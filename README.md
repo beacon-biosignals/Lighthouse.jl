@@ -5,7 +5,7 @@
        width="128">
 </div>
 
-# Lighthouse.jl
+# Lighthouse.jl lalala
 
 [![Build Status](https://travis-ci.com/beacon-biosignals/Lighthouse.jl.svg?token=Jbjm3zfgVHsfbKqsz3ki&branch=master)](https://travis-ci.com/beacon-biosignals/Lighthouse.jl)
 [![codecov](https://codecov.io/gh/beacon-biosignals/Lighthouse.jl/branch/master/graph/badge.svg?token=vKUqTYwORt)](https://codecov.io/gh/beacon-biosignals/Lighthouse.jl)
