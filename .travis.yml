@@ -4,7 +4,7 @@ os:
   - linux
 dist: xenial
 julia:
-  - 1.4
+  - 1.5
 if: branch = main OR tag IS present OR type = pull_request
 env:
   - JULIA_NUM_THREADS=2  # For testing multithreaded functions
