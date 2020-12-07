@@ -29,6 +29,7 @@ Lighthouse._calculate_ea_kappas
 Lighthouse._calculate_ira_kappas
 Lighthouse._calculate_spearman_correlation
 Lighthouse.evaluation_metrics_plot
+Base.flush
 ```
 
 ## Performance Metrics
@@ -45,4 +46,6 @@ calibration_curve
 
 ```@docs
 majority
+Lighthouse.area_under_curve
+Lighthouse.area_under_curve_unit_square
 ```
