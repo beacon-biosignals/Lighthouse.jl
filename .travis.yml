@@ -3,11 +3,9 @@ language: julia
 os:
   - linux
 dist: xenial
-if: branch = master OR tag IS present OR type = pull_request
-env:
-  - JULIA_NUM_THREADS=2  # For testing multithreaded functions
 julia:
   - 1.3
+if: branch = master OR tag IS present OR type = pull_request
 notifications:
   email: false
 # uncomment the following lines to override the default test script
