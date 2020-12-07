@@ -24,6 +24,11 @@ learn!
 upon
 evaluate!
 predict!
+Lighthouse.forward_logs
+Lighthouse._calculate_ea_kappas
+Lighthouse._calculate_ira_kappas
+Lighthouse._calculate_spearman_correlation
+Lighthouse.evaluation_metrics_plot
 ```
 
 ## Performance Metrics
