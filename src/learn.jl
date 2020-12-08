@@ -40,12 +40,13 @@ end
 function log_value!(logger::LearnLogger, field::AbstractString, value)
     values = get!(() -> Any[], logger.logged, field)
     push!(values, value)
-    TensorBoardLogger.log_value(logger.tensorboard_logger, field, value; step=length(values))
+    TensorBoardLogger.log_value(logger.tensorboard_logger, field, value;
+                                step=length(values))
     return value
 end
 
-function log_resource_info!(logger, section::AbstractString,
-                            info::ResourceInfo; suffix::AbstractString="")
+function log_resource_info!(logger, section::AbstractString, info::ResourceInfo;
+                            suffix::AbstractString="")
     log_value!(logger, section * "/time_in_seconds" * suffix, info.time_in_seconds)
     log_value!(logger, section * "/gc_time_in_seconds" * suffix, info.gc_time_in_seconds)
     log_value!(logger, section * "/allocations" * suffix, info.allocations)
@@ -53,8 +54,7 @@ function log_resource_info!(logger, section::AbstractString,
     return info
 end
 
-function log_resource_info!(f, logger, section::AbstractString;
-                            suffix::AbstractString="")
+function log_resource_info!(f, logger, section::AbstractString; suffix::AbstractString="")
     result, resource_info = call_with_resource_info(f)
     log_resource_info!(logger, section, resource_info; suffix=suffix)
     return result
@@ -90,14 +90,16 @@ function forward_logs(outbox, logger::LearnLogger)
             elseif startswith(field, "__plot__")
                 original_field = field[9:end]
                 values = get!(() -> Any[], logger.logged, original_field)
-                TensorBoardLogger.log_image(logger.tensorboard_logger, original_field, value; step=length(values))
-            elseif typeof(value) <: Union{Real, Complex}
+                TensorBoardLogger.log_image(logger.tensorboard_logger, original_field,
+                                            value; step=length(values))
+            elseif typeof(value) <: Union{Real,Complex}
                 log_value!(logger, field, value)
             end
         end
     catch e
         if !(isa(e, InvalidStateException) && e.state == :closed)
-            @error "error forwarding logs, STOPPING FORWARDING!" exception=(e, catch_backtrace())
+            @error "error forwarding logs, STOPPING FORWARDING!" exception = (e,
+                                                                              catch_backtrace())
         end
     end
 end
@@ -134,10 +136,8 @@ the iterable takes the form `(batch, votes_locations)`. Internally, `batch` is
 passed to [`loss_and_prediction`](@ref) as `loss_and_prediction(model, batch...)`.
 
  """
-function predict!(model::AbstractClassifier,
-                  predicted_soft_labels::AbstractMatrix,
-                  batches, logger;
-                  logger_prefix::AbstractString)
+function predict!(model::AbstractClassifier, predicted_soft_labels::AbstractMatrix, batches,
+                  logger; logger_prefix::AbstractString)
     losses = Float32[]
     for (batch, votes_locations) in batches
         batch_loss = log_resource_info!(logger, logger_prefix; suffix="_per_batch") do
@@ -204,17 +204,15 @@ This is only a valid parameter when `length(classes) == 2`
 """
 function evaluate!(predicted_hard_labels::AbstractVector,
                    predicted_soft_labels::AbstractMatrix,
-                   elected_hard_labels::AbstractVector,
-                   classes, logger;
-                   logger_prefix::AbstractString,
-                   logger_suffix::AbstractString="",
-                   votes::Union{Nothing,AbstractMatrix}=nothing,
-                   thresholds=0.0:0.01:1.0,
+                   elected_hard_labels::AbstractVector, classes, logger;
+                   logger_prefix::AbstractString, logger_suffix::AbstractString="",
+                   votes::Union{Nothing,AbstractMatrix}=nothing, thresholds=0.0:0.01:1.0,
                    optimal_threshold_class::Union{Nothing,Integer}=nothing)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     log_resource_info!(logger, logger_prefix; suffix=logger_suffix) do
-        plot, plot_data = evaluation_metrics_plot(predicted_hard_labels, predicted_soft_labels,
+        plot, plot_data = evaluation_metrics_plot(predicted_hard_labels,
+                                                  predicted_soft_labels,
                                                   elected_hard_labels, classes, thresholds;
                                                   votes=votes,
                                                   optimal_threshold_class=optimal_threshold_class)
@@ -229,72 +227,58 @@ end
 
 function plot_pr_curves(per_class_pr_curves, class_labels; legend=:bottomleft)
     return plot(per_class_pr_curves; labels=class_labels, title="PR curves",
-                xlabel="True positive rate", xlims=(0, 1),
-                ylabel="Precision", ylims=(0, 1),
+                xlabel="True positive rate", xlims=(0, 1), ylabel="Precision", ylims=(0, 1),
                 linewidth=1.5, framestyle=:box, legend=legend)
 end
 
 function plot_prg_curves(per_class_prg_curves, per_class_prg_aucs, class_labels;
                          legend=:bottomleft)
-     auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
-                              for (i, class) in enumerate(class_labels)]
+    auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
+                  for (i, class) in enumerate(class_labels)]
     return plot(per_class_prg_curves; labels=auc_labels, title="PR-Gain curves",
-                xlabel="True positive rate gain", xlims=(0, 1),
-                ylabel="Precision gain", ylims=(0, 1),
-                linewidth=1.5, framestyle=:box, legend=legend)
+                xlabel="True positive rate gain", xlims=(0, 1), ylabel="Precision gain",
+                ylims=(0, 1), linewidth=1.5, framestyle=:box, legend=legend)
 end
 
 function plot_roc_curves(per_class_roc_curves, per_class_roc_aucs, class_labels;
                          legend=:bottomright)
     auc_labels = [@sprintf("%s (AUC: %.3f)", class, per_class_roc_aucs[i])
-                              for (i, class) in enumerate(class_labels)]
+                  for (i, class) in enumerate(class_labels)]
     return plot(per_class_roc_curves; labels=auc_labels, title="ROC curves",
-                xlabel="False positive rate", xlims=(0, 1),
-                ylabel="True positive rate", ylims=(0, 1),
-                linewidth=1.5, framestyle=:box, legend=legend)
+                xlabel="False positive rate", xlims=(0, 1), ylabel="True positive rate",
+                ylims=(0, 1), linewidth=1.5, framestyle=:box, legend=legend)
 end
 
 function plot_reliability_calibration_curves(per_class_reliability_calibration_curves,
                                              per_class_reliability_calibration_scores,
                                              class_labels; legend=:bottomright)
-    calibration_score_labels = [@sprintf("%s (MSE: %.3f)", class, per_class_reliability_calibration_scores[i])
+    calibration_score_labels = [@sprintf("%s (MSE: %.3f)", class,
+                                         per_class_reliability_calibration_scores[i])
                                 for (i, class) in enumerate(class_labels)]
-    plot(per_class_reliability_calibration_curves;
-         labels=calibration_score_labels,
-         title="Prediction reliability calibration",
-         xlabel="Predicted probability bin", xlims=(0, 1),
-         ylabel="Fraction of positives", ylims=(0, 1),
-         markershape=:circle, markersize=2, linewidth=1,
-         markerstrokewidth=0,
-         legendfontsize=1,
-         legend=legend,
+    plot(per_class_reliability_calibration_curves; labels=calibration_score_labels,
+         title="Prediction reliability calibration", xlabel="Predicted probability bin",
+         xlims=(0, 1), ylabel="Fraction of positives", ylims=(0, 1), markershape=:circle,
+         markersize=2, linewidth=1, markerstrokewidth=0, legendfontsize=1, legend=legend,
          framestyle=:box)
     #TODO: mean predicted value histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
-    plot!([0, 1], [0, 1], linecolor=:black, linestyle=:dash, label="Ideal")
-    return xticks!(0:.2:1)
+    plot!([0, 1], [0, 1]; linecolor=:black, linestyle=:dash, label="Ideal")
+    return xticks!(0:0.2:1)
 end
 
-function plot_binary_discrimination_calibration_curves(calibration_curve,
-                                                       calibration_score,
+function plot_binary_discrimination_calibration_curves(calibration_curve, calibration_score,
                                                        per_expert_calibration_curves,
                                                        per_expert_calibration_scores,
                                                        optimal_threshold,
                                                        discrimination_class::AbstractString)
-
-    p = plot(per_expert_calibration_curves;
-             title="Detection calibration",
-             xlabel="Expert agreement rate", xlims=(0, 1),
-             xticks=(0:0.2:1),
-             ylabel="Predicted positive probability", ylims=(0, 1),
-             markershape=:rect, markersize=1.5, markerstrokewidth=0,
-             color=:darkgrey, linewidth=1,
+    p = plot(per_expert_calibration_curves; title="Detection calibration",
+             xlabel="Expert agreement rate", xlims=(0, 1), xticks=(0:0.2:1),
+             ylabel="Predicted positive probability", ylims=(0, 1), markershape=:rect,
+             markersize=1.5, markerstrokewidth=0, color=:darkgrey, linewidth=1,
              framestyle=:box, legend=false)
-    plot!(p, calibration_curve;
-          markershape=:circle, markersize=2, markerstrokewidth=0,
-          color=:navyblue,
-          linewidth=1)
-    plot!(p, [0, 1], [0, 1], linecolor=:black, linestyle=:dash, label="Ideal")
+    plot!(p, calibration_curve; markershape=:circle, markersize=2, markerstrokewidth=0,
+          color=:navyblue, linewidth=1)
+    plot!(p, [0, 1], [0, 1]; linecolor=:black, linestyle=:dash, label="Ideal")
     #TODO: expert agreement histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
     return p
@@ -303,23 +287,19 @@ end
 function plot_kappas(per_class_kappas, class_labels, per_class_IRA_kappas=nothing)
     # Note: both the data and the labels need to be reversed, so that it plots
     # with the first class at the top of plot.
-    class_labels_reversed = reverse(class_labels, dims=2)
+    class_labels_reversed = reverse(class_labels; dims=2)
     shift = x -> begin
         x < 0.92 && return x + 0.04
         return x - 0.05
     end
     local p
     if isnothing(per_class_IRA_kappas)
-        annos = [(shift(k), i, text(string(round(k;digits=3)), 7))
+        annos = [(shift(k), i, text(string(round(k; digits=3)), 7))
                  for (i, k) in enumerate(reverse(per_class_kappas))]
-        p = groupedbar(hcat(reverse(per_class_kappas));
-                       title="Algorithm-expert agreement",
-                       xlabel="Cohen's kappa",
-                       xlims=(-0.001, 1), xticks=0:.2:1,
+        p = groupedbar(hcat(reverse(per_class_kappas)); title="Algorithm-expert agreement",
+                       xlabel="Cohen's kappa", xlims=(-0.001, 1), xticks=0:0.2:1,
                        yticks=(1:length(class_labels_reversed), class_labels_reversed),
-                       annotations = vec(annos),
-                       legend=false,
-                       color=[1], linecolor=[1],
+                       annotations=vec(annos), legend=false, color=[1], linecolor=[1],
                        orientation=:horizontal, framestyle=:box)
     else
         # Note: The plotting libraries make legend customization very tricky.
@@ -329,28 +309,23 @@ function plot_kappas(per_class_kappas, class_labels, per_class_IRA_kappas=nothin
         # "empty" series to the plot, and then adjust the `color` and `label`
         # attributes for those series to match the real data. These have
         # been marked with "^plot hack" comments.
-        annos = [(shift(k), float(i) - 0.31, text(string(round(k;digits=3)), 6))
+        annos = [(shift(k), float(i) - 0.31, text(string(round(k; digits=3)), 6))
                  for (i, k) in enumerate(reverse(per_class_kappas))]
-        append!(annos, [(shift(k), float(i) - 0.095, text(string(round(k;digits=3)), 6))
-                        for (i, k) in enumerate(reverse(per_class_IRA_kappas))])
-        kappas = hcat(reverse(per_class_kappas),
-                      reverse(per_class_IRA_kappas),
+        append!(annos,
+                [(shift(k), float(i) - 0.095, text(string(round(k; digits=3)), 6))
+                 for (i, k) in enumerate(reverse(per_class_IRA_kappas))])
+        kappas = hcat(reverse(per_class_kappas), reverse(per_class_IRA_kappas),
                       fill(0, size(per_class_kappas)),  # ^plot hack
                       fill(0, size(per_class_kappas)))  # ^plot hack
-        p = groupedbar(kappas;
-                       title="Inter-rater reliability",
-                       xlabel="Cohen's kappa",
-                       xlims=(0, 1), xticks=0:.2:1,
+        p = groupedbar(kappas; title="Inter-rater reliability", xlabel="Cohen's kappa",
+                       xlims=(0, 1), xticks=0:0.2:1,
                        yticks=(1:length(class_labels_reversed), class_labels_reversed),
                        labels=["" "" "Expert-vs-expert IRA" "Algorithm-vs-expert"], # ^plot hack
-                       annotations = vec(annos),
-                       legend=:outertop,
-                       background_color_legend=nothing,
-                       foreground_color_legend=nothing,
+                       annotations=vec(annos), legend=:outertop,
+                       background_color_legend=nothing, foreground_color_legend=nothing,
                        color=[:lightblue :lightgrey :darkgrey :lightblue],  # ^plot hack
                        linecolor=[:lightblue :darkgrey :black :black],    # ^plot hack
-                       orientation=:horizontal,
-                       framestyle=:box)
+                       orientation=:horizontal, framestyle=:box)
     end
     return p
 end
@@ -364,13 +339,11 @@ function plot_confusion_matrix(confusion::AbstractMatrix, class_labels, normaliz
     annos = [(j, i, text(string(confusion[i, j]), 4))
              for i in class_indices, j in class_indices]
     heatmap(class_indices, class_indices, confusion;
-            title="$(string(normalize_by))-Normalized Confusion",
-            annotations=vec(annos),
-            xlabel="Elected Class", ylabel="Predicted Class",
-            clims=(0, maximum(confusion)), fillcolor=:Blues,
-            xticks=(class_indices, class_labels),
-            yticks=(class_indices, class_labels),
-            legend=false, xrotation=45, framestyle=:box)
+            title="$(string(normalize_by))-Normalized Confusion", annotations=vec(annos),
+            xlabel="Elected Class", ylabel="Predicted Class", clims=(0, maximum(confusion)),
+            fillcolor=:Blues, xticks=(class_indices, class_labels),
+            yticks=(class_indices, class_labels), legend=false, xrotation=45,
+            framestyle=:box)
     return yaxis!(:flip)
 end
 
@@ -388,46 +361,37 @@ function plot_combined(plots; class_labels, binary_discrimination_class=nothing)
         @warn "Legend placement hasn't been optimized for this number of subplots"
         layout = length(plots) + 1
     end
-    legend_plot = plot(zeros(1, length(labels));
-                       color=color,
-                       label=labels,
-                       grid=false,
-                       showaxis=false,
-                       legendtitle="Legend",
-                       legendtitlefontsize=4,
-                       legendtitlefonthalign=:right,
-                       background_color_legend=nothing,
-                       foreground_color_legend=nothing,
-                       legend=:right)
-    return plot(plots..., legend_plot;
-                dpi=500,
-                legendfontsize=4,
-                titlefontsize=8,
-                layout=layout,
-                title_location=:left,
-                guidefontsize=6,
-                tickfontsize=6,
-                left_margin=3mm,
-                size=size)
+    legend_plot = plot(zeros(1, length(labels)); color=color, label=labels, grid=false,
+                       showaxis=false, legendtitle="Legend", legendtitlefontsize=4,
+                       legendtitlefonthalign=:right, background_color_legend=nothing,
+                       foreground_color_legend=nothing, legend=:right)
+    return plot(plots..., legend_plot; dpi=500, legendfontsize=4, titlefontsize=8,
+                layout=layout, title_location=:left, guidefontsize=6, tickfontsize=6,
+                left_margin=3mm, size=size)
 end
 
 function evaluation_metrics_plot(plot_data::Dict)
     pr = plot_pr_curves(plot_data["per_class_pr_curves"], plot_data["class_labels"];
                         legend=false)
-    prg = plot_prg_curves(plot_data["per_class_prg_curves"], plot_data["per_class_prg_aucs"],
-                          plot_data["class_labels"]; legend=false)
-    roc = plot_roc_curves(plot_data["per_class_roc_curves"], plot_data["per_class_roc_aucs"],
-                          plot_data["class_labels"]; legend=false)
+    prg = plot_prg_curves(plot_data["per_class_prg_curves"],
+                          plot_data["per_class_prg_aucs"], plot_data["class_labels"];
+                          legend=false)
+    roc = plot_roc_curves(plot_data["per_class_roc_curves"],
+                          plot_data["per_class_roc_aucs"], plot_data["class_labels"];
+                          legend=false)
 
     IRA_kappa_data = nothing
     multiclass = length(plot_data["class_labels"]) > 2
-    labels = multiclass ? hcat("Multiclass", plot_data["class_labels"]) : plot_data["class_labels"]
-    kappa_data = multiclass ? vcat(plot_data["multiclass_kappa"],
-                                   plot_data["per_class_kappas"]) : plot_data["per_class_kappas"]
+    labels = multiclass ? hcat("Multiclass", plot_data["class_labels"]) :
+             plot_data["class_labels"]
+    kappa_data = multiclass ?
+                 vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]) :
+                 plot_data["per_class_kappas"]
     if issubset(["multiclass_IRA_kappas", "per_class_IRA_kappas"], keys(plot_data))
-        IRA_kappa_data = multiclass ? vcat(plot_data["multiclass_IRA_kappas"],
-                                           plot_data["per_class_IRA_kappas"]) :
-                                      plot_data["per_class_IRA_kappas"]
+        IRA_kappa_data = multiclass ?
+                         vcat(plot_data["multiclass_IRA_kappas"],
+                              plot_data["per_class_IRA_kappas"]) :
+                         plot_data["per_class_IRA_kappas"]
     end
     kappa = plot_kappas(kappa_data, labels, IRA_kappa_data)
     reliability_calibration = plot_reliability_calibration_curves(plot_data["per_class_reliability_calibration_curves"],
@@ -441,32 +405,30 @@ function evaluation_metrics_plot(plot_data::Dict)
 
     label_str = i -> begin
         class = plot_data["class_labels"][i]
-        auc = round(plot_data["per_class_roc_aucs"][i], digits=2)
-        mse = round(plot_data["per_class_reliability_calibration_scores"][i], digits=2)
+        auc = round(plot_data["per_class_roc_aucs"][i]; digits=2)
+        mse = round(plot_data["per_class_reliability_calibration_scores"][i]; digits=2)
         return "$class (ROC AUC $auc; Cal. MSE $mse)"
     end
     class_labels = map(label_str, 1:length(plot_data["class_labels"]))
     if haskey(plot_data, "discrimination_calibration_curve")
-        binary_calibration = plot_binary_discrimination_calibration_curves(
-            plot_data["discrimination_calibration_curve"],
-            plot_data["discrimination_calibration_score"],
-            plot_data["per_expert_discrimination_calibration_curves"],
-            plot_data["per_expert_discrimination_calibration_scores"],
-            plot_data["optimal_threshold"],
-            plot_data["class_labels"][plot_data["optimal_threshold_class"]])
-        return plot_combined((binary_calibration, reliability_calibration, kappa, confusion_row, confusion_col,
-                              roc, pr, prg);
+        binary_calibration = plot_binary_discrimination_calibration_curves(plot_data["discrimination_calibration_curve"],
+                                                                           plot_data["discrimination_calibration_score"],
+                                                                           plot_data["per_expert_discrimination_calibration_curves"],
+                                                                           plot_data["per_expert_discrimination_calibration_scores"],
+                                                                           plot_data["optimal_threshold"],
+                                                                           plot_data["class_labels"][plot_data["optimal_threshold_class"]])
+        return plot_combined((binary_calibration, reliability_calibration, kappa,
+                              confusion_row, confusion_col, roc, pr, prg);
                              class_labels=class_labels,
                              binary_discrimination_class=plot_data["class_labels"][plot_data["optimal_threshold_class"]])
     else
-        return plot_combined((confusion_col, confusion_row, kappa,
-                              roc, pr, prg,
-                              reliability_calibration);
-                             class_labels=class_labels)
+        return plot_combined((confusion_col, confusion_row, kappa, roc, pr, prg,
+                              reliability_calibration); class_labels=class_labels)
     end
 end
 
-function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count, strata)
+function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_labels,
+                                         class_count, strata)
     groups = reduce(∪, strata)
     kappas = Pair{String,Any}[]
     for group in groups
@@ -474,9 +436,10 @@ function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_lab
         predicted = predicted_hard_labels[index]
         elected = elected_hard_labels[index]
         k = _calculate_ea_kappas(predicted, elected, class_count)
-        push!(kappas, group => (per_class=k.per_class, multiclass=k.multiclass, n=sum(index)))
+        push!(kappas,
+              group => (per_class=k.per_class, multiclass=k.multiclass, n=sum(index)))
     end
-    return sort(kappas; by=p->last(p).multiclass)
+    return sort(kappas; by=p -> last(p).multiclass)
 end
 
 """
@@ -499,7 +462,8 @@ is the hard label elected as "ground truth" for sample `i` in the evaulation set
 
 """
 function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
-    multiclass = first(cohens_kappa(class_count, zip(predicted_hard_labels, elected_hard_labels)))
+    multiclass = first(cohens_kappa(class_count,
+                                    zip(predicted_hard_labels, elected_hard_labels)))
 
     CLASS_VS_ALL_CLASS_COUNT = 2
     per_class = map(1:class_count) do class_index
@@ -536,20 +500,22 @@ function _calculate_ira_kappas(votes, classes)
 
     all_hard_label_pairs = Array{Int}(undef, 0, 2)
     num_voters = size(votes, 2)
-    for i_voter in 1:num_voters - 1
+    for i_voter in 1:(num_voters - 1)
         for j_voter in (i_voter + 1):num_voters
             all_hard_label_pairs = vcat(all_hard_label_pairs, votes[:, [i_voter, j_voter]])
         end
     end
     hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
     length(hard_label_pairs) > 0 || return nothing  # No common observations voted on
-    length(hard_label_pairs) < 10 && @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
+    length(hard_label_pairs) < 10 &&
+        @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
 
     multiclass_ira = first(cohens_kappa(length(classes), hard_label_pairs))
 
     CLASS_VS_ALL_CLASS_COUNT = 2
     per_class_ira = map(1:length(classes)) do class_index
-        class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index), hard_label_pairs)
+        class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index),
+                                            hard_label_pairs)
         return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
     end
     return (per_class=per_class_ira, multiclass=multiclass_ira)
@@ -572,7 +538,8 @@ function _spearman_corr(predicted_soft_labels, elected_soft_labels)
     delta = 1.96 * stderr
     ci_lower = tanh(atanh(ρ) - delta)
     ci_upper = tanh(atanh(ρ) + delta)
-    return (ρ=ρ, n=n, ci_lower=round(ci_lower; digits=3), ci_upper=round(ci_upper; digits=3))
+    return (ρ=ρ, n=n, ci_lower=round(ci_lower; digits=3),
+            ci_upper=round(ci_upper; digits=3))
 end
 
 """
@@ -610,24 +577,22 @@ function _calculate_spearman_correlation(predicted_soft_labels, votes, classes)
         actual_sample_votes = filter(v -> v in Set([1, 2]), sample_votes)
         push!(elected_soft_labels, mean(actual_sample_votes .== class_index))
     end
-    return _spearman_corr(predicted_soft_labels[:, class_index],
-                          elected_soft_labels)
+    return _spearman_corr(predicted_soft_labels[:, class_index], elected_soft_labels)
 end
 
-function _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels, votes;
-                                                                      thresholds,
+function _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+                                                                      votes; thresholds,
                                                                       class_of_interest_index)
     elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
     bin_count = min(size(votes, 2) + 1, 10)
     per_threshold_curves = map(thresholds) do thresh
         return calibration_curve(elected_probabilities,
-                                 predicted_soft_labels[:, class_of_interest_index] .>= thresh;
-                                 bin_count=bin_count)
+                                 predicted_soft_labels[:, class_of_interest_index] .>=
+                                 thresh; bin_count=bin_count)
     end
     i_min = argmin([c.mean_squared_error for c in per_threshold_curves])
     curve = per_threshold_curves[i_min]
-    return (threshold=collect(thresholds)[i_min],
-            mse=curve.mean_squared_error,
+    return (threshold=collect(thresholds)[i_min], mse=curve.mean_squared_error,
             plot_curve_data=(mean.(curve.bins), curve.fractions))
 end
 
@@ -645,7 +610,8 @@ function _calculate_voter_discrimination_calibration(votes; class_of_interest_in
 
     bin_count = min(size(votes, 2) + 1, 10)
     per_voter_calibration_curves = map(1:size(votes, 2)) do i_voter
-        return calibration_curve(elected_probabilities, votes[:, i_voter] .== class_of_interest_index;
+        return calibration_curve(elected_probabilities,
+                                 votes[:, i_voter] .== class_of_interest_index;
                                  bin_count=bin_count)
     end
 
@@ -656,13 +622,13 @@ end
 
 function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
                                          class_of_interest_index)
-    dist = (p1, p2) -> sqrt((p1[1] - p2[1]) ^ 2 + (p1[2] - p2[2]) ^ 2)
+    dist = (p1, p2) -> sqrt((p1[1] - p2[1])^2 + (p1[2] - p2[2])^2)
     min = Inf
     curr_counter = 1
     opt_point = nothing
     threshold_idx = 1
     for point in zip(per_class_roc_curves[class_of_interest_index][1],
-                     per_class_roc_curves[class_of_interest_index][2])
+            per_class_roc_curves[class_of_interest_index][2])
         d = dist((0, 1), point)
         if d < min
             min = d
@@ -676,8 +642,10 @@ end
 
 function _validate_threshold_class(optimal_threshold_class, classes)
     isnothing(optimal_threshold_class) && return nothing
-    length(classes) == 2 || throw(ArgumentError("Only valid for binary classification problems"))
-    optimal_threshold_class in Set([1, 2]) || throw(ArgumentError("Invalid threshold class"))
+    length(classes) == 2 ||
+        throw(ArgumentError("Only valid for binary classification problems"))
+    optimal_threshold_class in Set([1, 2]) ||
+        throw(ArgumentError("Invalid threshold class"))
     return nothing
 end
 
@@ -726,8 +694,7 @@ This is only a valid parameter when `length(classes) == 2`
 """
 function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
                                  predicted_soft_labels::AbstractMatrix,
-                                 elected_hard_labels::AbstractVector,
-                                 classes, thresholds;
+                                 elected_hard_labels::AbstractVector, classes, thresholds;
                                  votes::Union{Nothing,AbstractMatrix}=nothing,
                                  strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
                                  optimal_threshold_class::Union{Nothing,Integer}=nothing)
@@ -737,8 +704,7 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
     class_labels = permutedims(string.(class_vector))
     per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
-                                                     elected_hard_labels,
-                                                     thresholds)
+                                                     elected_hard_labels, thresholds)
     plot_dict = Dict()
     plot_dict["class_labels"] = class_labels
     plot_dict["thresholds"] = thresholds
@@ -747,7 +713,8 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
     plot_dict["per_class_roc_curves"] = [(map(t -> t.false_positive_rate, stats),
                                           map(t -> t.true_positive_rate, stats))
                                          for stats in per_class_stats]
-    plot_dict["per_class_roc_aucs"] = [area_under_curve(x, y) for (x, y) in plot_dict["per_class_roc_curves"]]
+    plot_dict["per_class_roc_aucs"] = [area_under_curve(x, y)
+                                       for (x, y) in plot_dict["per_class_roc_curves"]]
 
     # Optionally calculate optimal threshold
     if !isnothing(optimal_threshold_class)
@@ -765,7 +732,8 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
             plot_dict["discrimination_calibration_curve"] = c.plot_curve_data
             plot_dict["discrimination_calibration_score"] = c.mse
 
-            expert_cal = _calculate_voter_discrimination_calibration(votes; class_of_interest_index=optimal_threshold_class)
+            expert_cal = _calculate_voter_discrimination_calibration(votes;
+                                                                     class_of_interest_index=optimal_threshold_class)
             plot_dict["per_expert_discrimination_calibration_curves"] = expert_cal.plot_curve_data
             plot_dict["per_expert_discrimination_calibration_scores"] = expert_cal.mse
         else
@@ -779,7 +747,8 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
         # Recalculate `predicted_hard_labels` with this new threshold
         other_class = optimal_threshold_class == 1 ? 2 : 1
         for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = row[optimal_threshold_class] .>= threshold ? optimal_threshold_class : other_class
+            predicted_hard_labels[i] = row[optimal_threshold_class] .>= threshold ?
+                                       optimal_threshold_class : other_class
         end
     end
 
@@ -789,13 +758,19 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
                                         for stats in per_class_stats]
 
     # PRG curves
-    plot_dict["per_class_prg_curves"] = [(map(t -> 1-gain(t.actual_positives,t.actual_negatives)
-                                                           * (t.false_negatives / t.true_positives), stats),
-                                         map(t -> 1-gain(t.actual_positives,t.actual_negatives)
-                                             * (t.false_positives / t.true_positives), stats))
-                                        for stats in per_class_stats]
+    plot_dict["per_class_prg_curves"] = [(map(t -> 1 -
+                                                   gain(t.actual_positives,
+                                                        t.actual_negatives) *
+                                                   (t.false_negatives / t.true_positives),
+                                              stats),
+                                          map(t -> 1 -
+                                                   gain(t.actual_positives,
+                                                        t.actual_negatives) *
+                                                   (t.false_positives / t.true_positives),
+                                              stats)) for stats in per_class_stats]
 
-    plot_dict["per_class_prg_aucs"] = [area_under_curve_unit_square(x, y) for (x, y) in plot_dict["per_class_pr_curves"]]
+    plot_dict["per_class_prg_aucs"] = [area_under_curve_unit_square(x, y)
+                                       for (x, y) in plot_dict["per_class_pr_curves"]]
 
     # Cohen's kappa
     kappas = _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
@@ -809,7 +784,10 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
 
     # Stratified kappas
     if !isnothing(strata)
-        plot_dict["stratified_kappas"] = _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count, strata)
+        plot_dict["stratified_kappas"] = _calculate_stratified_ea_kappas(predicted_hard_labels,
+                                                                         elected_hard_labels,
+                                                                         class_count,
+                                                                         strata)
     end
 
     # Reliability calibration curves
@@ -817,13 +795,16 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
         class_probabilities = view(predicted_soft_labels, :, class_index)
         return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
     end
-    plot_dict["per_class_reliability_calibration_curves"] = map(x -> (mean.(x.bins), x.fractions),
+    plot_dict["per_class_reliability_calibration_curves"] = map(x -> (mean.(x.bins),
+                                                                      x.fractions),
                                                                 per_class_reliability_calibration_curves)
     plot_dict["per_class_reliability_calibration_scores"] = map(x -> x.mean_squared_error,
                                                                 per_class_reliability_calibration_curves)
 
     # Confusion matrix
-    plot_dict["confusion_matrix"] = confusion_matrix(class_count, zip(predicted_hard_labels, elected_hard_labels))
+    plot_dict["confusion_matrix"] = confusion_matrix(class_count,
+                                                     zip(predicted_hard_labels,
+                                                         elected_hard_labels))
 
     # Log Spearman correlation, iff this is a binary classification problem
     if length(classes) == 2 && !isnothing(votes)
@@ -834,10 +815,10 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
 end
 
 function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
-                                        elected_hard_labels::AbstractVector,
-                                        thresholds)
+                                        elected_hard_labels::AbstractVector, thresholds)
     class_count = size(predicted_soft_labels, 2)
-    confusions = [[confusion_matrix(2) for _ in 1:length(thresholds)] for _ in 1:class_count]
+    confusions = [[confusion_matrix(2) for _ in 1:length(thresholds)]
+                  for _ in 1:class_count]
     for class_index in 1:class_count
         for label_index in 1:length(elected_hard_labels)
             predicted_soft_label = predicted_soft_labels[label_index, class_index]
@@ -919,9 +900,8 @@ is present, test set evaluation will be based on predicted hard labels calculate
 with this threshold; if `optimal_threshold_class` is `nothing`, predicted hard labels
 will be calculated via `onecold(classifier, soft_label)`.
 """
-function learn!(model::AbstractClassifier, logger,
-                get_train_batches, get_test_batches, votes,
-                elected=majority.(eachrow(votes), (1:length(classes(model)),));
+function learn!(model::AbstractClassifier, logger, get_train_batches, get_test_batches,
+                votes, elected=majority.(eachrow(votes), (1:length(classes(model)),));
                 epoch_limit=100, post_epoch_callback=(_ -> nothing),
                 optimal_threshold_class::Union{Nothing,Integer}=nothing)
     # NOTE `votes` is currently unused except to construct `elected` by default,
@@ -943,11 +923,9 @@ function learn!(model::AbstractClassifier, logger,
             train!(model, get_train_batches(), logger)
             predict!(model, predicted, get_test_batches(), logger;
                      logger_prefix="test_set_prediction")
-            evaluate!(map(label -> onecold(model, label), eachrow(predicted)),
-                      predicted, elected, classes(model), logger;
-                      logger_prefix="test_set_evaluation",
-                      logger_suffix="_per_epoch",
-                      votes=votes,
+            evaluate!(map(label -> onecold(model, label), eachrow(predicted)), predicted,
+                      elected, classes(model), logger; logger_prefix="test_set_evaluation",
+                      logger_suffix="_per_epoch", votes=votes,
                       optimal_threshold_class=optimal_threshold_class)
             post_epoch_callback(current_epoch)
             flush(logger)
@@ -956,7 +934,8 @@ function learn!(model::AbstractClassifier, logger,
                 log_event!(logger, "`learn!` call stopped via $ex in epoch $current_epoch")
                 break
             else
-                log_event!(logger, "`learn!` call encountered exception in epoch $current_epoch")
+                log_event!(logger,
+                           "`learn!` call encountered exception in epoch $current_epoch")
                 rethrow(ex)
             end
         end

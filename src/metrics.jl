@@ -14,7 +14,7 @@ samples that the first classifier labeled `i` and the second classifier labeled
 Note that the returned confusion matrix can be updated in-place with new labels
 via `Lighthouse.increment_at!(matrix, more_hard_label_pairs)`.
 """
-function confusion_matrix(class_count::Integer, hard_label_pairs = ())
+function confusion_matrix(class_count::Integer, hard_label_pairs=())
     confusion = zeros(Int, class_count, class_count)
     increment_at!(confusion, hard_label_pairs)
     return confusion
@@ -78,21 +78,15 @@ function binary_statistics(confusion::AbstractMatrix, class_index::Integer)
     false_negative_rate = (false_negatives == 0 && actual_positives == 0) ?
                           (zero(false_negatives) / one(actual_positives)) :
                           (false_negatives / actual_positives)
-    precision = (true_positives == 0 && predicted_positives == 0) ?
-                missing : (true_positives / predicted_positives)
+    precision = (true_positives == 0 && predicted_positives == 0) ? missing :
+                (true_positives / predicted_positives)
     return (predicted_positives=predicted_positives,
-            predicted_negatives=predicted_negatives,
-            actual_positives=actual_positives,
-            actual_negatives=actual_negatives,
-            true_positives=true_positives,
-            true_negatives=true_negatives,
-            false_positives=false_positives,
-            false_negatives=false_negatives,
-            true_positive_rate=true_positive_rate,
-            true_negative_rate=true_negative_rate,
-            false_positive_rate=false_positive_rate,
-            false_negative_rate=false_negative_rate,
-            precision=precision)
+            predicted_negatives=predicted_negatives, actual_positives=actual_positives,
+            actual_negatives=actual_negatives, true_positives=true_positives,
+            true_negatives=true_negatives, false_positives=false_positives,
+            false_negatives=false_negatives, true_positive_rate=true_positive_rate,
+            true_negative_rate=true_negative_rate, false_positive_rate=false_positive_rate,
+            false_negative_rate=false_negative_rate, precision=precision)
 end
 
 function gain(actual_positives, actual_negatives)
@@ -136,7 +130,7 @@ end
 #####
 
 # source: https://github.com/FluxML/Flux.jl/blob/fe85a38d78e225e07a0b75c12b55c8398ae3fe5d/src/layers/stateless.jl#L6
-mse(ŷ, y) = sum((ŷ .- y).^2) * 1 // length(y)
+mse(ŷ, y) = sum((ŷ .- y) .^ 2) * 1 // length(y)
 
 """
     calibration_curve(probabilities, bitmask; bin_count=10)
