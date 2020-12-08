@@ -6,4 +6,4 @@ makedocs(; modules=[Lighthouse], sitename="Lighthouse",
          pages=["API Documentation" => "index.md"])
 
 deploydocs(repo="github.com/beacon-biosignals/Lighthouse.jl.git",
-           latest="main")
+           devbranch="main")
