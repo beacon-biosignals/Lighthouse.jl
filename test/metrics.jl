@@ -1,15 +1,16 @@
 @testset "agreement/confusion matrix tests" begin
-    hard_label_pairs = zip([1, 1, 3, 1, 3, 1, 2, 1],
-                           [2, 2, 1, 1, 3, 2, 3, 1])
+    hard_label_pairs = zip([1, 1, 3, 1, 3, 1, 2, 1], [2, 2, 1, 1, 3, 2, 3, 1])
     c = confusion_matrix(3, hard_label_pairs)
-    @test c == [2 3 0;
-                0 0 1;
-                1 0 1]
+    @test c == [
+        2 3 0
+        0 0 1
+        1 0 1
+    ]
     kappa, percent_agreement = cohens_kappa(3, hard_label_pairs)
     chance = Lighthouse._probability_of_chance_agreement(3, hard_label_pairs)
-    @test chance == (5*3 + 1*3 + 2*2) / 8^2
-    @test accuracy(c) == percent_agreement == 3/8
-    @test kappa == (3/8 - chance) / (1 - chance)
+    @test chance == (5 * 3 + 1 * 3 + 2 * 2) / 8^2
+    @test accuracy(c) == percent_agreement == 3 / 8
+    @test kappa == (3 / 8 - chance) / (1 - chance)
     stats = binary_statistics(c, 3)
     @test stats.predicted_positives == 2
     @test stats.predicted_negatives == 6
@@ -20,8 +21,8 @@
     @test stats.false_positives == 1
     @test stats.false_negatives == 1
     @test stats.true_positive_rate == 0.5
-    @test stats.true_negative_rate == 1/3
-    @test stats.false_positive_rate == 1/6
+    @test stats.true_negative_rate == 1 / 3
+    @test stats.false_positive_rate == 1 / 6
     @test stats.false_negative_rate == 0.5
     @test stats.precision == 0.5
 
@@ -97,7 +98,8 @@ end
     probs = rand(rng, 1_000_000)
     bitmask = rand(rng, Bool, 1_000_000)
     bin_count = 12
-    bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask; bin_count=bin_count)
+    bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
+                                                                    bin_count=bin_count)
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
@@ -106,13 +108,14 @@ end
     @test all(isapprox.(totals, length(probs) / bin_count; atol=1000))
     @test sum(totals) == length(probs)
     @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
-    @test isapprox(mean_squared_error, inv(bin_count), atol=0.001)
+    @test isapprox(mean_squared_error, inv(bin_count); atol=0.001)
 
     rng = MersenneTwister(42)
     probs = range(0.0, 1.0; length=1_000_000)
     bitmask = [rand(rng) <= p for p in probs]
     bin_count = 10
-    bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask; bin_count=bin_count)
+    bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
+                                                                    bin_count=bin_count)
     ideal = range(mean(first(bins)), mean(last(bins)); length=bin_count)
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
@@ -121,10 +124,11 @@ end
     @test all(isapprox.(fractions, ideal; atol=0.01))
     @test all(totals .== 1_000_000 / bin_count)
     @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
-    @test isapprox(mean_squared_error, 0.0, atol=0.00001)
+    @test isapprox(mean_squared_error, 0.0; atol=0.00001)
 
     bitmask = reverse(bitmask)
-    bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask; bin_count=bin_count)
+    bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
+                                                                    bin_count=bin_count)
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
@@ -132,5 +136,5 @@ end
     @test all(isapprox.(fractions, reverse(ideal); atol=0.01))
     @test all(totals .== 1_000_000 / bin_count)
     @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
-    @test isapprox(mean_squared_error, 1/3, atol=0.01)
+    @test isapprox(mean_squared_error, 1 / 3; atol=0.01)
 end

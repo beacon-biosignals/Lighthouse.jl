@@ -36,8 +36,9 @@ for a unit square, using the trapezoidal rule.
 """
 function area_under_curve_unit_square(x, y)
     @assert length(x) == length(y)
-    kept = [(i, j) for (i, j) in zip(x, y) if
-            !(ismissing(i) || ismissing(j)) && (0 <= i <= 1 && 0 <= j <= 1)]
+    kept = [(i, j)
+            for (i, j) in zip(x, y)
+            if !(ismissing(i) || ismissing(j)) && (0 <= i <= 1 && 0 <= j <= 1)]
     return area_under_curve(map(k -> k[1], kept), map(k -> k[2], kept))
 end
 
@@ -56,7 +57,9 @@ julia> majority([1, 2, 1, 3, 2, 2, 3, 4], 3:4)
 
 In the event of a tie, a winner is randomly selected from the tied labels via `rng`.
 """
-majority(rng::AbstractRNG, labels, among::UnitRange) = rand(rng, StatsBase.modes(labels, among))
+function majority(rng::AbstractRNG, labels, among::UnitRange)
+    return rand(rng, StatsBase.modes(labels, among))
+end
 majority(labels, among::UnitRange) = majority(Random.GLOBAL_RNG, labels, among)
 
 #####
