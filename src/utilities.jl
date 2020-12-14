@@ -17,6 +17,7 @@ using the trapezoidal rule.
 """
 function area_under_curve(x, y)
     @assert length(x) == length(y)
+    length(x) == 0 && return 0.0
     auc = zero(middle(one(eltype(x)), one(eltype(y))))
     perms = sortperm(x)
     sorted_x = view(x, perms)
