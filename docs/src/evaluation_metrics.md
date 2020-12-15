@@ -19,9 +19,9 @@ versus the elected class (the columns). These come in two variants:
 
 ## ROC curves
 
-## PR curves
+## PR curves (precision-recall curves)
 
-## PR-gain curves
+## PR-gain curves (precision-recall-gain curves)
 
 ## Prediction-reliability calibration
 
