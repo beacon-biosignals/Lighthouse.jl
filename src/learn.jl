@@ -843,7 +843,7 @@ end
     learn!(model::AbstractClassifier, logger,
            get_train_batches, get_test_batches, votes,
            elected=majority.(eachrow(votes), (1:length(classes(model)),));
-           epoch_limit=100, post_epoch_callback=(_ -> nothing),
+           epoch_limit=100, post_epoch_callback=(current_epoch -> nothing),
            optimal_threshold_class::Union{Nothing,Integer}=nothing)
 
 Return `model` after optimizing its parameters across multiple epochs of
@@ -905,7 +905,7 @@ Where...
 """
 function learn!(model::AbstractClassifier, logger, get_train_batches, get_test_batches,
                 votes, elected=majority.(eachrow(votes), (1:length(classes(model)),));
-                epoch_limit=100, post_epoch_callback=(_ -> nothing),
+                epoch_limit=100, post_epoch_callback=(current_epoch -> nothing),
                 optimal_threshold_class::Union{Nothing,Integer}=nothing)
     # NOTE `votes` is currently unused except to construct `elected` by default,
     # but will be necessary for calculating multirater metrics e.g. Fleiss' kappa
