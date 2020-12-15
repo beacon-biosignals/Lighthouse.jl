@@ -460,11 +460,9 @@ for class `i`.
 Where...
 
 - `predicted_hard_labels` is a vector of hard labels where the `i`th element
-is the hard label predicted by the model for sample `i` in the evaulation set.
-
+    is the hard label predicted by the model for sample `i` in the evaulation set.
 - `elected_hard_labels` is a vector of hard labels where the `i`th element
 is the hard label elected as "ground truth" for sample `i` in the evaulation set.
-
 - `class_count` is the number of possible classes.
 
 """
@@ -559,10 +557,9 @@ Only valid for binary classification problems (i.e., `length(classes) == 2`)
 Where...
 
 - `predicted_soft_labels` is a matrix of soft labels whose columns correspond to
-the two classes and whose rows correspond to the samples in the test set that have been
-classified. For a given sample, the two class column values must sum to 1 (i.e.,
-softmax has been applied to the classification output).
-
+    the two classes and whose rows correspond to the samples in the test set that have been
+    classified. For a given sample, the two class column values must sum to 1 (i.e.,
+    softmax has been applied to the classification output).
 - `votes` is a matrix of hard labels whose columns correspond to voters and whose
     rows correspond to the samples in the test set that have been voted on. If
 `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
@@ -881,8 +878,8 @@ of logged values, `\$resource` takes the values of the field names of
 Where...
 
 - `get_train_batches` is a zero-argument function that returns an iterable of
-training set batches. Internally, `learn!` uses this function when it calls
-`train!(model, get_train_batches(), logger)`.
+    training set batches. Internally, `learn!` uses this function when it calls
+    `train!(model, get_train_batches(), logger)`.
 
 - `get_test_batches` is a zero-argument function that returns an iterable
     of test set batches used during the current epoch's test phase. Each element of
