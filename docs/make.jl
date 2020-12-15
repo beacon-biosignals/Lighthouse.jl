@@ -8,4 +8,4 @@ makedocs(; modules=[Lighthouse], sitename="Lighthouse",
                 "evaluation_metrics" => "evaluation_metrics.md"])
 
 deploydocs(repo="github.com/beacon-biosignals/Lighthouse.jl.git",
-           devbranch="main")
+           devbranch="main", push_preview=true)
