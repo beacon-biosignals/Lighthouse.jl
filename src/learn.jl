@@ -220,6 +220,7 @@ function evaluate!(predicted_hard_labels::AbstractVector,
                                                   votes=votes,
                                                   optimal_threshold_class=optimal_threshold_class)
         log_plot!(logger, logger_prefix * "/metrics" * logger_suffix, plot, plot_data)
+        log_value!(logger, logger_prefix * "/metrics/accuracy" * logger_suffix, accuracy(plot_data["confusion_matrix"]))
         if haskey(plot_data, "spearman_correlation")
             log_value!(logger, logger_prefix * "/spearman_correlation" * logger_suffix,
                        plot_data["spearman_correlation"].ρ)
