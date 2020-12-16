@@ -60,7 +60,8 @@ end
              "test_set_evaluation/time_in_seconds_per_epoch",
              "test_set_evaluation/gc_time_in_seconds_per_epoch",
              "test_set_evaluation/allocations_per_epoch",
-             "test_set_evaluation/memory_in_mb_per_epoch"]
+             "test_set_evaluation/memory_in_mb_per_epoch",
+             "test_set_evaluation/metrics/accuracy_per_epoch"]
             @test length(logger.logged[key]) == limit
         end
         @test length(logger.logged["test_set_evaluation/metrics_per_epoch"]) == limit
