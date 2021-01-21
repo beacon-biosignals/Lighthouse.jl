@@ -125,15 +125,15 @@ The following quantities are logged to `logger`:
 Where...
 
 - `model` is a model that outputs soft labels when called on a batch of `batches`,
-`model(batch)`.
+  `model(batch)`.
 
 - `predicted_soft_labels` is a matrix whose columns correspond to classes and
-whose rows correspond to samples in batches, and which is filled in with soft-label
-predictions.
+  whose rows correspond to samples in batches, and which is filled in with soft-label
+  predictions.
 
 - `batches` is an iterable of batches, where each element of
-the iterable takes the form `(batch, votes_locations)`. Internally, `batch` is
-passed to [`loss_and_prediction`](@ref) as `loss_and_prediction(model, batch...)`.
+  the iterable takes the form `(batch, votes_locations)`. Internally, `batch` is
+  passed to [`loss_and_prediction`](@ref) as `loss_and_prediction(model, batch...)`.
 
  """
 function predict!(model::AbstractClassifier, predicted_soft_labels::AbstractMatrix, batches,
@@ -180,27 +180,27 @@ The following quantities are logged to `logger`:
 Where...
 
 - `predicted_soft_labels` is a matrix of soft labels whose columns correspond to
-classes and whose rows correspond to samples in the evaluation set.
+  classes and whose rows correspond to samples in the evaluation set.
 
 - `predicted_hard_labels` is a vector of hard labels where the `i`th element
-is the hard label predicted by the model for sample `i` in the evaulation set.
+  is the hard label predicted by the model for sample `i` in the evaulation set.
 
 - `elected_hard_labels` is a vector of hard labels where the `i`th element
-is the hard label elected as "ground truth" for sample `i` in the evaulation set.
+  is the hard label elected as "ground truth" for sample `i` in the evaulation set.
 
 - `thresholds` are the range of thresholds used by metrics (e.g. PR curves) that
-are calculated on the `predicted_soft_labels` for a range of thresholds.
+  are calculated on the `predicted_soft_labels` for a range of thresholds.
 
 - `votes` is a matrix of hard labels whose columns correspond to voters and whose
-rows correspond to the samples in the test set that have been voted on. If
-`votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
-simply be considered to have not assigned a hard label to `sample`.
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`.
 
 - `optimal_threshold_class` is the class index (`1` or `2`) for which to calculate
-an optimal threshold for converting the `predicted_soft_labels` to
-`predicted_hard_labels`. If present, the input `predicted_hard_labels` will be
-ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
-This is only a valid parameter when `length(classes) == 2`
+  an optimal threshold for converting the `predicted_soft_labels` to
+  `predicted_hard_labels`. If present, the input `predicted_hard_labels` will be
+  ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
+  This is only a valid parameter when `length(classes) == 2`
 """
 function evaluate!(predicted_hard_labels::AbstractVector,
                    predicted_soft_labels::AbstractMatrix,
@@ -453,10 +453,10 @@ for class `i`.
 Where...
 
 - `predicted_hard_labels` is a vector of hard labels where the `i`th element
-is the hard label predicted by the model for sample `i` in the evaulation set.
+  is the hard label predicted by the model for sample `i` in the evaulation set.
 
 - `elected_hard_labels` is a vector of hard labels where the `i`th element
-is the hard label elected as "ground truth" for sample `i` in the evaulation set.
+  is the hard label elected as "ground truth" for sample `i` in the evaulation set.
 
 - `class_count` is the number of possible classes.
 
@@ -485,9 +485,9 @@ IRA kappa calculated for class `i`.
 Where...
 
 - `votes` is a matrix of hard labels whose columns correspond to voters and whose
-rows correspond to the samples in the test set that have been voted on. If
-`votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
-simply be considered to have not assigned a hard label to `sample`.
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`.
 
 - `classes` all possible classes voted on.
 
@@ -552,15 +552,15 @@ Only valid for binary classification problems (i.e., `length(classes) == 2`)
 Where...
 
 - `predicted_soft_labels` is a matrix of soft labels whose columns correspond to
-the two classes and whose rows correspond to the samples in the test set that have been
-classified. For a given sample, the two class column values must sum to 1 (i.e.,
-softmax has been applied to the classification output).
+  the two classes and whose rows correspond to the samples in the test set that have been
+  classified. For a given sample, the two class column values must sum to 1 (i.e.,
+  softmax has been applied to the classification output).
 
 - `votes` is a matrix of hard labels whose columns correspond to voters and whose
-rows correspond to the samples in the test set that have been voted on. If
-`votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
-simply be considered to have not assigned a hard label to `sample`. May contain
-a single voter (i.e., a single column).
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`. May contain
+  a single voter (i.e., a single column).
 
 - `classes` are the two classes voted on.
 """
@@ -666,31 +666,31 @@ agaist `elected_hard_labels`.
 Where...
 
 - `predicted_soft_labels` is a matrix of soft labels whose columns correspond to
-classes and whose rows correspond to samples in the evaluation set.
+  classes and whose rows correspond to samples in the evaluation set.
 
 - `predicted_hard_labels` is a vector of hard labels where the `i`th element
-is the hard label predicted by the model for sample `i` in the evaulation set.
+  is the hard label predicted by the model for sample `i` in the evaulation set.
 
 - `elected_hard_labels` is a vector of hard labels where the `i`th element
-is the hard label elected as "ground truth" for sample `i` in the evaulation set.
+  is the hard label elected as "ground truth" for sample `i` in the evaulation set.
 
 - `thresholds` are the range of thresholds used by metrics (e.g. PR curves) that
-are calculated on the `predicted_soft_labels` for a range of thresholds.
+  are calculated on the `predicted_soft_labels` for a range of thresholds.
 
 - `votes` is a matrix of hard labels whose columns correspond to voters and whose
-rows correspond to the samples in the test set that have been voted on. If
-`votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
-simply be considered to have not assigned a hard label to `sample`.
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`.
 
 - `strata` is a vector of sets of (arbitrarily typed) groups/strata for each sample
-in the evaluation set, or `nothing`. If not `nothing`, per-class and multiclass
-kappas will also be calculated per group/stratum.
+  in the evaluation set, or `nothing`. If not `nothing`, per-class and multiclass
+  kappas will also be calculated per group/stratum.
 
 - `optimal_threshold_class` is the class index (`1` or `2`) for which to calculate
-an optimal threshold for converting the `predicted_soft_labels` to
-`predicted_hard_labels`. If present, the input `predicted_hard_labels` will be
-ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
-This is only a valid parameter when `length(classes) == 2`
+  an optimal threshold for converting the `predicted_soft_labels` to
+  `predicted_hard_labels`. If present, the input `predicted_hard_labels` will be
+  ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
+  This is only a valid parameter when `length(classes) == 2`
 """
 function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
                                  predicted_soft_labels::AbstractMatrix,
@@ -875,30 +875,30 @@ of logged values, `\$resource` takes the values of the field names of
 Where...
 
 - `get_train_batches` is a zero-argument function that returns an iterable of
-training set batches. Internally, `learn!` uses this function when it calls
-`train!(model, get_train_batches(), logger)`.
+  training set batches. Internally, `learn!` uses this function when it calls
+  `train!(model, get_train_batches(), logger)`.
 
 - `get_test_batches` is a zero-argument function that returns an iterable
-of test set batches used during the current epoch's test phase. Each element of
-the iterable takes the form `(batch, votes_locations)`. Internally, `batch` is
-passed to [`loss_and_prediction`](@ref) as `loss_and_prediction(model, batch...)`,
-and `votes_locations[i]` is expected to yield the row index of `votes` that
-corresponds to the `i`th sample in `batch`.
+  of test set batches used during the current epoch's test phase. Each element of
+  the iterable takes the form `(batch, votes_locations)`. Internally, `batch` is
+  passed to [`loss_and_prediction`](@ref) as `loss_and_prediction(model, batch...)`,
+  and `votes_locations[i]` is expected to yield the row index of `votes` that
+  corresponds to the `i`th sample in `batch`.
 
 - `votes` is a matrix of hard labels whose columns correspond to voters and whose
-rows correspond to the samples in the test set that have been voted on. If
-`votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
-simply be considered to have not assigned a hard label to `sample`.
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`.
 
 - `elected` is a vector of hard labels where the `i`th element is the hard label
-elected as "ground truth" out of `votes[i, :]`.
+  elected as "ground truth" out of `votes[i, :]`.
 
 - `optimal_threshold_class` is the class index (`1` or `2`) for which to calculate
-an optimal threshold for converting `predicted_soft_labels` to `predicted_hard_labels`.
-This is only a valid parameter when `length(classes) == 2`. If `optimal_threshold_class`
-is present, test set evaluation will be based on predicted hard labels calculated
-with this threshold; if `optimal_threshold_class` is `nothing`, predicted hard labels
-will be calculated via `onecold(classifier, soft_label)`.
+  an optimal threshold for converting `predicted_soft_labels` to `predicted_hard_labels`.
+  This is only a valid parameter when `length(classes) == 2`. If `optimal_threshold_class`
+  is present, test set evaluation will be based on predicted hard labels calculated
+  with this threshold; if `optimal_threshold_class` is `nothing`, predicted hard labels
+  will be calculated via `onecold(classifier, soft_label)`.
 """
 function learn!(model::AbstractClassifier, logger, get_train_batches, get_test_batches,
                 votes, elected=majority.(eachrow(votes), (1:length(classes(model)),));
