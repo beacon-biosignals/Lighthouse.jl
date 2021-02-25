@@ -7,7 +7,7 @@
 
 # Lighthouse.jl
 
-[![Build Status](https://travis-ci.com/beacon-biosignals/Lighthouse.jl.svg?token=m6ugwCxo8pHBxpMeiNTu&branch=main)](https://travis-ci.com/beacon-biosignals/Lighthouse.jl)
+[![CI](https://github.com/beacon-biosignals/Lighthouse.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/beacon-biosignals/Lighthouse.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/beacon-biosignals/Lighthouse.jl/branch/main/graph/badge.svg?token=8DnNEbLw2x)](https://codecov.io/gh/beacon-biosignals/Lighthouse.jl)
 [![Docs: stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://beacon-biosignals.github.io/Lighthouse.jl/stable)
 [![Docs: development](https://img.shields.io/badge/docs-dev-blue.svg)](https://beacon-biosignals.github.io/Lighthouse.jl/dev)
