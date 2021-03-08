@@ -24,6 +24,8 @@ jobs:
       JULIA_NUM_THREADS: 2
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
