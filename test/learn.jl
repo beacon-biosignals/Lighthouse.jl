@@ -193,8 +193,9 @@ end
 
         # And now, `optimal_threshold_class` during learning
         Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes;
-                          epoch_limit=limit, optimal_threshold_class=2)
-        plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
+                          epoch_limit=limit, optimal_threshold_class=2,
+                          test_set_logger_prefix="validation_set")
+        plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
         @test haskey(plot_data, "optimal_threshold")
         @test haskey(plot_data, "optimal_threshold_class")
         @test plot_data["optimal_threshold_class"] == 2
