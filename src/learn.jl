@@ -841,7 +841,8 @@ end
            get_train_batches, get_test_batches, votes,
            elected=majority.(eachrow(votes), (1:length(classes(model)),));
            epoch_limit=100, post_epoch_callback=(_ -> nothing),
-           optimal_threshold_class::Union{Nothing,Integer}=nothing)
+           optimal_threshold_class::Union{Nothing,Integer}=nothing,
+           test_set_logger_prefix="test_set")
 
 Return `model` after optimizing its parameters across multiple epochs of
 training and test, logging Lighthouse's standardized suite of classifier
@@ -860,15 +861,15 @@ of logged values, `\$resource` takes the values of the field names of
 2. Compute `model`'s predictions on test set provided by `get_test_batches()`
    (see below for details). The following quantities are logged to `logger`
    during this phase:
-    - `test_set_prediction/loss_per_batch`
-    - `test_set_prediction/mean_loss_per_epoch`
-    - `test_set_prediction/\$resource_per_batch`
+    - `<test_set_logger_prefix>_prediction/loss_per_batch`
+    - `<test_set_logger_prefix>_prediction/mean_loss_per_epoch`
+    - `<test_set_logger_prefix>_prediction/\$resource_per_batch`
 
 3. Compute a battery of metrics to evaluate `model`'s performance on the test
    set based on the test set prediction phase. The following quantities are
    logged to `logger` during this phase:
-    - `test_set_evaluation/metrics_per_epoch`
-    - `test_set_evaluation/\$resource_per_epoch`
+    - `<test_set_logger_prefix>_evaluation/metrics_per_epoch`
+    - `<test_set_logger_prefix>_evaluation/\$resource_per_epoch`
 
 4. Call `post_epoch_callback(current_epoch)`.
 
@@ -903,7 +904,8 @@ Where...
 function learn!(model::AbstractClassifier, logger, get_train_batches, get_test_batches,
                 votes, elected=majority.(eachrow(votes), (1:length(classes(model)),));
                 epoch_limit=100, post_epoch_callback=(_ -> nothing),
-                optimal_threshold_class::Union{Nothing,Integer}=nothing)
+                optimal_threshold_class::Union{Nothing,Integer}=nothing,
+                test_set_logger_prefix="test_set")
     # NOTE `votes` is currently unused except to construct `elected` by default,
     # but will be necessary for calculating multirater metrics e.g. Fleiss' kappa
     # later so we still required it in the API
@@ -922,9 +924,9 @@ function learn!(model::AbstractClassifier, logger, get_train_batches, get_test_b
         try
             train!(model, get_train_batches(), logger)
             predict!(model, predicted, get_test_batches(), logger;
-                     logger_prefix="test_set_prediction")
+                     logger_prefix="$(test_set_logger_prefix)_prediction")
             evaluate!(map(label -> onecold(model, label), eachrow(predicted)), predicted,
-                      elected, classes(model), logger; logger_prefix="test_set_evaluation",
+                      elected, classes(model), logger; logger_prefix="$(test_set_logger_prefix)_evaluation",
                       logger_suffix="_per_epoch", votes=votes,
                       optimal_threshold_class=optimal_threshold_class)
             post_epoch_callback(current_epoch)
