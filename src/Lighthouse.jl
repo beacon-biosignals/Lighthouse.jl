@@ -9,7 +9,10 @@ using StatsPlots.Plots.PlotMeasures
 using Printf
 
 # Set up plotting backend for Plots.jl (GR)
-gr()
+function __init__()
+    gr()
+    GR.inline("png")
+end
 
 include("utilities.jl")
 export majority
