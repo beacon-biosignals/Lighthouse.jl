@@ -10,7 +10,6 @@ using Printf
 
 # Set up plotting backend for Plots.jl (GR)
 gr()
-GR.inline("png")
 
 include("utilities.jl")
 export majority
