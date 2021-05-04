@@ -8,11 +8,6 @@ using StatsPlots
 using StatsPlots.Plots.PlotMeasures
 using Printf
 
-function __init__()
-    GR.inline("png")
-    return nothing
-end
-
 include("utilities.jl")
 export majority
 
