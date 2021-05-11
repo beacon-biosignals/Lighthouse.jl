@@ -95,9 +95,9 @@ function plot_confusion_matrix!(subfig, confusion::AbstractMatrix, class_labels,
     end
     confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
     class_indices = 1:nclasses
-
+    max_conf = maximum(confusion)
     ax = Axis(subfig; title="$(string(normalize_by))-Normalized Confusion", xlabel="Elected Class",
-              ylabel="Predicted Class", clims=(0, maximum(confusion)), xticks=(class_indices, class_labels),
+              ylabel="Predicted Class", xticks=(class_indices, class_labels),
               yticks=(class_indices, class_labels), xticklabelrotation=pi / 4)
 
     ylims!(ax, nclasses, 0)
@@ -105,10 +105,11 @@ function plot_confusion_matrix!(subfig, confusion::AbstractMatrix, class_labels,
     tightlimits!(ax)
     # Really unfortunate, that heatmap is not correctly aligned
     aligned = range(0.5; stop=nclasses + 0.5, length=nclasses)
-    heatmap!(ax, aligned, aligned, confusion'; colormap=:Blues, colornorm=(0, maximum(confusion)))
-
+    heatmap!(ax, aligned, aligned, confusion'; colormap=:Blues, colorrange=(0.0, max_conf))
+    half_conf = max_conf / 2
     annos = vec([(string(confusion[i, j]), Point2f0(j, i)) for i in class_indices, j in class_indices])
-    text!(ax, annos; align=(:center, :center), color=:black, textsize=annotation_text_size)
+    colors = vec([confusion[i, j] < half_conf ? :black : :white for i in class_indices, j in class_indices])
+    text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size)
     return ax
 end
 
@@ -158,9 +159,9 @@ function evaluation_metrics_plot(plot_data::Dict; resolution=(1000, 1000), texts
 
     # Confusion
     confusion_row = plot_confusion_matrix!(fig[1, 1], plot_data["confusion_matrix"],
-                                           plot_data["class_labels"], :Row; annotation_text_size=textsize)
-    confusion_col = plot_confusion_matrix!(fig[1, 2], plot_data["confusion_matrix"],
                                            plot_data["class_labels"], :Column; annotation_text_size=textsize)
+    confusion_col = plot_confusion_matrix!(fig[1, 2], plot_data["confusion_matrix"],
+                                           plot_data["class_labels"], :Row; annotation_text_size=textsize)
     # Kappas
     IRA_kappa_data = nothing
     multiclass = length(plot_data["class_labels"]) > 2
@@ -177,13 +178,15 @@ function evaluation_metrics_plot(plot_data::Dict; resolution=(1000, 1000), texts
     kappa = plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data; annotation_text_size=textsize)
 
     # Curves
-    plot_pr_curves!(fig[2, 1], plot_data["per_class_pr_curves"], plot_data["class_labels"]; legend=nothing)
 
-    plot_prg_curves!(fig[2, 2], plot_data["per_class_prg_curves"], plot_data["per_class_prg_aucs"],
+    ax = plot_roc_curves!(fig[2, 1], plot_data["per_class_roc_curves"], plot_data["per_class_roc_aucs"],
+                          plot_data["class_labels"]; legend=nothing)
+
+    plot_pr_curves!(fig[2, 2], plot_data["per_class_pr_curves"], plot_data["class_labels"]; legend=nothing)
+
+    plot_prg_curves!(fig[2, 3], plot_data["per_class_prg_curves"], plot_data["per_class_prg_aucs"],
                      plot_data["class_labels"]; legend=nothing)
 
-    ax = plot_roc_curves!(fig[2, 3], plot_data["per_class_roc_curves"], plot_data["per_class_roc_aucs"],
-                          plot_data["class_labels"]; legend=nothing)
 
     plot_reliability_calibration_curves!(fig[3, 1], plot_data["per_class_reliability_calibration_curves"],
                                          plot_data["per_class_reliability_calibration_scores"],
@@ -225,10 +228,9 @@ end
 
 # Hack until we make a better integration with the recipe system and have these defined automatically
 for name in (:plot_reliability_calibration_curves, :plot_prg_curves, :plot_pr_curves,
-                  :plot_roc_curves, :plot_kappas, :plot_confusion_matrix,
-                  :evaluation_metrics_plot)
+                  :plot_roc_curves, :plot_kappas, :plot_confusion_matrix)
     @eval begin
-        function $(name)(args...; resolution=(600, 800), plot_kw...)
+        function $(name)(args...; resolution=(800, 600), plot_kw...)
             fig = Figure(resolution=resolution)
             ax = $(Symbol(string(name, "!")))(fig[1, 1], args...; plot_kw...)
             # ax.plots[1] is not really that great, but there isn't a FigureAxis object right now
