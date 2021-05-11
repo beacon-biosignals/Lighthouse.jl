@@ -110,46 +110,42 @@ end
         @test isa(plot_data["thresholds"], AbstractVector)
         prg = plot_prg_curves(plot_data["per_class_prg_curves"],
                               plot_data["per_class_prg_aucs"], plot_data["class_labels"])
-        @test isa(prg, Plots.Plot)
+        @testplot prg
+
         pr = plot_pr_curves(plot_data["per_class_pr_curves"], plot_data["class_labels"])
-        @test isa(pr, Plots.Plot)
+        @testplot pr
 
         roc = plot_roc_curves(plot_data["per_class_roc_curves"],
                               plot_data["per_class_roc_aucs"], plot_data["class_labels"])
-        @test isa(roc, Plots.Plot)
+        @testplot roc
 
         # Kappa no IRA
-        k = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
+        kappas_no_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
                         hcat("Multiclass", plot_data["class_labels"]))
-        @test isa(k, Plots.Plot)
+        @testplot kappas_no_ira
 
         # Kappa with IRA
-        k = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
+        kappas_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
                         hcat("Multiclass", plot_data["class_labels"]),
                         vcat(plot_data["multiclass_IRA_kappas"],
                              plot_data["per_class_IRA_kappas"]))
-        @test isa(k, Plots.Plot)
+        @testplot kappas_ira
 
         reliability_calibration = plot_reliability_calibration_curves(plot_data["per_class_reliability_calibration_curves"],
                                                                       plot_data["per_class_reliability_calibration_scores"],
                                                                       plot_data["class_labels"])
-        @test isa(k, Plots.Plot)
+        @testplot reliability_calibration
 
         confusion_row = plot_confusion_matrix(plot_data["confusion_matrix"],
                                               plot_data["class_labels"], :Row)
-        @test isa(confusion_row, Plots.Plot)
+        @testplot confusion_row
 
         confusion_col = plot_confusion_matrix(plot_data["confusion_matrix"],
                                               plot_data["class_labels"], :Row)
-        @test isa(confusion_col, Plots.Plot)
-
-        all_together = plot_combined((k, reliability_calibration, prg, roc, pr,
-                                      confusion_row, confusion_col);
-                                     class_labels=plot_data["class_labels"])
-        @test isa(all_together, Plots.Plot)
+        @testplot confusion_col
 
         all_together_2 = evaluation_metrics_plot(plot_data)
-        @test isa(all_together_2, Plots.Plot)
+        @testplot all_together_2
 
         #savefig(all_together_2, "/tmp/multiclass.png")
     end
@@ -260,7 +256,7 @@ end
         plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
         all_together = evaluation_metrics_plot(plot_data)
         #savefig(all_together, "/tmp/binary.png")
-        @test isa(all_together, Plots.Plot)
+        @testplot all_together
     end
 end
 
