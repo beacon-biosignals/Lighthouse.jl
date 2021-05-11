@@ -20,7 +20,7 @@ function series!(ax::Axis, curves; labels=nothing, linewidth=2, scatter=nothing,
     end
 end
 
-function plot_pr_curves!(subfig, per_class_pr_curves, class_labels; legend=:lb, titel="PR curves",
+function plot_pr_curves!(subfig, per_class_pr_curves, class_labels; legend=:lt, titel="PR curves",
                          xlabel="True positive rate", ylabel="Precision", linewidth=2, scatter=nothing,
                          color=nothing)
     ax = Axis(subfig; title=titel, xlabel=xlabel, ylabel=ylabel, xticks=0:0.2:1, yticks=0:0.2:1)
@@ -33,7 +33,7 @@ function plot_pr_curves!(subfig, per_class_pr_curves, class_labels; legend=:lb, 
     return ax
 end
 
-function plot_prg_curves!(subfig, per_class_prg_curves, per_class_prg_aucs, class_labels; legend=:lb)
+function plot_prg_curves!(subfig, per_class_prg_curves, per_class_prg_aucs, class_labels; legend=:lt)
     auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
                   for (i, class) in enumerate(class_labels)]
     return plot_pr_curves!(subfig, per_class_prg_curves, auc_labels; legend=legend, titel="PR-Gain curves",
