@@ -126,8 +126,11 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition, 
     return ax
 end
 
-function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix, class_labels::AbstractVector{String}, normalize_by::Symbol;
-                                annotation_text_size=20)
+function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
+                                class_labels::AbstractVector{String},
+                                normalize_by::Symbol;
+                                annotation_text_size=20,
+                                colormap=:Blues)
     normdim = get((Row=2, Column=1), normalize_by) do
         return error("normalize_by must be either :Row or :Column, found: $(normalize_by)")
     end
@@ -139,16 +142,32 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
     class_indices = 1:nclasses
     max_conf = maximum(confusion)
-    ax = Axis(subfig; title="$(string(normalize_by))-Normalized Confusion", xlabel="Elected Class",
-              ylabel="Predicted Class", xticks=(class_indices, class_labels),
-              yticks=(class_indices, class_labels), xticklabelrotation=pi / 4)
+    cmap = to_colormap(colormap)
+    # use the color from the middle of the colormap for the spine color
+    # so that it doesn't distract, but that we still have spines so that a white
+    # field doesn't look like the background
+    spinecolor = cmap[end÷2]
+
+    ax = Axis(subfig;
+              title="$(string(normalize_by))-Normalized Confusion",
+              xlabel="Elected Class",
+              ylabel="Predicted Class",
+              bottomspinecolor=spinecolor,
+              leftspinecolor=spinecolor,
+              topspinecolor=spinecolor,
+              rightspinecolor=spinecolor,
+              xticks=(class_indices, class_labels),
+              yticks=(class_indices, class_labels),
+              xticklabelrotation=pi / 4)
+
+    hidedecorations!(ax, label = false, ticklabels = false)
 
     ylims!(ax, nclasses, 0)
 
     tightlimits!(ax)
     # Really unfortunate, that heatmap is not correctly aligned
     aligned = range(0.5; stop=nclasses + 0.5, length=nclasses)
-    heatmap!(ax, aligned, aligned, confusion'; colormap=:Blues, colorrange=(0.0, max_conf))
+    heatmap!(ax, aligned, aligned, confusion'; colormap=cmap, colorrange=(0.0, max_conf))
     half_conf = max_conf / 2
     annos = vec([(string(confusion[i, j]), Point2f0(j, i)) for i in class_indices, j in class_indices])
     colors = vec([confusion[i, j] < half_conf ? :black : :white for i in class_indices, j in class_indices])
