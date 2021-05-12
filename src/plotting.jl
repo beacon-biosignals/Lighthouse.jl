@@ -142,20 +142,10 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
     class_indices = 1:nclasses
     max_conf = maximum(confusion)
-    cmap = to_colormap(colormap)
-    # use the color from the middle of the colormap for the spine color
-    # so that it doesn't distract, but that we still have spines so that a white
-    # field doesn't look like the background
-    spinecolor = cmap[end÷2]
-
     ax = Axis(subfig;
               title="$(string(normalize_by))-Normalized Confusion",
               xlabel="Elected Class",
               ylabel="Predicted Class",
-              bottomspinecolor=spinecolor,
-              leftspinecolor=spinecolor,
-              topspinecolor=spinecolor,
-              rightspinecolor=spinecolor,
               xticks=(class_indices, class_labels),
               yticks=(class_indices, class_labels),
               xticklabelrotation=pi / 4)
@@ -167,7 +157,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     tightlimits!(ax)
     # Really unfortunate, that heatmap is not correctly aligned
     aligned = range(0.5; stop=nclasses + 0.5, length=nclasses)
-    heatmap!(ax, aligned, aligned, confusion'; colormap=cmap, colorrange=(0.0, max_conf))
+    heatmap!(ax, aligned, aligned, confusion'; colormap=colormap, colorrange=(0.0, max_conf))
     half_conf = max_conf / 2
     annos = vec([(string(confusion[i, j]), Point2f0(j, i)) for i in class_indices, j in class_indices])
     colors = vec([confusion[i, j] < half_conf ? :black : :white for i in class_indices, j in class_indices])
@@ -188,11 +178,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
               title="Algorithm-expert agreement",
               xlabel="Cohen's kappa",
               xticks=[0, 1],
-              yticks=(1:nclasses, class_labels),
-              bottomspinecolor=spinecolor,
-              leftspinecolor=spinecolor,
-              topspinecolor=spinecolor,
-              rightspinecolor=spinecolor)
+              yticks=(1:nclasses, class_labels))
 
     hidedecorations!(ax; label=false, ticklabels=false)
     ylims!(ax, nclasses + 1, 0)
