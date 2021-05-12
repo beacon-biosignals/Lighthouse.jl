@@ -49,7 +49,12 @@ function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurv
                          xlabel="True positive rate", ylabel="Precision",
                          linewidth=2, scatter=nothing, color=nothing)
 
-    ax = Axis(subfig; title=titel, xlabel=xlabel, ylabel=ylabel, xticks=0:0.2:1, yticks=0:0.2:1)
+    ax = Axis(subfig;
+        title=titel,
+        xlabel=xlabel, ylabel=ylabel,
+        xticks=0:0.2:1, yticks=0:0.2:1)
+
+    hidedecorations!(ax, label = false, ticklabels = false, grid=false)
     xlims!(ax, 0, 1)
     ylims!(ax, 0, 1)
     series!(ax, per_class_pr_curves; labels=class_labels, linewidth=linewidth, scatter=scatter, color=color)
