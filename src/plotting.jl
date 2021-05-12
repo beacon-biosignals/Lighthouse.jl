@@ -1,10 +1,30 @@
+using AbstractPlotting: FigurePosition
+
+const NumberLike = Union{Number, Missing, Nothing}
+const NumberVector = AbstractVector{<: NumberLike}
+const NumberMatrix = AbstractMatrix{<: NumberLike}
+
+"""
+    Tuple{<:NumberVector, <: NumberVector}
+
+Tuple of X, Y coordinates
+"""
+const XYVector = Tuple{<:NumberVector, <: NumberVector}
+
+"""
+    Union{XYVector, AbstractVector{<: XYVector}}
+
+A series of XYVectors, or a single xyvector.
+"""
+const SeriesCurves = Union{XYVector, AbstractVector{<: XYVector}}
+
 replace_missings(x) = replace(x, missing => NaN)
 
-function series!(ax::Axis, curves::Tuple{<:AbstractVector, <: AbstractVector}; kw...)
+function series!(ax::Axis, curves::XYVector; kw...)
     series!(ax, [curves]; kw...)
 end
 
-function series!(ax::Axis, curves; labels=nothing, linewidth=2, scatter=nothing, color=nothing)
+function series!(ax::Axis, curves::AbstractVector{<: XYVector}; labels=nothing, linewidth=2, scatter=nothing, color=nothing)
     colors = to_colormap(:lighttest, 8)
     for (i, (x, y)) in enumerate(curves)
         x = replace_missings(x)
@@ -20,9 +40,11 @@ function series!(ax::Axis, curves; labels=nothing, linewidth=2, scatter=nothing,
     end
 end
 
-function plot_pr_curves!(subfig, per_class_pr_curves, class_labels; legend=:lt, titel="PR curves",
-                         xlabel="True positive rate", ylabel="Precision", linewidth=2, scatter=nothing,
-                         color=nothing)
+function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
+                         class_labels::AbstractVector{<: String}; legend=:lt, titel="PR curves",
+                         xlabel="True positive rate", ylabel="Precision",
+                         linewidth=2, scatter=nothing, color=nothing)
+
     ax = Axis(subfig; title=titel, xlabel=xlabel, ylabel=ylabel, xticks=0:0.2:1, yticks=0:0.2:1)
     xlims!(ax, 0, 1)
     ylims!(ax, 0, 1)
@@ -33,24 +55,41 @@ function plot_pr_curves!(subfig, per_class_pr_curves, class_labels; legend=:lt, 
     return ax
 end
 
-function plot_prg_curves!(subfig, per_class_prg_curves, per_class_prg_aucs, class_labels; legend=:lt)
+function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCurves,
+                          per_class_prg_aucs::NumberVector,
+                          class_labels::AbstractVector{<: String};
+                          legend=:lt,
+                          titel="PR-Gain curves",
+                          xlabel="True positive rate gain",
+                          ylabel="Precision gain")
+
     auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
                   for (i, class) in enumerate(class_labels)]
-    return plot_pr_curves!(subfig, per_class_prg_curves, auc_labels; legend=legend, titel="PR-Gain curves",
-                           xlabel="True positive rate gain", ylabel="Precision gain")
+    return plot_pr_curves!(subfig, per_class_prg_curves, auc_labels; legend=legend, titel=titel,
+                           xlabel=xlabel, ylabel=ylabel)
 end
 
-function plot_roc_curves!(subfig, per_class_roc_curves, per_class_roc_aucs, class_labels; legend=:rb)
+function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCurves,
+                          per_class_roc_aucs::NumberVector,
+                          class_labels::AbstractVector{<: String};
+                          legend=:rb,
+                          titel="ROC curves",
+                          xlabel="False positive rate",
+                          ylabel="True positive rate")
+
     auc_labels = [@sprintf("%s (AUC: %.3f)", class, per_class_roc_aucs[i])
                   for (i, class) in enumerate(class_labels)]
 
-    return plot_pr_curves!(subfig, per_class_roc_curves, auc_labels; legend=legend, titel="ROC curves",
-                           xlabel="False positive rate", ylabel="True positive rate")
+    return plot_pr_curves!(subfig, per_class_roc_curves, auc_labels; legend=legend, titel=titel,
+                           xlabel=xlabel, ylabel=ylabel)
 end
 
-function plot_reliability_calibration_curves!(subfig, per_class_reliability_calibration_curves,
-                                              per_class_reliability_calibration_scores, class_labels;
+function plot_reliability_calibration_curves!(subfig::FigurePosition,
+                                              per_class_reliability_calibration_curves::SeriesCurves,
+                                              per_class_reliability_calibration_scores::NumberVector,
+                                              class_labels::AbstractVector{String};
                                               legend=:rb)
+
     calibration_score_labels = map(enumerate(class_labels)) do (i, class)
         @sprintf("%s (MSE: %.3f)", class, per_class_reliability_calibration_scores[i])
     end
@@ -65,8 +104,8 @@ function plot_reliability_calibration_curves!(subfig, per_class_reliability_cali
     return ax
 end
 
-function plot_binary_discrimination_calibration_curves!(subfig, calibration_curve, calibration_score,
-                                                        per_expert_calibration_curves,
+function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition, calibration_curve::SeriesCurves, calibration_score,
+                                                        per_expert_calibration_curves::SeriesCurves,
                                                         per_expert_calibration_scores, optimal_threshold,
                                                         discrimination_class::AbstractString;
                                                         markershape=Rect, markersize=5)
@@ -83,7 +122,7 @@ function plot_binary_discrimination_calibration_curves!(subfig, calibration_curv
     return ax
 end
 
-function plot_confusion_matrix!(subfig, confusion::AbstractMatrix, class_labels, normalize_by::Symbol;
+function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix, class_labels::AbstractVector{String}, normalize_by::Symbol;
                                 annotation_text_size=20)
     normdim = get((Row=2, Column=1), normalize_by) do
         return error("normalize_by must be either :Row or :Column, found: $(normalize_by)")
@@ -113,7 +152,9 @@ function plot_confusion_matrix!(subfig, confusion::AbstractMatrix, class_labels,
     return ax
 end
 
-function plot_kappas!(subfig, per_class_kappas, class_labels, per_class_IRA_kappas=nothing;
+function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
+                      class_labels::AbstractVector{String},
+                      per_class_IRA_kappas=nothing;
                       annotation_text_size=20)
     # Note: both the data and the labels need to be reversed, so that it plots
     # with the first class at the top of plot.
@@ -154,67 +195,67 @@ function plot_kappas!(subfig, per_class_kappas, class_labels, per_class_IRA_kapp
     return ax
 end
 
-function evaluation_metrics_plot(plot_data::Dict; resolution=(1000, 1000), textsize=12)
+function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
     fig = Figure(; resolution=resolution)
 
     # Confusion
-    confusion_row = plot_confusion_matrix!(fig[1, 1], plot_data["confusion_matrix"],
-                                           plot_data["class_labels"], :Column; annotation_text_size=textsize)
-    confusion_col = plot_confusion_matrix!(fig[1, 2], plot_data["confusion_matrix"],
-                                           plot_data["class_labels"], :Row; annotation_text_size=textsize)
+    plot_confusion_matrix!(fig[1, 1], data["confusion_matrix"],
+                           data["class_labels"], :Column; annotation_text_size=textsize)
+    plot_confusion_matrix!(fig[1, 2], data["confusion_matrix"],
+                           data["class_labels"], :Row; annotation_text_size=textsize)
     # Kappas
     IRA_kappa_data = nothing
-    multiclass = length(plot_data["class_labels"]) > 2
-    labels = multiclass ? hcat("Multiclass", plot_data["class_labels"]) : plot_data["class_labels"]
-    kappa_data = multiclass ? vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]) :
-                 plot_data["per_class_kappas"]
+    multiclass = length(data["class_labels"]) > 2
+    labels = multiclass ? hcat("Multiclass", data["class_labels"]) : data["class_labels"]
+    kappa_data = multiclass ? vcat(data["multiclass_kappa"], data["per_class_kappas"]) :
+                 data["per_class_kappas"]
 
-    if issubset(["multiclass_IRA_kappas", "per_class_IRA_kappas"], keys(plot_data))
+    if issubset(["multiclass_IRA_kappas", "per_class_IRA_kappas"], keys(data))
         IRA_kappa_data = multiclass ?
-                         vcat(plot_data["multiclass_IRA_kappas"], plot_data["per_class_IRA_kappas"]) :
-                         plot_data["per_class_IRA_kappas"]
+                         vcat(data["multiclass_IRA_kappas"], data["per_class_IRA_kappas"]) :
+                         data["per_class_IRA_kappas"]
     end
 
-    kappa = plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data; annotation_text_size=textsize)
+    plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data; annotation_text_size=textsize)
 
     # Curves
 
-    ax = plot_roc_curves!(fig[2, 1], plot_data["per_class_roc_curves"], plot_data["per_class_roc_aucs"],
-                          plot_data["class_labels"]; legend=nothing)
+    ax = plot_roc_curves!(fig[2, 1], data["per_class_roc_curves"], data["per_class_roc_aucs"],
+                          data["class_labels"]; legend=nothing)
 
-    plot_pr_curves!(fig[2, 2], plot_data["per_class_pr_curves"], plot_data["class_labels"]; legend=nothing)
+    plot_pr_curves!(fig[2, 2], data["per_class_pr_curves"], data["class_labels"]; legend=nothing)
 
-    plot_prg_curves!(fig[2, 3], plot_data["per_class_prg_curves"], plot_data["per_class_prg_aucs"],
-                     plot_data["class_labels"]; legend=nothing)
+    plot_prg_curves!(fig[2, 3], data["per_class_prg_curves"], data["per_class_prg_aucs"],
+                     data["class_labels"]; legend=nothing)
 
 
-    plot_reliability_calibration_curves!(fig[3, 1], plot_data["per_class_reliability_calibration_curves"],
-                                         plot_data["per_class_reliability_calibration_scores"],
-                                         plot_data["class_labels"]; legend=nothing)
+    plot_reliability_calibration_curves!(fig[3, 1], data["per_class_reliability_calibration_curves"],
+                                         data["per_class_reliability_calibration_scores"],
+                                         data["class_labels"]; legend=nothing)
 
     legend_pos = 2:3
-    if haskey(plot_data, "discrimination_calibration_curve")
+    if haskey(data, "discrimination_calibration_curve")
         legend_pos = 3
-        curve = plot_binary_discrimination_calibration_curves!(fig[3, 2],
-                                                               plot_data["discrimination_calibration_curve"],
-                                                               plot_data["discrimination_calibration_score"],
-                                                               plot_data["per_expert_discrimination_calibration_curves"],
-                                                               plot_data["per_expert_discrimination_calibration_scores"],
-                                                               plot_data["optimal_threshold"],
-                                                               plot_data["class_labels"][plot_data["optimal_threshold_class"]])
+        plot_binary_discrimination_calibration_curves!(fig[3, 2],
+                                                       data["discrimination_calibration_curve"],
+                                                       data["discrimination_calibration_score"],
+                                                       data["per_expert_discrimination_calibration_curves"],
+                                                       data["per_expert_discrimination_calibration_scores"],
+                                                       data["optimal_threshold"],
+                                                       data["class_labels"][data["optimal_threshold_class"]])
     end
     elements = map(AbstractPlotting.MakieLayout.legendelements(ax.scene)) do elem
         return [PolyElement(; color=elem.color, strokecolor=:transparent)]
     end
 
     function label_str(i)
-        auc = round(plot_data["per_class_roc_aucs"][i]; digits=2)
-        mse = round(plot_data["per_class_reliability_calibration_scores"][i]; digits=2)
+        auc = round(data["per_class_roc_aucs"][i]; digits=2)
+        mse = round(data["per_class_reliability_calibration_scores"][i]; digits=2)
         return ["""ROC AUC  $auc
                    Cal. MSE    $mse
                    """]
     end
-    classes = plot_data["class_labels"]
+    classes = data["class_labels"]
     nclasses = length(classes)
     class_labels = label_str.(1:nclasses)
     Legend(fig[3, legend_pos], elements, class_labels, classes; nbanks=2,
@@ -225,17 +266,109 @@ function evaluation_metrics_plot(plot_data::Dict; resolution=(1000, 1000), texts
     return fig
 end
 
-
-# Hack until we make a better integration with the recipe system and have these defined automatically
-for name in (:plot_reliability_calibration_curves, :plot_prg_curves, :plot_pr_curves,
-                  :plot_roc_curves, :plot_kappas, :plot_confusion_matrix)
-    @eval begin
-        function $(name)(args...; resolution=(800, 600), plot_kw...)
-            fig = Figure(resolution=resolution)
-            ax = $(Symbol(string(name, "!")))(fig[1, 1], args...; plot_kw...)
-            # ax.plots[1] is not really that great, but there isn't a FigureAxis object right now
-            # this will need to wait for when we figure out a better recipe integration
-            return AbstractPlotting.FigureAxisPlot(fig, ax, ax.scene.plots[1])
-        end
-    end
+# Helper to more easily define the non mutating versions
+function axisplot(func, args; resolution=(800, 600), plot_kw...)
+    fig = Figure(resolution=resolution)
+    ax = func(fig[1, 1], args...; plot_kw...)
+    # ax.plots[1] is not really that great, but there isn't a FigureAxis object right now
+    # this will need to wait for when we figure out a better recipe integration
+    return AbstractPlotting.FigureAxisPlot(fig, ax, ax.scene.plots[1])
 end
+
+"""
+    plot_confusion_matrix!(subfig::FigurePosition, args...; kw...)
+
+    plot_confusion_matrix(confusion::AbstractMatrix{<: Number}, class_labels::AbstractVector{String}, normalize_by::Symbol;
+                          resolution=(800,600),
+                          annotation_text_size=20)
+
+
+Lighthouse plots confusion matrices, which are simple tables
+showing the empirical distribution of predicted class (the rows)
+versus the elected class (the columns). These come in two variants:
+
+* row-normalized: this means each row has been normalized to sum to 1. Thus, the row-normalized confusion matrix shows the empirical distribution of elected classes for a given predicted class. E.g. the first row of the row-normalized confusion matrix shows the empirical probabilities of the elected classes for a sample which was predicted to be in the first class.
+* column-normalized: this means each column has been normalized to sum to 1. Thus, the column-normalized confusion matrix shows the empirical distribution of predicted classes for a given elected class. E.g. the first column of the column-normalized confusion matrix shows the empirical probabilities of the predicted classes for a sample which was elected to be in the first class.
+
+```
+fig, ax, p = plot_confusion_matrix(rand(2, 2), ["1", "2"], :Row)
+fig = Figure()
+ax = plot_confusion_matrix!(fig[1, 1], rand(2, 2), ["1", "2"], :Column)
+```
+"""
+plot_confusion_matrix(args...; kw...) = axisplot(plot_confusion_matrix!, args; kw...)
+
+
+"""
+    plot_reliability_calibration_curves!(fig::SubFigure, args...; kw...)
+
+    plot_reliability_calibration_curves(per_class_reliability_calibration_curves::SeriesCurves,
+                                        per_class_reliability_calibration_scores::NumberVector,
+                                        class_labels::AbstractVector{String};
+                                        legend=:rb, resolution=(800, 600))
+
+"""
+plot_reliability_calibration_curves(args...; kw...) = axisplot(plot_reliability_calibration_curves!, args; kw...)
+
+
+"""
+    plot_pr_curves!(subfig::FigurePosition, args...; kw...)
+
+    plot_pr_curves(per_class_pr_curves::SeriesCurves,
+                class_labels::AbstractVector{<: String};
+                resolution=(800, 600),
+                legend=:lt, titel="PR curves",
+                xlabel="True positive rate", ylabel="Precision",
+                linewidth=2, scatter=nothing, color=nothing)
+
+- `scatter::Union{Nothing, NamedTuple}`: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.
+
+"""
+plot_pr_curves(args...; kw...) = axisplot(plot_pr_curves!, args; kw...)
+
+"""
+    plot_prg_curves!(subfig::FigurePosition, args...; kw...)
+
+    plot_prg_curves(per_class_prg_curves::SeriesCurves,
+                    per_class_prg_aucs::NumberVector,
+                    class_labels::AbstractVector{<: String};
+                    resolution=(800, 600),
+                    legend=:lt,
+                    titel="PR-Gain curves",
+                    xlabel="True positive rate gain",
+                    ylabel="Precision gain",
+                    linewidth=2, scatter=nothing, color=nothing)
+
+- `scatter::Union{Nothing, NamedTuple}`: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.
+
+"""
+plot_prg_curves(args...; kw...) = axisplot(plot_prg_curves!, args; kw...)
+
+"""
+    plot_roc_curves!(subfig::FigurePosition, args...; kw...)
+
+    plot_roc_curves(per_class_roc_curves::SeriesCurves,
+                    per_class_roc_aucs::NumberVector,
+                    class_labels::AbstractVector{<: String};
+                    resolution=(800, 600),
+                    legend=:lt,
+                    titel="ROC curves",
+                    xlabel="False positive rate",
+                    ylabel="True positive rate",
+                    linewidth=2, scatter=nothing, color=nothing)
+
+- `scatter::Union{Nothing, NamedTuple}`: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.
+
+"""
+plot_roc_curves(args...; kw...) = axisplot(plot_roc_curves!, args; kw...)
+
+"""
+    plot_kappas!(subfig::FigurePosition, args...; kw...)
+
+    plot_kappas(per_class_kappas::NumberVector,
+                class_labels::AbstractVector{String},
+                per_class_IRA_kappas=nothing;
+                resolution=(800, 600),
+                annotation_text_size=20)
+"""
+plot_kappas(args...; kw...) = axisplot(plot_kappas!, args; kw...)
