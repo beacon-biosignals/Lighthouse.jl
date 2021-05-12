@@ -178,7 +178,6 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
     # with the first class at the top of plot.
 
     nclasses = length(class_labels)
-    spinecolor = (:gray, 0.5)
     ax = Axis(subfig[1, 1];
               title="Algorithm-expert agreement",
               xlabel="Cohen's kappa",
