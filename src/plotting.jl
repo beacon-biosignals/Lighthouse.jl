@@ -183,18 +183,32 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
     # with the first class at the top of plot.
 
     nclasses = length(class_labels)
-    ax = Axis(subfig[1, 1]; title="Algorithm-expert agreement", xlabel="Cohen's kappa",
-              yticks=(1:nclasses, class_labels))
+    spinecolor = (:gray, 0.5)
+    ax = Axis(subfig[1, 1];
+              title="Algorithm-expert agreement",
+              xlabel="Cohen's kappa",
+              xticks=[0, 1],
+              yticks=(1:nclasses, class_labels),
+              bottomspinecolor=spinecolor,
+              leftspinecolor=spinecolor,
+              topspinecolor=spinecolor,
+              rightspinecolor=spinecolor)
 
-    hidedecorations!(ax; label=false, ticklabels=false, ticks=false)
+    hidedecorations!(ax; label=false, ticklabels=false)
     ylims!(ax, nclasses + 1, 0)
     xlims!(ax, 0, 1)
     if isnothing(per_class_IRA_kappas)
         annotations = map(enumerate(per_class_kappas)) do (i, k)
             return (string(round(k; digits=3)), Point2f0(max(0, k), i))
         end
+        aligns = map(per_class_kappas) do k
+            k > 0.85 ? (:right, :center) : (:left, :center)
+        end
+        offsets = map(per_class_kappas) do k
+            k > 0.85 ? (-10, 0) : (10, 0)
+        end
         barplot!(ax, per_class_kappas; direction=:x, color=:lightblue)
-        text!(ax, annotations; align=(:left, :center), offset=(10, 0), textsize=annotation_text_size)
+        text!(ax, annotations; align=aligns, offset=offsets, textsize=annotation_text_size)
     else
         values = vcat(per_class_kappas, per_class_IRA_kappas)
         groups = vcat(fill(1, nclasses), fill(2, nclasses))
@@ -205,8 +219,15 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         rectangles = bars.plots[][1][]
         dodged_y = last.(minimum.(rectangles)) .+ (last.(widths.(rectangles)) ./ 2)
         textpos = Point2f0.(max.(0, values), dodged_y)
+
         labels = string.(round.(values; digits=3))
-        text!(ax, labels; position=textpos, align=(:left, :center), offset=(10, 0),
+        aligns = map(values) do k
+            k > 0.85 ? (:right, :center) : (:left, :center)
+        end
+        offsets = map(values) do k
+            k > 0.85 ? (-10, 0) : (10, 0)
+        end
+        text!(ax, labels; position=textpos, align=aligns, offset=offsets,
               textsize=annotation_text_size)
         labels = ["Expert-vs-expert IRA", "Algorithm-vs-expert"]
         entries = map(c -> PolyElement(; color=c, strokewidth=0, strokecolor=:white), cmap)
