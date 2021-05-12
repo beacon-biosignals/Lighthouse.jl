@@ -502,7 +502,7 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
 
     class_count = length(classes)
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
-    class_labels = permutedims(string.(class_vector))
+    class_labels = string.(class_vector)
     per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
                                                      elected_hard_labels, thresholds)
     plot_dict = Dict()

@@ -121,12 +121,12 @@ end
 
         # Kappa no IRA
         kappas_no_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
-                        hcat("Multiclass", plot_data["class_labels"]))
+                        vcat("Multiclass", plot_data["class_labels"]))
         @testplot kappas_no_ira
 
         # Kappa with IRA
         kappas_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
-                        hcat("Multiclass", plot_data["class_labels"]),
+                        vcat("Multiclass", plot_data["class_labels"]),
                         vcat(plot_data["multiclass_IRA_kappas"],
                              plot_data["per_class_IRA_kappas"]))
         @testplot kappas_ira

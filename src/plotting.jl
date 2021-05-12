@@ -1,6 +1,10 @@
 using AbstractPlotting: FigurePosition
 
-const NumberLike = Union{Number, Missing, Nothing}
+# We can't rely on inference to always give us fully typed
+# Vector{<: Number} so we add `{T} where T` to the the mix
+# This makes the number like type a bit absurd, but is still nice for
+# documentation purposes!
+const NumberLike = Union{Number, Missing, Nothing, T} where T
 const NumberVector = AbstractVector{<: NumberLike}
 const NumberMatrix = AbstractMatrix{<: NumberLike}
 
@@ -41,7 +45,7 @@ function series!(ax::Axis, curves::AbstractVector{<: XYVector}; labels=nothing, 
 end
 
 function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
-                         class_labels::AbstractVector{<: String}; legend=:lt, titel="PR curves",
+                         class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt, titel="PR curves",
                          xlabel="True positive rate", ylabel="Precision",
                          linewidth=2, scatter=nothing, color=nothing)
 
@@ -195,6 +199,11 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
     return ax
 end
 
+"""
+    evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
+
+Plots all evaluation metrics Lighthouse has to offer.
+"""
 function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
     fig = Figure(; resolution=resolution)
 
@@ -206,7 +215,7 @@ function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=1
     # Kappas
     IRA_kappa_data = nothing
     multiclass = length(data["class_labels"]) > 2
-    labels = multiclass ? hcat("Multiclass", data["class_labels"]) : data["class_labels"]
+    labels = multiclass ? vcat("Multiclass", data["class_labels"]) : data["class_labels"]
     kappa_data = multiclass ? vcat(data["multiclass_kappa"], data["per_class_kappas"]) :
                  data["per_class_kappas"]
 

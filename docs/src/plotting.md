@@ -12,19 +12,19 @@ CairoMakie.activate!(type = "png")
 
 ```@example 1
 using Lighthouse: plot_confusion_matrix, plot_confusion_matrix!
-data = [0.1 0.2 0.3 0.4 0.0;
+confusion = [0.1 0.2 0.3 0.4 0.0;
         0.1 0.2 0.3 0.4 0.5;
         0.1 0.2 1.0 0.4 0.5;
         0.1 0.2 0.3 0.4 0.5;
         0.9 0.2 0.3 0.4 0.5]
-classes = ["class $i" for i in 1:size(data, 1)]
-fig, ax, p = plot_confusion_matrix(data, classes, :Row)
+classes = ["class $i" for i in 1:size(confusion, 1)]
+fig, ax, p = plot_confusion_matrix(confusion, classes, :Row)
 ```
 
 ```@example 1
 fig = Figure(resolution=(800, 400))
-plot_confusion_matrix!(fig[1, 1], data, classes, :Row, annotation_text_size=14)
-plot_confusion_matrix!(fig[1, 2], data, classes, :Column, annotation_text_size=14)
+plot_confusion_matrix!(fig[1, 1], confusion, classes, :Row, annotation_text_size=14)
+plot_confusion_matrix!(fig[1, 2], confusion, classes, :Column, annotation_text_size=14)
 fig
 ```
 
@@ -111,4 +111,43 @@ plot_kappas(rand(5), classes, rand(5))
 
 ```@docs
 Lighthouse.evaluation_metrics_plot
+```
+
+```@example 1
+using Lighthouse: evaluation_metrics_plot
+data = Dict{String, Any}()
+data["confusion_matrix"] = confusion
+data["class_labels"] = classes
+
+data["per_class_kappas"] = rand(5)
+data["multiclass_kappa"] = rand()
+data["per_class_IRA_kappas"] = rand(5)
+data["multiclass_IRA_kappas"] = rand()
+
+data["per_class_pr_curves"] = curves
+data["per_class_prg_curves"] = curves
+data["per_class_roc_curves"] = curves
+data["per_class_roc_aucs"] = rand(5)
+data["per_class_prg_aucs"] = rand(5)
+
+data["per_class_reliability_calibration_curves"] = curves
+data["per_class_reliability_calibration_scores"] = rand(5)
+
+evaluation_metrics_plot(data)
+```
+
+Optionally, one can also add a binary discrimination calibration curve plot:
+
+```@example 1
+
+data["discrimination_calibration_curve"] = (LinRange(0, 1, 10), LinRange(0,1, 10) .+ 0.1randn(10))
+data["per_expert_discrimination_calibration_curves"] = curves
+
+# These are currently not implemented, but are still passed to plot_binary_discrimination_calibration_curves!
+data["discrimination_calibration_score"] = nothing
+data["optimal_threshold_class"] = 1
+data["per_expert_discrimination_calibration_scores"] = nothing
+data["optimal_threshold"] = nothing
+
+evaluation_metrics_plot(data)
 ```
