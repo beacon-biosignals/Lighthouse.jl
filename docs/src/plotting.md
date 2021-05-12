@@ -23,8 +23,8 @@ fig, ax, p = plot_confusion_matrix(data, classes, :Row)
 
 ```@example 1
 fig = Figure(resolution=(800, 400))
-plot_confusion_matrix!(fig[1, 1], data, classes, :Row)
-plot_confusion_matrix!(fig[1, 2], data, classes, :Column)
+plot_confusion_matrix!(fig[1, 1], data, classes, :Row, annotation_text_size=14)
+plot_confusion_matrix!(fig[1, 2], data, classes, :Column, annotation_text_size=14)
 fig
 ```
 
@@ -87,7 +87,8 @@ using Lighthouse: plot_roc_curves
 plot_roc_curves(
     curves,
     rand(5),
-    classes)
+    classes,
+    legend=:lt)
 ```
 
 # Kappas (per expert agreement)
