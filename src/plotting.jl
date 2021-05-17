@@ -45,12 +45,12 @@ function series!(ax::Axis, curves::AbstractVector{<: XYVector}; labels=nothing, 
 end
 
 function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
-                         class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt, titel="PR curves",
+                         class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt, title="PR curves",
                          xlabel="True positive rate", ylabel="Precision",
                          linewidth=2, scatter=nothing, color=nothing)
 
     ax = Axis(subfig;
-        title=titel,
+        title=title,
         xlabel=xlabel, ylabel=ylabel,
         xticks=0:0.2:1, yticks=0:0.2:1)
 
@@ -68,13 +68,13 @@ function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCu
                           per_class_prg_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
                           legend=:lt,
-                          titel="PR-Gain curves",
+                          title="PR-Gain curves",
                           xlabel="True positive rate gain",
                           ylabel="Precision gain")
 
     auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
                   for (i, class) in enumerate(class_labels)]
-    return plot_pr_curves!(subfig, per_class_prg_curves, auc_labels; legend=legend, titel=titel,
+    return plot_pr_curves!(subfig, per_class_prg_curves, auc_labels; legend=legend, title=title,
                            xlabel=xlabel, ylabel=ylabel)
 end
 
@@ -82,14 +82,14 @@ function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCu
                           per_class_roc_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
                           legend=:rb,
-                          titel="ROC curves",
+                          title="ROC curves",
                           xlabel="False positive rate",
                           ylabel="True positive rate")
 
     auc_labels = [@sprintf("%s (AUC: %.3f)", class, per_class_roc_aucs[i])
                   for (i, class) in enumerate(class_labels)]
 
-    return plot_pr_curves!(subfig, per_class_roc_curves, auc_labels; legend=legend, titel=titel,
+    return plot_pr_curves!(subfig, per_class_roc_curves, auc_labels; legend=legend, title=title,
                            xlabel=xlabel, ylabel=ylabel)
 end
 
@@ -104,7 +104,7 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
     end
 
     ax = plot_pr_curves!(subfig, per_class_reliability_calibration_curves, calibration_score_labels;
-                         legend=legend, titel="Prediction reliability calibration",
+                         legend=legend, title="Prediction reliability calibration",
                          xlabel="Predicted probability bin", ylabel="Fraction of positives",
                          scatter=(markershape=Circle, markersize=5, markerstroke=0))
     #TODO: mean predicted value histogram underneath?? Maybe important...
@@ -119,7 +119,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition, 
                                                         discrimination_class::AbstractString;
                                                         markershape=Rect, markersize=5)
     ax = plot_pr_curves!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
-                         titel="Detection calibration", xlabel="Expert agreement rate",
+                         title="Detection calibration", xlabel="Expert agreement rate",
                          ylabel="Predicted positive probability", color=:darkgrey,
                          scatter=(markershape=markershape, markersize=markersize))
 
@@ -356,7 +356,7 @@ plot_reliability_calibration_curves(args...; kw...) = axisplot(plot_reliability_
     plot_pr_curves(per_class_pr_curves::SeriesCurves,
                 class_labels::AbstractVector{<: String};
                 resolution=(800, 600),
-                legend=:lt, titel="PR curves",
+                legend=:lt, title="PR curves",
                 xlabel="True positive rate", ylabel="Precision",
                 linewidth=2, scatter=nothing, color=nothing)
 
@@ -373,7 +373,7 @@ plot_pr_curves(args...; kw...) = axisplot(plot_pr_curves!, args; kw...)
                     class_labels::AbstractVector{<: String};
                     resolution=(800, 600),
                     legend=:lt,
-                    titel="PR-Gain curves",
+                    title="PR-Gain curves",
                     xlabel="True positive rate gain",
                     ylabel="Precision gain",
                     linewidth=2, scatter=nothing, color=nothing)
@@ -391,7 +391,7 @@ plot_prg_curves(args...; kw...) = axisplot(plot_prg_curves!, args; kw...)
                     class_labels::AbstractVector{<: String};
                     resolution=(800, 600),
                     legend=:lt,
-                    titel="ROC curves",
+                    title="ROC curves",
                     xlabel="False positive rate",
                     ylabel="True positive rate",
                     linewidth=2, scatter=nothing, color=nothing)
