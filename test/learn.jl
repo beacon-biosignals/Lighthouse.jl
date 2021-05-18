@@ -44,7 +44,7 @@ end
                     @info counted n
                 end
             end
-            elected = majority.(rng, eachrow(votes), (1:length(Lighthouse.classes(model)),))
+            elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
             Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
                               epoch_limit=limit, post_epoch_callback=callback)
             @test counted == sum(1:limit)
@@ -174,7 +174,7 @@ end
                     @info counted n
                 end
             end
-            elected = majority.(rng, eachrow(votes), (1:length(Lighthouse.classes(model)),))
+            elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
             Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
                               epoch_limit=limit, post_epoch_callback=callback)
             @test counted == sum(1:limit)
