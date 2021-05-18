@@ -255,7 +255,7 @@ end
         @test isequal(thresh_from_calibration, plot_data_2["optimal_threshold"])
 
         # Test that plotting succeeds (no specialization relative to the multi-class tests)
-        plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
+        plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
         all_together = evaluation_metrics_plot(plot_data)
         #savefig(all_together, "/tmp/binary.png")
         @testplot all_together
