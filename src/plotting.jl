@@ -120,7 +120,7 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
     ax = series!(subfig, per_class_reliability_calibration_curves, calibration_score_labels;
                          legend=legend, title="Prediction reliability calibration",
                          xlabel="Predicted probability bin", ylabel="Fraction of positives",
-                         scatter=(markershape=Circle, markersize=5, markerstroke=0))
+                         scatter=(markershape=Circle, markersize=5, strokewidth=0))
     #TODO: mean predicted value histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
     linesegments!(ax, [0, 1], [0, 1]; color=(:black, 0.5), linewidth=2, linestyle=:dash, label="Ideal")
