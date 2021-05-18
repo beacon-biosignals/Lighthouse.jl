@@ -39,7 +39,7 @@ Lighthouse.plot_reliability_calibration_curves
 
 ```@example 1
 using Lighthouse: plot_reliability_calibration_curves
-
+classes = ["class $i" for i in 1:5]
 curves = [(LinRange(0, 1, 10), range(0, stop=i/2, length=10) .+ (stable_randn(10) .* 0.1)) for i in -1:3]
 
 plot_reliability_calibration_curves(
