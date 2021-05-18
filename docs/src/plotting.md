@@ -143,7 +143,7 @@ Optionally, one can also add a binary discrimination calibration curve plot:
 data["discrimination_calibration_curve"] = (LinRange(0, 1, 10), LinRange(0,1, 10) .+ 0.1randn(10))
 data["per_expert_discrimination_calibration_curves"] = curves
 
-# These are currently not implemented, but are still passed to plot_binary_discrimination_calibration_curves!
+# These are currently not used in plotting, but are still passed to `plot_binary_discrimination_calibration_curves`!
 data["discrimination_calibration_score"] = nothing
 data["optimal_threshold_class"] = 1
 data["per_expert_discrimination_calibration_scores"] = nothing
