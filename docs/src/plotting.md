@@ -15,12 +15,12 @@ stable_randn(args...) = randn(RNG, args...)
 
 ```@example 1
 using Lighthouse: plot_confusion_matrix, plot_confusion_matrix!
-confusion = [0.1 0.2 0.3 0.4 0.0;
-        0.1 0.2 0.3 0.4 0.5;
-        0.1 0.2 1.0 0.4 0.5;
-        0.1 0.2 0.3 0.4 0.5;
-        0.9 0.2 0.3 0.4 0.5]
-classes = ["class $i" for i in 1:size(confusion, 1)]
+
+classes = ["red", "orange", "yellow", "green"]
+ground_truth = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]
+predicted_labels = [1, 1, 1, 1, 2, 2, 4, 4, 4, 4, 4, 1]
+confusion = Lighthouse.confusion_matrix(length(classes), zip(predicted_labels, ground_truth))
+
 fig, ax, p = plot_confusion_matrix(confusion, classes, :Row)
 ```
 
