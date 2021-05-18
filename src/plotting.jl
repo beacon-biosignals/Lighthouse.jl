@@ -52,6 +52,7 @@ function series!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
 
     ax = Axis(subfig;
         title=title,
+        titlealign=:left,
         xlabel=xlabel, ylabel=ylabel,
         aspect=AxisAspect(1),
         xticks=0:0.2:1, yticks=0:0.2:1)
@@ -163,6 +164,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     class_indices = 1:nclasses
     max_conf = maximum(confusion)
     ax = Axis(subfig;
+              titlealign=:left,
               title="$(string(normalize_by))-Normalized Confusion",
               xlabel="Elected Class",
               ylabel="Predicted Class",
@@ -193,11 +195,11 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
 
     nclasses = length(class_labels)
     ax = Axis(subfig[1, 1];
+              titlealign=:left,
               xlabel="Cohen's kappa",
               xticks=[0, 1],
               yticks=(1:nclasses, class_labels))
 
-    hidedecorations!(ax; label=false, ticklabels=false)
     ylims!(ax, nclasses + 1, 0)
     xlims!(ax, 0, 1)
     if isnothing(per_class_IRA_kappas)
