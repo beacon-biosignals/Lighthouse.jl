@@ -12,7 +12,9 @@ using CairoMakie
 # which TensorBoardLogger.jl uses to determine output
 CairoMakie.activate!(type="png")
 plot_results = joinpath(@__DIR__, "plot_results")
-isdir(plot_results) ? rm(plot_results; force=true, recursive=true) : mkdir(plot_results)
+# Remove any old plots
+isdir(plot_results) && rm(plot_results; force=true, recursive=true)
+mkdir(plot_results)
 
 macro testplot(fig_name)
     path = joinpath(plot_results, string(fig_name, ".png"))
