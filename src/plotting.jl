@@ -174,8 +174,6 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
                       class_labels::AbstractVector{String},
                       per_class_IRA_kappas=nothing;
                       annotation_text_size=20)
-    # Note: both the data and the labels need to be reversed, so that it plots
-    # with the first class at the top of plot.
 
     nclasses = length(class_labels)
     ax = Axis(subfig[1, 1];
