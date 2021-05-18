@@ -7,7 +7,10 @@ Lighthouse.plot_confusion_matrix
 ```@setup 1
 using CairoMakie
 CairoMakie.activate!(type = "png")
-
+using StableRNGs
+const RNG = StableRNG(22)
+stable_rand(args...) = rand(RNG, args...)
+stable_randn(args...) = randn(RNG, args...)
 ```
 
 ```@example 1
@@ -37,11 +40,11 @@ Lighthouse.plot_reliability_calibration_curves
 ```@example 1
 using Lighthouse: plot_reliability_calibration_curves
 
-curves = [(LinRange(0, 1, 10), range(0, stop=i/2, length=10) .+ (randn(10) .* 0.1)) for i in -1:3]
+curves = [(LinRange(0, 1, 10), range(0, stop=i/2, length=10) .+ (stable_randn(10) .* 0.1)) for i in -1:3]
 
 plot_reliability_calibration_curves(
     curves,
-    rand(5),
+    stable_rand(5),
     classes
 )
 ```
@@ -56,7 +59,7 @@ Lighthouse.plot_prg_curves
 using Lighthouse: plot_prg_curves
 plot_prg_curves(
     curves,
-    rand(5),
+    stable_rand(5),
     classes
 )
 ```
@@ -86,7 +89,7 @@ using Lighthouse: plot_roc_curves
 
 plot_roc_curves(
     curves,
-    rand(5),
+    stable_rand(5),
     classes,
     legend=:lt)
 ```
@@ -99,12 +102,12 @@ Lighthouse.plot_kappas
 
 ```@example 1
 using Lighthouse: plot_kappas
-plot_kappas(rand(5), classes)
+plot_kappas(stable_rand(5), classes)
 ```
 
 ```@example 1
 using Lighthouse: plot_kappas
-plot_kappas(rand(5), classes, rand(5))
+plot_kappas(stable_rand(5), classes, stable_rand(5))
 ```
 
 # Evaluation metrics plot
@@ -119,19 +122,19 @@ data = Dict{String, Any}()
 data["confusion_matrix"] = confusion
 data["class_labels"] = classes
 
-data["per_class_kappas"] = rand(5)
-data["multiclass_kappa"] = rand()
-data["per_class_IRA_kappas"] = rand(5)
-data["multiclass_IRA_kappas"] = rand()
+data["per_class_kappas"] = stable_rand(5)
+data["multiclass_kappa"] = stable_rand()
+data["per_class_IRA_kappas"] = stable_rand(5)
+data["multiclass_IRA_kappas"] = stable_rand()
 
 data["per_class_pr_curves"] = curves
 data["per_class_prg_curves"] = curves
 data["per_class_roc_curves"] = curves
-data["per_class_roc_aucs"] = rand(5)
-data["per_class_prg_aucs"] = rand(5)
+data["per_class_roc_aucs"] = stable_rand(5)
+data["per_class_prg_aucs"] = stable_rand(5)
 
 data["per_class_reliability_calibration_curves"] = curves
-data["per_class_reliability_calibration_scores"] = rand(5)
+data["per_class_reliability_calibration_scores"] = stable_rand(5)
 
 evaluation_metrics_plot(data)
 ```
