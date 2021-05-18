@@ -53,6 +53,7 @@ function series!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
     ax = Axis(subfig;
         title=title,
         xlabel=xlabel, ylabel=ylabel,
+        aspect=AxisAspect(1),
         xticks=0:0.2:1, yticks=0:0.2:1)
 
     hidedecorations!(ax, label = false, ticklabels = false, grid=false)
@@ -167,6 +168,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
               ylabel="Predicted Class",
               xticks=(class_indices, class_labels),
               yticks=(class_indices, class_labels),
+              aspect=AxisAspect(1),
               xticklabelrotation=pi / 4)
 
     hidedecorations!(ax, label = false, ticklabels = false)
