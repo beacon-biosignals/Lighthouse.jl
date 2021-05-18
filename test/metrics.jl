@@ -26,7 +26,7 @@
     @test stats.false_negative_rate == 0.5
     @test stats.precision == 0.5
 
-    labels = rand(MersenneTwister(42), 1:3, 100)
+    labels = rand(StableRNG(42), 1:3, 100)
     hard_label_pairs = zip(labels, labels)
     c = confusion_matrix(3, hard_label_pairs)
     @test tr(c) == length(labels) == sum(c)
@@ -44,7 +44,7 @@
     end
 
     n, k = 1_000_000, 2
-    rng = MersenneTwister(42)
+    rng = StableRNG(42)
     hard_label_pairs = zip(rand(rng, 1:k, n), rand(rng, 1:k, n))
     c = confusion_matrix(k, hard_label_pairs)
     kappa, percent_agreement = cohens_kappa(3, hard_label_pairs)
@@ -94,7 +94,7 @@
 end
 
 @testset "`calibration_curve`" begin
-    rng = MersenneTwister(42)
+    rng = StableRNG(42)
     probs = rand(rng, 1_000_000)
     bitmask = rand(rng, Bool, 1_000_000)
     bin_count = 12
@@ -108,9 +108,9 @@ end
     @test all(isapprox.(totals, length(probs) / bin_count; atol=1000))
     @test sum(totals) == length(probs)
     @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
-    @test isapprox(mean_squared_error, inv(bin_count); atol=0.001)
+    @test isapprox(mean_squared_error, inv(bin_count); atol=0.002)
 
-    rng = MersenneTwister(42)
+    rng = StableRNG(42)
     probs = range(0.0, 1.0; length=1_000_000)
     bitmask = [rand(rng) <= p for p in probs]
     bin_count = 10
