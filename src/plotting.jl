@@ -31,7 +31,12 @@ end
 # Workaround for `to_colormap` not doing the right thing for
 # categorical colors.
 # Obsolete in new Makie version
-categorical_colors(palette, n) = categorical_colors(to_colormap(palette), n)
+function categorical_colors(palette, n)
+    # sigh
+    cmap = n > 1 ? to_colormap(palette, n) : to_colormap(palette)
+    return categorical_colors(cmap, n)
+end
+
 function categorical_colors(palette::AbstractVector, n)
     colors = to_color.(palette)
     if n > length(colors)
@@ -221,6 +226,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
 
     nclasses = length(class_labels)
     ax = Axis(subfig[1, 1];
+              aspect=AxisAspect(1),
               titlealign=:left,
               xlabel="Cohen's kappa",
               xticks=[0, 1],
