@@ -158,7 +158,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition, 
     ax = series!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
                          title="Detection calibration", xlabel="Expert agreement rate",
                          ylabel="Predicted positive probability", color=:darkgrey,
-                         scatter=(markershape=markershape, markersize=markersize),
+                         scatter=(markershape=markershape, markersize=markersize, strokewidth=0),
                          color_palette=color_palette)
 
     scatter = (markershape=:circle, markersize=markersize, markerstrokewidth=0, color=:navyblue)
