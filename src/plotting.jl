@@ -184,7 +184,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     end
     confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
     class_indices = 1:nclasses
-    max_conf = maximum(confusion)
+    max_conf = maximum(x-> isnan(x) ? 0.0 : x, confusion)
     ax = Axis(subfig;
               titlealign=:left,
               title="$(string(normalize_by))-Normalized Confusion",
@@ -195,17 +195,21 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
               aspect=AxisAspect(1),
               xticklabelrotation=pi / 4)
 
-    hidedecorations!(ax, label = false, ticklabels = false)
+    hidedecorations!(ax, label = false, ticklabels = false, grid=false)
 
     ylims!(ax, nclasses, 0)
 
     tightlimits!(ax)
     # Really unfortunate, that heatmap is not correctly aligned
     aligned = range(0.5; stop=nclasses + 0.5, length=nclasses)
-    heatmap!(ax, aligned, aligned, confusion'; colormap=colormap, colorrange=(0.0, max_conf))
+    heatmap!(ax, aligned, aligned, confusion'; colormap=colormap, colorrange=(0.0, max_conf), nan_color=(:black, 0))
     half_conf = max_conf / 2
+    function label_color(i, j)
+        c = confusion[i, j]
+        (isnan(c) || ismissing(c) || c < half_conf) ? :black : :white
+    end
     annos = vec([(string(confusion[i, j]), Point2f0(j, i)) for i in class_indices, j in class_indices])
-    colors = vec([confusion[i, j] < half_conf ? :black : :white for i in class_indices, j in class_indices])
+    colors = vec([label_color(i, j) for i in class_indices, j in class_indices])
     text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size)
     return ax
 end

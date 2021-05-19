@@ -17,8 +17,8 @@ stable_randn(args...) = randn(RNG, args...)
 using Lighthouse: plot_confusion_matrix, plot_confusion_matrix!
 
 classes = ["red", "orange", "yellow", "green"]
-ground_truth = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]
-predicted_labels = [1, 1, 1, 1, 2, 2, 4, 4, 4, 4, 4, 1]
+ground_truth =     [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]
+predicted_labels = [1, 1, 1, 1, 2, 2, 4, 4, 4, 4, 4, 3]
 confusion = Lighthouse.confusion_matrix(length(classes), zip(predicted_labels, ground_truth))
 
 fig, ax, p = plot_confusion_matrix(confusion, classes, :Row)
