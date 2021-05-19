@@ -28,8 +28,20 @@ function series!(ax::Axis, curves::XYVector; kw...)
     series!(ax, [curves]; kw...)
 end
 
-function series!(ax::Axis, curves::AbstractVector{<: XYVector}; labels=nothing, linewidth=2, scatter=nothing, color=nothing)
-    colors = to_colormap(:lighttest, 8)
+# Workaround for `to_colormap` not doing the right thing for
+# categorical colors.
+# Obsolete in new Makie version
+categorical_colors(palette, n) = categorical_colors(to_colormap(palette), n)
+function categorical_colors(palette::AbstractVector, n)
+    colors = to_color.(palette)
+    if n > length(colors)
+        error("Too many categories for color palette")
+    end
+    return palette[1:n]
+end
+
+function series!(ax::Axis, curves::AbstractVector{<: XYVector}; labels=nothing, linewidth=2, scatter=nothing, color=nothing, color_palette=:lighttest)
+    colors = categorical_colors(color_palette, length(curves))
     for (i, (x, y)) in enumerate(curves)
         x = replace_missings(x)
         y = replace_missings(y)
@@ -48,6 +60,7 @@ function series!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                  class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt,
                  title="No title",
                  xlabel="x label", ylabel="y label",
+                 color_palette=:lighttest,
                  linewidth=2, scatter=nothing, color=nothing)
 
     ax = Axis(subfig;
@@ -60,7 +73,7 @@ function series!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
     hidedecorations!(ax, label = false, ticklabels = false, grid=false)
     xlims!(ax, 0, 1)
     ylims!(ax, 0, 1)
-    series!(ax, per_class_pr_curves; labels=class_labels, linewidth=linewidth, scatter=scatter, color=color)
+    series!(ax, per_class_pr_curves; labels=class_labels, linewidth=linewidth, scatter=scatter, color=color, color_palette=color_palette)
     if !isnothing(legend)
         axislegend(ax; position=legend)
     end
@@ -70,6 +83,7 @@ end
 function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                          class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt, title="PR curves",
                          xlabel="True positive rate", ylabel="Precision",
+                         color_palette=:lighttest,
                          linewidth=2, scatter=nothing, color=nothing)
 
     series!(subfig, per_class_pr_curves,
@@ -77,12 +91,14 @@ function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurv
             legend=legend,
             title=title,
             xlabel=xlabel, ylabel=ylabel,
+            color_palette=color_palette,
             linewidth=linewidth, scatter=scatter, color=color)
 end
 
 function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCurves,
                           per_class_prg_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
+                          color_palette=:lighttest,
                           legend=:lt,
                           title="PR-Gain curves",
                           xlabel="True positive rate gain",
@@ -91,12 +107,13 @@ function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCu
     auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
                   for (i, class) in enumerate(class_labels)]
     return series!(subfig, per_class_prg_curves, auc_labels; legend=legend, title=title,
-                           xlabel=xlabel, ylabel=ylabel)
+                           xlabel=xlabel, ylabel=ylabel, color_palette=color_palette)
 end
 
 function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCurves,
                           per_class_roc_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
+                          color_palette=:lighttest,
                           legend=:rb,
                           title="ROC curves",
                           xlabel="False positive rate",
@@ -106,13 +123,14 @@ function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCu
                   for (i, class) in enumerate(class_labels)]
 
     return series!(subfig, per_class_roc_curves, auc_labels; legend=legend, title=title,
-                           xlabel=xlabel, ylabel=ylabel)
+                           xlabel=xlabel, ylabel=ylabel, color_palette=color_palette)
 end
 
 function plot_reliability_calibration_curves!(subfig::FigurePosition,
                                               per_class_reliability_calibration_curves::SeriesCurves,
                                               per_class_reliability_calibration_scores::NumberVector,
                                               class_labels::AbstractVector{String};
+                                              color_palette=:lighttest,
                                               legend=:rb)
 
     calibration_score_labels = map(enumerate(class_labels)) do (i, class)
@@ -120,9 +138,11 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
     end
 
     ax = series!(subfig, per_class_reliability_calibration_curves, calibration_score_labels;
-                         legend=legend, title="Prediction reliability calibration",
+                         legend=legend,
+                         title="Prediction reliability calibration",
                          xlabel="Predicted probability bin", ylabel="Fraction of positives",
-                         scatter=(markershape=Circle, markersize=5, strokewidth=0))
+                         scatter=(markershape=Circle, markersize=5, strokewidth=0),
+                         color_palette=color_palette)
     #TODO: mean predicted value histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
     linesegments!(ax, [0, 1], [0, 1]; color=(:black, 0.5), linewidth=2, linestyle=:dash, label="Ideal")
@@ -133,11 +153,13 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition, 
                                                         per_expert_calibration_curves::SeriesCurves,
                                                         per_expert_calibration_scores, optimal_threshold,
                                                         discrimination_class::AbstractString;
-                                                        markershape=Rect, markersize=5)
+                                                        markershape=Rect, markersize=5,
+                                                        color_palette=:lighttest)
     ax = series!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
                          title="Detection calibration", xlabel="Expert agreement rate",
                          ylabel="Predicted positive probability", color=:darkgrey,
-                         scatter=(markershape=markershape, markersize=markersize))
+                         scatter=(markershape=markershape, markersize=markersize),
+                         color_palette=color_palette)
 
     scatter = (markershape=:circle, markersize=markersize, markerstrokewidth=0, color=:navyblue)
     series!(ax, calibration_curve; scatter=scatter, color=:navyblue, linewidth=1)
