@@ -4,9 +4,10 @@ using Statistics, Dates, LinearAlgebra, Random, Logging
 using Base.Threads
 using StatsBase: StatsBase
 using TensorBoardLogger
-using StatsPlots
-using StatsPlots.Plots.PlotMeasures
+using AbstractPlotting
 using Printf
+
+include("plotting.jl")
 
 include("utilities.jl")
 export majority

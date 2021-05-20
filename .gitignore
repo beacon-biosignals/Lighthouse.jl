@@ -6,3 +6,4 @@ docs/build/
 docs/site/
 .DS_Store
 tmpdir/*
+test/plot_results

@@ -1,7 +1,7 @@
 @testset "`majority`" begin
     @test majority([1, 2, 1, 3, 2, 2, 3], 1:3) == 2
     @test majority([1, 2, 1, 3, 2, 2, 3, 4], 3:4) == 3
-    rng = MersenneTwister(42)
+    rng = StableRNG(42)
     picked = [majority(rng, 1:2, 1:2) for _ in 1:1_000_000]
     @test isapprox(count(==(1), picked), 500_000; atol=1000)
 end

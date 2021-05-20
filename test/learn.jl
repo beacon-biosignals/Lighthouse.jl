@@ -13,7 +13,7 @@ function Lighthouse.train!(c::TestClassifier, dummy_batches, logger)
     return c.dummy_loss
 end
 
-const RNG_LOSS = MersenneTwister(22)
+const RNG_LOSS = StableRNG(22)
 
 function Lighthouse.loss_and_prediction(c::TestClassifier, dummy_input_batch)
     dummy_soft_label_batch = rand(RNG_LOSS, length(c.classes), size(dummy_input_batch)[end])
@@ -26,7 +26,7 @@ end
     mktempdir() do tmpdir
         model = TestClassifier(1000000.0, ["class_$i" for i in 1:5])
         k, n = length(model.classes), 3
-        rng = MersenneTwister(22)
+        rng = StableRNG(22)
         train_batches = [(rand(rng, 4 * k, n), -rand(rng)) for _ in 1:100]
         test_batches = [((rand(rng, 4 * k, n),), (n * i - n + 1):(n * i)) for i in 1:10]
         possible_vote_labels = collect(0:k)
@@ -44,7 +44,8 @@ end
                     @info counted n
                 end
             end
-            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes;
+            elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
+            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
                               epoch_limit=limit, post_epoch_callback=callback)
             @test counted == sum(1:limit)
         end
@@ -110,46 +111,42 @@ end
         @test isa(plot_data["thresholds"], AbstractVector)
         prg = plot_prg_curves(plot_data["per_class_prg_curves"],
                               plot_data["per_class_prg_aucs"], plot_data["class_labels"])
-        @test isa(prg, Plots.Plot)
+        @testplot prg
+
         pr = plot_pr_curves(plot_data["per_class_pr_curves"], plot_data["class_labels"])
-        @test isa(pr, Plots.Plot)
+        @testplot pr
 
         roc = plot_roc_curves(plot_data["per_class_roc_curves"],
                               plot_data["per_class_roc_aucs"], plot_data["class_labels"])
-        @test isa(roc, Plots.Plot)
+        @testplot roc
 
         # Kappa no IRA
-        k = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
-                        hcat("Multiclass", plot_data["class_labels"]))
-        @test isa(k, Plots.Plot)
+        kappas_no_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
+                        vcat("Multiclass", plot_data["class_labels"]))
+        @testplot kappas_no_ira
 
         # Kappa with IRA
-        k = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
-                        hcat("Multiclass", plot_data["class_labels"]),
+        kappas_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
+                        vcat("Multiclass", plot_data["class_labels"]),
                         vcat(plot_data["multiclass_IRA_kappas"],
                              plot_data["per_class_IRA_kappas"]))
-        @test isa(k, Plots.Plot)
+        @testplot kappas_ira
 
         reliability_calibration = plot_reliability_calibration_curves(plot_data["per_class_reliability_calibration_curves"],
                                                                       plot_data["per_class_reliability_calibration_scores"],
                                                                       plot_data["class_labels"])
-        @test isa(k, Plots.Plot)
+        @testplot reliability_calibration
 
         confusion_row = plot_confusion_matrix(plot_data["confusion_matrix"],
                                               plot_data["class_labels"], :Row)
-        @test isa(confusion_row, Plots.Plot)
+        @testplot confusion_row
 
         confusion_col = plot_confusion_matrix(plot_data["confusion_matrix"],
                                               plot_data["class_labels"], :Row)
-        @test isa(confusion_col, Plots.Plot)
-
-        all_together = plot_combined((k, reliability_calibration, prg, roc, pr,
-                                      confusion_row, confusion_col);
-                                     class_labels=plot_data["class_labels"])
-        @test isa(all_together, Plots.Plot)
+        @testplot confusion_col
 
         all_together_2 = evaluation_metrics_plot(plot_data)
-        @test isa(all_together_2, Plots.Plot)
+        @testplot all_together_2
 
         #savefig(all_together_2, "/tmp/multiclass.png")
     end
@@ -159,7 +156,7 @@ end
     mktempdir() do tmpdir
         model = TestClassifier(1000000.0, ["class_$i" for i in 1:2])
         k, n = length(model.classes), 3
-        rng = MersenneTwister(23)
+        rng = StableRNG(23)
         train_batches = [(rand(rng, 4 * k, n), -rand(rng)) for _ in 1:100]
         test_batches = [((rand(rng, 4 * k, n),), (n * i - n + 1):(n * i)) for i in 1:10]
         possible_vote_labels = collect(0:k)
@@ -177,7 +174,8 @@ end
                     @info counted n
                 end
             end
-            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes;
+            elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
+            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
                               epoch_limit=limit, post_epoch_callback=callback)
             @test counted == sum(1:limit)
         end
@@ -192,7 +190,8 @@ end
         @test !haskey(plot_data, "optimal_threshold_class")
 
         # And now, `optimal_threshold_class` during learning
-        Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes;
+        elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
+        Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
                           epoch_limit=limit, optimal_threshold_class=2,
                           test_set_logger_prefix="validation_set")
         plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
@@ -257,10 +256,10 @@ end
         @test isequal(thresh_from_calibration, plot_data_2["optimal_threshold"])
 
         # Test that plotting succeeds (no specialization relative to the multi-class tests)
-        plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
+        plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
         all_together = evaluation_metrics_plot(plot_data)
         #savefig(all_together, "/tmp/binary.png")
-        @test isa(all_together, Plots.Plot)
+        @testplot all_together
     end
 end
 
