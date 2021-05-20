@@ -46,4 +46,5 @@ calibration_curve
 majority
 Lighthouse.area_under_curve
 Lighthouse.area_under_curve_unit_square
+flush(::LearnLogger)
 ```

@@ -50,6 +50,13 @@ plot_reliability_calibration_curves(
 )
 ```
 
+Note that all curve plot types accepts these types:
+
+```@docs
+Lighthouse.XYVector
+Lighthouse.SeriesCurves
+```
+
 # PRG curves
 
 ```@docs
