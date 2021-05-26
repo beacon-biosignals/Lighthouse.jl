@@ -27,7 +27,7 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                  title="No title",
                  xlabel="x label", ylabel="y label",
                  color=:darktest, solid_color=nothing,
-                 linewidth=2, scatter=(;))
+                 linewidth=2, scatter=NamedTuple())
 
     ax = Axis(subfig;
         title=title,
@@ -50,7 +50,7 @@ function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurv
                          class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt, title="PR curves",
                          xlabel="True positive rate", ylabel="Precision",
                          color=:darktest,
-                         linewidth=2, scatter=(;), solid_color=nothing)
+                         linewidth=2, scatter=NamedTuple(), solid_color=nothing)
 
     series_plot!(subfig, per_class_pr_curves,
             class_labels;
@@ -366,7 +366,7 @@ plot_reliability_calibration_curves(args...; kw...) = axisplot(plot_reliability_
                 resolution=(800, 600),
                 legend=:lt, title="PR curves",
                 xlabel="True positive rate", ylabel="Precision",
-                linewidth=2, scatter=(;), color=nothing)
+                linewidth=2, scatter=NamedTuple(), color=:darktest)
 
 - `scatter::Union{Nothing, NamedTuple}`: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.
 
@@ -384,7 +384,7 @@ plot_pr_curves(args...; kw...) = axisplot(plot_pr_curves!, args; kw...)
                     title="PR-Gain curves",
                     xlabel="True positive rate gain",
                     ylabel="Precision gain",
-                    linewidth=2, scatter=(;), color=nothing)
+                    linewidth=2, scatter=NamedTuple(), color=:darktest)
 
 - `scatter::Union{Nothing, NamedTuple}`: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.
 
@@ -402,7 +402,7 @@ plot_prg_curves(args...; kw...) = axisplot(plot_prg_curves!, args; kw...)
                     title="ROC curves",
                     xlabel="False positive rate",
                     ylabel="True positive rate",
-                    linewidth=2, scatter=(;), color=nothing)
+                    linewidth=2, scatter=NamedTuple(), color=:darktest)
 
 - `scatter::Union{Nothing, NamedTuple}`: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.
 
