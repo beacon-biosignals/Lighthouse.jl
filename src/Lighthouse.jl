@@ -4,7 +4,7 @@ using Statistics, Dates, LinearAlgebra, Random, Logging
 using Base.Threads
 using StatsBase: StatsBase
 using TensorBoardLogger
-using AbstractPlotting
+using Makie
 using Printf
 
 include("plotting.jl")

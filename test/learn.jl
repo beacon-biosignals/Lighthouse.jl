@@ -142,7 +142,7 @@ end
         @testplot confusion_row
 
         confusion_col = plot_confusion_matrix(plot_data["confusion_matrix"],
-                                              plot_data["class_labels"], :Row)
+                                              plot_data["class_labels"], :Column)
         @testplot confusion_col
 
         all_together_2 = evaluation_metrics_plot(plot_data)
