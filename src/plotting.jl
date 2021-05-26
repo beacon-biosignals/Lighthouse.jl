@@ -26,7 +26,7 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                  class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt,
                  title="No title",
                  xlabel="x label", ylabel="y label",
-                 color=:lighttest, solid_color=nothing,
+                 color=:darktest, solid_color=nothing,
                  linewidth=2, scatter=(;))
 
     ax = Axis(subfig;
@@ -49,7 +49,7 @@ end
 function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                          class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt, title="PR curves",
                          xlabel="True positive rate", ylabel="Precision",
-                         color=:lighttest,
+                         color=:darktest,
                          linewidth=2, scatter=(;), solid_color=nothing)
 
     series_plot!(subfig, per_class_pr_curves,
@@ -64,7 +64,7 @@ end
 function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCurves,
                           per_class_prg_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
-                          color=:lighttest,
+                          color=:darktest,
                           legend=:lt,
                           title="PR-Gain curves",
                           xlabel="True positive rate gain",
@@ -79,7 +79,7 @@ end
 function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCurves,
                           per_class_roc_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
-                          color=:lighttest,
+                          color=:darktest,
                           legend=:rb,
                           title="ROC curves",
                           xlabel="False positive rate",
@@ -96,7 +96,7 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
                                               per_class_reliability_calibration_curves::SeriesCurves,
                                               per_class_reliability_calibration_scores::NumberVector,
                                               class_labels::AbstractVector{String};
-                                              color=:lighttest,
+                                              color=:darktest,
                                               legend=:rb)
 
     calibration_score_labels = map(enumerate(class_labels)) do (i, class)
