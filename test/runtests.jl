@@ -20,7 +20,7 @@ macro testplot(fig_name)
     path = joinpath(plot_results, string(fig_name, ".png"))
     return quote
         fig = $(esc(fig_name))
-        @test fig isa AbstractPlotting.FigureLike
+        @test fig isa Makie.FigureLike
         save($(path), fig)
     end
 end
