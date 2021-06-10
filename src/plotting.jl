@@ -8,6 +8,41 @@ const NumberLike = Union{Number, Missing, Nothing, T} where T
 const NumberVector = AbstractVector{<: NumberLike}
 const NumberMatrix = AbstractMatrix{<: NumberLike}
 
+
+#####
+##### Helpers for theming and color generation...May want to move them to Colors.jl / Makie.jl
+#####
+using Makie.Colors: LCHab, distinguishable_colors
+
+function get_theme(scene, key1::Symbol, key2::Union{Symbol, Nothing}; defaults...)
+    get_theme(Makie.get_scene(scene), key1, key2; defaults...)
+end
+function get_theme(fig::Makie.FigurePosition, key1::Symbol, key2::Union{Symbol, Nothing}; defaults...)
+    get_theme(fig.fig, key1, key2; defaults...)
+end
+
+function get_theme(scene::Scene, key1::Symbol, key2::Union{Symbol, Nothing}; defaults...)
+    scene_theme = theme(scene)
+    sub_theme = get(scene_theme, key1, Theme())
+    if key2 !== nothing
+        return merge(get(sub_theme, key2, Theme()), Theme(; defaults...), get(scene_theme, key2, Theme()))
+    else
+        return merge(sub_theme, Theme(; defaults...))
+    end
+end
+
+function high_contrast(background_color, target_color;
+                        # chose from whole lightness spectrum
+                        lchoices = range(0, stop=100, length=15),)
+    target = LCHab(target_color)
+    color = distinguishable_colors(1, [Makie.Colors.RGB(background_color)];
+                                dropseed = true,
+                                lchoices = lchoices,
+                                cchoices = [target.c],
+                                hchoices = [target.h])
+    return RGBAf0(color[1], Makie.Colors.alpha(target_color))
+end
+
 """
     Tuple{<:NumberVector, <: NumberVector}
 
@@ -25,21 +60,23 @@ const SeriesCurves = Union{XYVector, AbstractVector{<: XYVector}}
 function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                  class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt,
                  title="No title",
-                 xlabel="x label", ylabel="y label",
-                 color=:darktest, solid_color=nothing,
-                 linewidth=2, scatter=NamedTuple())
+                 xlabel="x label", ylabel="y label", solid_color=nothing, scatter=NamedTuple())
 
     ax = Axis(subfig;
         title=title,
         titlealign=:left,
         xlabel=xlabel, ylabel=ylabel,
         aspect=AxisAspect(1),
-        xticks=0:0.2:1, yticks=0:0.2:1)
+        xticks=0:0.2:1, yticks=0.2:0.2:1)
+    theme = Dict{Symbol, Any}()
+    if solid_color !== nothing
+        theme[:solid_color] = solid_color
+    end
 
     hidedecorations!(ax, label = false, ticklabels = false, grid=false)
     xlims!(ax, 0, 1)
     ylims!(ax, 0, 1)
-    Makie.series!(ax, per_class_pr_curves; labels=class_labels, linewidth=linewidth, color=color, solid_color=solid_color, scatter...)
+    Makie.series!(ax, per_class_pr_curves; labels=class_labels, solid_color=solid_color, theme..., scatter...)
     if !isnothing(legend)
         axislegend(ax; position=legend)
     end
@@ -48,23 +85,18 @@ end
 
 function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                          class_labels::Union{Nothing, AbstractVector{String}}; legend=:lt, title="PR curves",
-                         xlabel="True positive rate", ylabel="Precision",
-                         color=:darktest,
-                         linewidth=2, scatter=NamedTuple(), solid_color=nothing)
+                         xlabel="True positive rate", ylabel="Precision", scatter=NamedTuple(), solid_color=nothing)
 
     series_plot!(subfig, per_class_pr_curves,
             class_labels;
             legend=legend,
             title=title,
-            xlabel=xlabel, ylabel=ylabel,
-            color=color,
-            linewidth=linewidth, scatter=scatter, solid_color=solid_color)
+            xlabel=xlabel, ylabel=ylabel,  scatter=scatter, solid_color=solid_color)
 end
 
 function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCurves,
                           per_class_prg_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
-                          color=:darktest,
                           legend=:lt,
                           title="PR-Gain curves",
                           xlabel="True positive rate gain",
@@ -73,13 +105,12 @@ function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCu
     auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
                   for (i, class) in enumerate(class_labels)]
     return series_plot!(subfig, per_class_prg_curves, auc_labels; legend=legend, title=title,
-                           xlabel=xlabel, ylabel=ylabel, color=color)
+                           xlabel=xlabel, ylabel=ylabel)
 end
 
 function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCurves,
                           per_class_roc_aucs::NumberVector,
                           class_labels::AbstractVector{<: String};
-                          color=:darktest,
                           legend=:rb,
                           title="ROC curves",
                           xlabel="False positive rate",
@@ -89,14 +120,13 @@ function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCu
                   for (i, class) in enumerate(class_labels)]
 
     return series_plot!(subfig, per_class_roc_curves, auc_labels; legend=legend, title=title,
-                           xlabel=xlabel, ylabel=ylabel, color=color)
+                           xlabel=xlabel, ylabel=ylabel)
 end
 
 function plot_reliability_calibration_curves!(subfig::FigurePosition,
                                               per_class_reliability_calibration_curves::SeriesCurves,
                                               per_class_reliability_calibration_scores::NumberVector,
                                               class_labels::AbstractVector{String};
-                                              color=:darktest,
                                               legend=:rb)
 
     calibration_score_labels = map(enumerate(class_labels)) do (i, class)
@@ -107,11 +137,10 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
                          legend=legend,
                          title="Prediction reliability calibration",
                          xlabel="Predicted probability bin", ylabel="Fraction of positives",
-                         scatter=(markershape=Circle, markersize=5, strokewidth=0),
-                         color=color)
+                         scatter=(markershape=Circle, markersize=5, strokewidth=0))
     #TODO: mean predicted value histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
-    linesegments!(ax, [0, 1], [0, 1]; color=(:black, 0.5), linewidth=2, linestyle=:dash, label="Ideal")
+    linesegments!(ax, [0, 1], [0, 1]; color=(:black, 0.5), linestyle=:dash, label="Ideal")
     return ax
 end
 
@@ -148,6 +177,13 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
     class_indices = 1:nclasses
     max_conf = maximum(x-> isnan(x) ? 0.0 : x, confusion)
+
+    text_theme = get_theme(subfig, :ConfusionMatrix, :Text; textsize=annotation_text_size)
+    nan_color = to_color((:black, 0.0))
+    heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=nan_color)
+    cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
+
+    text_color = to_color(to_value(pop!(text_theme, :color, :black)))
     ax = Axis(subfig;
               titlealign=:left,
               title="$(string(normalize_by))-Normalized Confusion",
@@ -159,56 +195,88 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
               xticklabelrotation=pi / 4)
 
     hidedecorations!(ax, label = false, ticklabels = false, grid=false)
-
     ylims!(ax, nclasses, 0)
-
     tightlimits!(ax)
-    heatmap!(ax, confusion'; colormap=colormap, colorrange=(0.0, max_conf), nan_color=(:black, 0))
-    half_conf = max_conf / 2
+
+    crange = (0.0, max_conf)
+    heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, heatmap_theme...)
     function label_color(i, j)
         c = confusion[i, j]
-        (isnan(c) || ismissing(c) || c < half_conf) ? :black : :white
+        bg_color = if isnan(c) || ismissing(c)
+            nan_color
+        else
+            Makie.interpolated_getindex(cmap, c, crange)
+        end
+        return high_contrast(bg_color, text_color)
     end
     annos = vec([(string(confusion[i, j]), Point2f0(j, i)) for i in class_indices, j in class_indices])
     colors = vec([label_color(i, j) for i in class_indices, j in class_indices])
-    text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size)
+    text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size, text_theme...)
     return ax
+end
+
+function text_attributes(values, groups, bar_colors, bg_color, text_color)
+    aligns = NTuple{2, Symbol}[]
+    offsets = NTuple{2, Int}[]
+    text_colors = RGBAf0[]
+    for (i, k) in enumerate(values)
+        group = groups isa AbstractVector ? groups[i] : groups
+        bar_color = bar_colors[group]
+        # Plot text inside bar
+        if k > 0.85
+            push!(aligns, (:right, :center))
+            push!(offsets, (-10, 0))
+            push!(text_colors, high_contrast(bar_color, text_color))
+        else
+            # plot text next to bar
+            push!(aligns, (:left, :center))
+            push!(offsets, (10, 0))
+            push!(text_colors, high_contrast(bg_color, text_color))
+        end
+    end
+    return aligns, offsets, text_colors
 end
 
 function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
                       class_labels::AbstractVector{String},
                       per_class_IRA_kappas=nothing;
+                      color = [:lightgrey, :lightblue],
                       annotation_text_size=20)
 
     nclasses = length(class_labels)
-    ax = Axis(subfig[1, 1];
-              aspect=AxisAspect(1),
-              titlealign=:left,
-              xlabel="Cohen's kappa",
-              xticks=[0, 1],
-              yticks=(1:nclasses, class_labels))
+    axis_theme = get_theme(subfig, :Kappas, :Axis;
+                            aspect=AxisAspect(1),
+                            titlealign=:left,
+                            xlabel="Cohen's kappa",
+                            xticks=[0, 1],
+                            yreversed=true,
+                            yticks=(1:nclasses, class_labels))
 
-    ylims!(ax, nclasses + 1, 0)
+    text_theme = get_theme(subfig, :Kappas, :Text; textsize=annotation_text_size)
+    text_color = to_value(pop!(text_theme, :color, to_color(:black)))
+    bars_theme = get_theme(subfig, :Kappas, :BarPlot, color=color)
+    bar_colors = to_color.(bars_theme.color[])
+
+    ax = Axis(subfig[1, 1]; axis_theme...)
+    bg_color = to_color(ax.backgroundcolor[])
     xlims!(ax, 0, 1)
     if isnothing(per_class_IRA_kappas)
         ax.title = "Algorithm-expert agreement"
         annotations = map(enumerate(per_class_kappas)) do (i, k)
             return (string(round(k; digits=3)), Point2f0(max(0, k), i))
         end
-        aligns = map(per_class_kappas) do k
-            k > 0.85 ? (:right, :center) : (:left, :center)
-        end
-        offsets = map(per_class_kappas) do k
-            k > 0.85 ? (-10, 0) : (10, 0)
-        end
-        barplot!(ax, per_class_kappas; direction=:x, color=:lightblue)
-        text!(ax, annotations; align=aligns, offset=offsets, textsize=annotation_text_size)
+
+        aligns, offsets, text_colors = text_attributes(per_class_kappas, 2,
+                                                       bar_colors, bg_color,
+                                                       text_color)
+        barplot!(ax, per_class_kappas; direction=:x, color=bar_colors[2])
+        text!(ax, annotations; align=aligns, offset=offsets, color=text_colors, text_theme...)
     else
         ax.title = "Inter-rater reliability"
         values = vcat(per_class_kappas, per_class_IRA_kappas)
         groups = vcat(fill(2, nclasses), fill(1, nclasses))
         xvals = vcat(1:nclasses, 1:nclasses)
-        cmap = to_color.([:lightgrey, :lightblue])
+        cmap = bar_colors
         bars = barplot!(ax, xvals, max.(0, values); dodge=groups, color=groups, direction=:x, colormap=cmap)
         # This is a bit hacky, but for now the easiest way to figure out the exact, dodged positions
         rectangles = bars.plots[][1][]
@@ -216,19 +284,15 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         textpos = Point2f0.(max.(0, values), dodged_y)
 
         labels = string.(round.(values; digits=3))
-        aligns = map(values) do k
-            k > 0.85 ? (:right, :center) : (:left, :center)
-        end
-        offsets = map(values) do k
-            k > 0.85 ? (-10, 0) : (10, 0)
-        end
-        text!(ax, labels; position=textpos, align=aligns, offset=offsets,
-              textsize=annotation_text_size)
+        aligns, offsets, text_colors = text_attributes(values, groups,
+                                                       bar_colors, bg_color,
+                                                       text_color)
+        text!(ax, labels; position=textpos, align=aligns, offset=offsets, color=text_colors, text_theme...)
         labels = ["Expert-vs-expert IRA", "Algorithm-vs-expert"]
         entries = map(c -> PolyElement(; color=c, strokewidth=0, strokecolor=:white), cmap)
         legend = Legend(subfig[1, 1, Bottom()], entries, labels; tellwidth=false, tellheight=true,
                         labelsize=12, padding=(0, 0, 0, 0), framevisible=false, patchsize=(10, 10),
-                        patchlabelgap=2)
+                        patchlabelgap=6)
         legend.margin = (0, 0, 0, 60)
     end
     return ax
