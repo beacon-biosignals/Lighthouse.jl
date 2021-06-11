@@ -32,6 +32,27 @@ plot_confusion_matrix!(fig[1, 2], confusion, classes, :Column, annotation_text_s
 fig
 ```
 
+## Theming
+
+```@example 1
+with_theme(
+        ConfusionMatrix = (
+            Text = (
+                color=:yellow,
+            ),
+            Heatmap = (
+                colormap=:greens,
+            ),
+            Axis = (
+                backgroundcolor=:black,
+                xticklabelrotation=0.0,
+            )
+        )
+    ) do
+    plot_confusion_matrix(confusion, classes, :Row)
+end
+```
+
 # Reliability calibration curves
 
 ```@docs
@@ -56,6 +77,40 @@ Note that all curve plot types accepts these types:
 Lighthouse.XYVector
 Lighthouse.SeriesCurves
 ```
+## Theming
+All curves geth themed like this, with the main key (in this case `ReliabilityCalibrationCurves`), being the camel case variant of the function name and allowiing .
+
+```@example 1
+# The axis is getting created in the seriesplot,
+# to always have these kind of probabilistic series have the same axis
+series_theme = (
+    Axis = (
+        backgroundcolor = (:gray, 0.1),
+        bottomspinevisible = false,
+        leftspinevisible = false,
+        topspinevisible = false,
+        rightspinevisible = false,
+    ),
+    Series = (
+        color=:darktest,
+        marker=:circle
+    )
+)
+with_theme(
+        ReliabilityCalibrationCurves = (
+            Ideal = (
+                color=:red, linewidth=3
+            ),
+        ),
+        SeriesPlot = series_theme
+    ) do
+    plot_reliability_calibration_curves(
+        curves,
+        stable_rand(5),
+        classes
+    )
+end
+```
 
 # PRG curves
 
@@ -72,6 +127,20 @@ plot_prg_curves(
 )
 ```
 
+## Theming
+
+```@example 1
+# The plots with only a series don't have a special keyword
+with_theme(SeriesPlot = series_theme) do
+    plot_prg_curves(
+        curves,
+        stable_rand(5),
+        classes
+    )
+end
+````
+
+
 # PR curves
 
 ```@docs
@@ -85,6 +154,19 @@ plot_pr_curves(
     classes
 )
 ```
+
+## Theming
+
+```@example 1
+# The plots with only a series don't have a special keyword
+with_theme(SeriesPlot = series_theme) do
+    plot_pr_curves(
+        curves,
+        classes
+    )
+end
+````
+
 
 # ROC curves
 
@@ -102,6 +184,20 @@ plot_roc_curves(
     legend=:lt)
 ```
 
+
+## Theming
+
+```@example 1
+# The plots with only a series don't have a special keyword
+with_theme(SeriesPlot = series_theme) do
+    plot_roc_curves(
+        curves,
+        stable_rand(5),
+        classes,
+        legend=:lt)
+end
+````
+
 # Kappas (per expert agreement)
 
 ```@docs
@@ -116,6 +212,27 @@ plot_kappas(stable_rand(5), classes)
 ```@example 1
 using Lighthouse: plot_kappas
 plot_kappas(stable_rand(5), classes, stable_rand(5))
+```
+## Theming
+
+```@example 1
+with_theme(
+        Kappas = (
+            Axis = (
+                xticklabelvisible=false,
+                xticksvisible=false,
+                leftspinevisible = false,
+                rightspinevisible = false,
+                bottomspinevisible = false,
+                topspinevisible = false,
+            ),
+            Text = (
+                color = :blue,
+            ),
+            BarPlot = (color=[:black, :green],)
+        )) do
+    plot_kappas((1:5) ./ 5 .- 0.1, classes, (1:5) ./ 5)
+end
 ```
 
 # Evaluation metrics plot

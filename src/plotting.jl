@@ -16,6 +16,7 @@ using Makie.Colors: LCHab, distinguishable_colors, RGB, Colorant
 function get_theme(scene, key1::Symbol, key2::Symbol; defaults...)
     return get_theme(Makie.get_scene(scene), key1, key2; defaults...)
 end
+
 function get_theme(fig::Makie.FigurePosition, key1::Symbol, key2::Symbol; defaults...)
     return get_theme(fig.fig, key1, key2; defaults...)
 end
@@ -29,7 +30,8 @@ function get_theme(scene::Scene, key1::Symbol, key2::Symbol; defaults...)
     # Consider Kappas.Axis for key1/2, what we want is, that if there are defaults in Kappas.Axis
     # they should overwrite our generic lighthouse defaults. But anything not specified in Kappas.Axis/defaults,
     # should fall back to scene_theme.Axis
-    return merge(get(sub_theme, key2, Theme()), Theme(; defaults...), get(scene_theme, key2, Theme()))
+    return merge(to_value(get(sub_theme, key2, Theme())), Theme(; defaults...),
+                 to_value(get(scene_theme, key2, Theme())))
 end
 
 function high_contrast(background_color::Colorant, target_color::Colorant;
@@ -57,9 +59,11 @@ const SeriesCurves = Union{XYVector,AbstractVector{<:XYVector}}
 
 function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                       class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt, title="No title",
-                      xlabel="x label", ylabel="y label", solid_color=nothing, color=nothing, linewidth=nothing, scatter=NamedTuple())
+                      xlabel="x label", ylabel="y label", solid_color=nothing, color=nothing,
+                      linewidth=nothing, scatter=NamedTuple())
+    axis_theme = get_theme(subfig, :SeriesPlot, :Axis)
     ax = Axis(subfig; title=title, titlealign=:left, xlabel=xlabel, ylabel=ylabel, aspect=AxisAspect(1),
-              xticks=0:0.2:1, yticks=0.2:0.2:1)
+              xticks=0:0.2:1, yticks=0.2:0.2:1, axis_theme...)
     theme = Dict{Symbol,Any}()
     # Not the most elegant, but this way we can let the theming to the Series theme, or
     # pass it through explicitely
@@ -67,9 +71,11 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
     isnothing(color) || (theme[:color] = color)
     isnothing(linewidth) || (theme[:linewidth] = linewidth)
 
+    series_theme = get_theme(subfig, :SeriesPlot, :Series; theme..., scatter...)
+
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
     limits!(ax, 0, 1, 0, 1)
-    Makie.series!(ax, per_class_pr_curves; labels=class_labels, solid_color=solid_color, theme..., scatter...)
+    Makie.series!(ax, per_class_pr_curves; labels=class_labels, series_theme...)
     if !isnothing(legend)
         axislegend(ax; position=legend)
     end
@@ -113,8 +119,10 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
         @sprintf("%s (MSE: %.3f)", class, per_class_reliability_calibration_scores[i])
     end
 
-    scatter_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Scatter; markershape=Circle, markersize=5, strokewidth=0)
-    ideal_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Ideal; color=(:black, 0.5), linestyle=:dash, linewidth=2)
+    scatter_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Scatter; markershape=Circle,
+                              markersize=5, strokewidth=0)
+    ideal_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Ideal; color=(:black, 0.5),
+                            linestyle=:dash, linewidth=2)
 
     ax = series_plot!(subfig, per_class_reliability_calibration_curves, calibration_score_labels;
                       legend=legend, title="Prediction reliability calibration",
@@ -132,19 +140,20 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                                                         per_expert_calibration_scores, optimal_threshold,
                                                         discrimination_class::AbstractString;
                                                         markershape=Rect, markersize=5)
-
-    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter; markershape=markershape, markersize=markersize, strokewidth=0)
-    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey, color=nothing, linewidth=2)
+    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter;
+                              markershape=markershape, markersize=markersize, strokewidth=0)
+    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey,
+                           color=nothing, linewidth=2)
     ax = series_plot!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
                       title="Detection calibration", xlabel="Expert agreement rate",
                       ylabel="Predicted positive probability", scatter=scatter_theme, per_expert...)
 
-    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert;
-                           solid_color=:navyblue, linewidth=2, markershape=:circle,
-                           markersize=markersize, markerstrokewidth=0)
+    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:navyblue,
+                           linewidth=2, markershape=:circle, markersize=markersize, markerstrokewidth=0)
     Makie.series!(ax, calibration_curve; per_expert...)
 
-    ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5), linestyle=:dash, linewidth=2)
+    ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
+                            linestyle=:dash, linewidth=2)
     linesegments!(ax, [0, 1], [0, 1]; label="Ideal", ideal_theme...)
     #TODO: expert agreement histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
@@ -167,21 +176,22 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     max_conf = maximum(x -> isnan(x) ? 0.0 : x, confusion)
 
     text_theme = get_theme(subfig, :ConfusionMatrix, :Text; textsize=annotation_text_size)
-    nan_color = to_color((:black, 0.0))
-    heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=nan_color)
-    cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
+    heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=(:black, 0.0))
+    axis_theme = get_theme(subfig, :ConfusionMatrix, :Axis; xticklabelrotation=pi / 4)
 
-    text_color = to_color(to_value(pop!(text_theme, :color, :black)))
     ax = Axis(subfig; titlealign=:left, title="$(string(normalize_by))-Normalized Confusion",
               xlabel="Elected Class", ylabel="Predicted Class", xticks=(class_indices, class_labels),
-              yticks=(class_indices, class_labels), aspect=AxisAspect(1), xticklabelrotation=pi / 4)
+              yticks=(class_indices, class_labels), aspect=AxisAspect(1), axis_theme...)
 
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
     ylims!(ax, nclasses, 0)
     tightlimits!(ax)
 
     crange = (0.0, max_conf)
-    heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, heatmap_theme...)
+    nan_color = to_color(heatmap_theme.nan_color[])
+    cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
+    heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, nan_color=nan_color, heatmap_theme...)
+    text_color = to_color(to_value(pop!(text_theme, :color, :black)))
     function label_color(i, j)
         c = confusion[i, j]
         bg_color = if isnan(c) || ismissing(c)
@@ -228,7 +238,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
                            yticks=(1:nclasses, class_labels))
 
     text_theme = get_theme(subfig, :Kappas, :Text; textsize=annotation_text_size)
-    text_color = to_value(pop!(text_theme, :color, to_color(:black)))
+    text_color = to_color(to_value(pop!(text_theme, :color, to_color(:black))))
     bars_theme = get_theme(subfig, :Kappas, :BarPlot; color=color)
     bar_colors = to_color.(bars_theme.color[])
 
