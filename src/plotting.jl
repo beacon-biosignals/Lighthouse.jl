@@ -120,7 +120,7 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
         @sprintf("%s (MSE: %.3f)", class, per_class_reliability_calibration_scores[i])
     end
 
-    scatter_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Scatter; markershape=Circle,
+    scatter_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Scatter; marker=Circle,
                               markersize=5, strokewidth=0)
     ideal_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Ideal; color=(:black, 0.5),
                             linestyle=:dash, linewidth=2)
@@ -140,9 +140,9 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                                                         per_expert_calibration_curves::SeriesCurves,
                                                         per_expert_calibration_scores, optimal_threshold,
                                                         discrimination_class::AbstractString;
-                                                        markershape=Rect, markersize=5)
+                                                        marker=:rect, markersize=5)
     scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter;
-                              markershape=markershape, markersize=markersize, strokewidth=0)
+                              marker=marker, markersize=markersize, strokewidth=0)
     per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey,
                            color=nothing, linewidth=2)
     ax = series_plot!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
@@ -150,7 +150,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                       ylabel="Predicted positive probability", scatter=scatter_theme, per_expert...)
 
     per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:navyblue,
-                           linewidth=2, markershape=:circle, markersize=markersize, markerstrokewidth=0)
+                           linewidth=2, marker=:rect, markersize=markersize, markerstrokewidth=0)
     Makie.series!(ax, calibration_curve; per_expert...)
 
     ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
@@ -191,7 +191,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     ylims!(ax, nclasses, 0)
     tightlimits!(ax)
     plot_bg_color = to_color(ax.backgroundcolor[])
-    crange = (0.0, max_conf)
+    crange = (0.0, 1.0)
     nan_color = to_color(heatmap_theme.nan_color[])
     cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
     heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, nan_color=nan_color, heatmap_theme...)
