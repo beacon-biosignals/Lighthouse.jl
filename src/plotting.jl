@@ -61,18 +61,19 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                       class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt, title="No title",
                       xlabel="x label", ylabel="y label", solid_color=nothing, color=nothing,
                       linewidth=nothing, scatter=NamedTuple())
-    axis_theme = get_theme(subfig, :SeriesPlot, :Axis)
-    ax = Axis(subfig; title=title, titlealign=:left, xlabel=xlabel, ylabel=ylabel, aspect=AxisAspect(1),
-              xticks=0:0.2:1, yticks=0.2:0.2:1, axis_theme...)
+
+    axis_theme = get_theme(subfig, :SeriesPlot, :Axis; title=title, titlealign=:left, xlabel=xlabel,
+                           ylabel=ylabel, aspect=AxisAspect(1),
+                           xticks=0:0.2:1, yticks=0.2:0.2:1)
+
+    ax = Axis(subfig; axis_theme...)
     theme = Dict{Symbol,Any}()
     # Not the most elegant, but this way we can let the theming to the Series theme, or
     # pass it through explicitely
     isnothing(solid_color) || (theme[:solid_color] = solid_color)
     isnothing(color) || (theme[:color] = color)
     isnothing(linewidth) || (theme[:linewidth] = linewidth)
-
     series_theme = get_theme(subfig, :SeriesPlot, :Series; theme..., scatter...)
-
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
     limits!(ax, 0, 1, 0, 1)
     Makie.series!(ax, per_class_pr_curves; labels=class_labels, series_theme...)
@@ -177,11 +178,14 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
 
     text_theme = get_theme(subfig, :ConfusionMatrix, :Text; textsize=annotation_text_size)
     heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=(:black, 0.0))
-    axis_theme = get_theme(subfig, :ConfusionMatrix, :Axis; xticklabelrotation=pi / 4)
+    axis_theme = get_theme(subfig, :ConfusionMatrix, :Axis; xticklabelrotation=pi / 4,
+                           titlealign=:left, title="$(string(normalize_by))-Normalized Confusion",
+                           xlabel="Elected Class", ylabel="Predicted Class",
+                           xticks=(class_indices, class_labels),
+                           yticks=(class_indices, class_labels),
+                           aspect=AxisAspect(1))
 
-    ax = Axis(subfig; titlealign=:left, title="$(string(normalize_by))-Normalized Confusion",
-              xlabel="Elected Class", ylabel="Predicted Class", xticks=(class_indices, class_labels),
-              yticks=(class_indices, class_labels), aspect=AxisAspect(1), axis_theme...)
+    ax = Axis(subfig; axis_theme...)
 
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
     ylims!(ax, nclasses, 0)
@@ -284,7 +288,7 @@ end
 Plots all evaluation metrics Lighthouse has to offer.
 """
 function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
-    fig = Figure(; resolution=resolution)
+    fig = Figure(; resolution=resolution, Axis=(titlesize=17,))
 
     # Confusion
     plot_confusion_matrix!(fig[1, 1], data["confusion_matrix"], data["class_labels"], :Column;
@@ -347,8 +351,9 @@ function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=1
     nclasses = length(classes)
     class_labels = label_str.(1:nclasses)
     Legend(fig[3, legend_pos], elements, class_labels, classes; nbanks=2, tellwidth=false, tellheight=false,
-           labelsize=11, titlegap=5, groupgap=6, labelhalign=:left, labelvalign=:center)
-    colgap!(fig.layout, 3)
+           labelsize=11, titlesize=14, titlegap=5, groupgap=6, labelhalign=:left, labelvalign=:center)
+    colgap!(fig.layout, 2)
+    rowgap!(fig.layout, 4)
     return fig
 end
 
