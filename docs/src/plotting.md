@@ -34,6 +34,11 @@ fig
 
 ## Theming
 
+All plots are globally themeable, by setting there `camelcase(functionname)` to a theme. Usually, there are a few sub categories, for e.g. axis, text and subplots.
+
+!!! warning
+    `convert_arguments` must always return a Tuple.
+
 ```@example 1
 with_theme(
         ConfusionMatrix = (

@@ -186,7 +186,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
     ylims!(ax, nclasses, 0)
     tightlimits!(ax)
-
+    plot_bg_color = to_color(ax.backgroundcolor[])
     crange = (0.0, max_conf)
     nan_color = to_color(heatmap_theme.nan_color[])
     cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
@@ -195,7 +195,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     function label_color(i, j)
         c = confusion[i, j]
         bg_color = if isnan(c) || ismissing(c)
-            nan_color
+            Makie.Colors.alpha(nan_color) <= 0.0 ? plot_bg_color : nan_color
         else
             Makie.interpolated_getindex(cmap, c, crange)
         end
@@ -250,7 +250,6 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         annotations = map(enumerate(per_class_kappas)) do (i, k)
             return (string(round(k; digits=3)), Point2f0(max(0, k), i))
         end
-
         aligns, offsets, text_colors = text_attributes(per_class_kappas, 2, bar_colors, bg_color, text_color)
         barplot!(ax, per_class_kappas; direction=:x, color=bar_colors[2])
         text!(ax, annotations; align=aligns, offset=offsets, color=text_colors, text_theme...)
