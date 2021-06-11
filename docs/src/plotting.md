@@ -83,8 +83,11 @@ Lighthouse.XYVector
 Lighthouse.SeriesCurves
 ```
 ## Theming
-All curves geth themed like this, with the main key (in this case `ReliabilityCalibrationCurves`), being the camel case variant of the function name and allowiing .
 
+All generic series and axis attributes can be themed via `SeriesPlot.Series` / `SeriesPlot.Axis`.
+You can have a look at [the series doc to get an idea about the applicable attributes](http://makie.juliaplots.org/stable/plotting_functions/series.html).
+To style specifics of a subplot inside the curve plot, e.g. the ideal lineplot, one can use the camel case function name (without `plot_`) and pass those attributes there.
+So e.g the `ideal` curve inside the reliability curve can be themed like this:
 ```@example 1
 # The axis is getting created in the seriesplot,
 # to always have these kind of probabilistic series have the same axis
