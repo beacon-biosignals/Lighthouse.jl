@@ -138,7 +138,7 @@ with_theme(SeriesPlot = series_theme) do
         classes
     )
 end
-````
+```
 
 
 # PR curves
@@ -165,7 +165,7 @@ with_theme(SeriesPlot = series_theme) do
         classes
     )
 end
-````
+```
 
 
 # ROC curves
@@ -196,7 +196,7 @@ with_theme(SeriesPlot = series_theme) do
         classes,
         legend=:lt)
 end
-````
+```
 
 # Kappas (per expert agreement)
 
