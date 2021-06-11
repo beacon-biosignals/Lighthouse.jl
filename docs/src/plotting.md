@@ -34,7 +34,7 @@ fig
 
 ## Theming
 
-All plots are globally themeable, by setting there `camelcase(functionname)` to a theme. Usually, there are a few sub categories, for e.g. axis, text and subplots.
+All plots are globally themeable, by setting their `camelcase(functionname)` to a theme. Usually, there are a few sub categories, for e.g. axis, text and subplots.
 
 !!! warning
     Make sure, that you spell names correctly and fully construct the named tuples in the calls. E.g. `(color=:red)` is _not_ a named tuple - it needs to be `(color=:red,)`. Misspelled names and badly constructed named tuples are not easy to error on, since those theming attributes are global, and may be valid for other plots.
