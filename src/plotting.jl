@@ -30,8 +30,8 @@ function get_theme(scene::Scene, key1::Symbol, key2::Symbol; defaults...)
     # Consider Kappas.Axis for key1/2, what we want is, that if there are defaults in Kappas.Axis
     # they should overwrite our generic lighthouse defaults. But anything not specified in Kappas.Axis/defaults,
     # should fall back to scene_theme.Axis
-    return merge(to_value(get(sub_theme, key2, Theme())), Theme(; defaults...),
-                 to_value(get(scene_theme, key2, Theme())))
+    return merge(get(sub_theme, key2, Theme()), Theme(; defaults...),
+                 get(scene_theme, key2, Theme()))
 end
 
 function high_contrast(background_color::Colorant, target_color::Colorant;
