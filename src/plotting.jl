@@ -140,21 +140,22 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                                                         per_expert_calibration_curves::SeriesCurves,
                                                         per_expert_calibration_scores, optimal_threshold,
                                                         discrimination_class::AbstractString;
-                                                        marker=:rect, markersize=5)
+                                                        marker=:rect, markersize=5, linewidth=2)
     scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter;
                               marker=marker, markersize=markersize, strokewidth=0)
     per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey,
-                           color=nothing, linewidth=2)
+                           color=nothing, linewidth=linewidth)
     ax = series_plot!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
                       title="Detection calibration", xlabel="Expert agreement rate",
                       ylabel="Predicted positive probability", scatter=scatter_theme, per_expert...)
 
-    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:navyblue,
-                           linewidth=2, marker=:rect, markersize=markersize, markerstrokewidth=0)
-    Makie.series!(ax, calibration_curve; per_expert...)
+    calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :CalibrationCurve;
+                            solid_color=:navyblue, linewidth=linewidth, marker=:rect,
+                            markersize=markersize, markerstrokewidth=0)
+    Makie.series!(ax, calibration_curve; calibration...)
 
     ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
-                            linestyle=:dash, linewidth=2)
+                            linestyle=:dash, linewidth=linewidth)
     linesegments!(ax, [0, 1], [0, 1]; label="Ideal", ideal_theme...)
     #TODO: expert agreement histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
