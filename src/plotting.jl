@@ -67,13 +67,13 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
                            xticks=0:0.2:1, yticks=0.2:0.2:1)
 
     ax = Axis(subfig; axis_theme...)
-    theme = Dict{Symbol,Any}()
     # Not the most elegant, but this way we can let the theming to the Series theme, or
     # pass it through explicitely
-    isnothing(solid_color) || (theme[:solid_color] = solid_color)
-    isnothing(color) || (theme[:color] = color)
-    isnothing(linewidth) || (theme[:linewidth] = linewidth)
-    series_theme = get_theme(subfig, :SeriesPlot, :Series; theme..., scatter...)
+    series_theme = get_theme(subfig, :SeriesPlot, :Series; scatter...)
+    isnothing(solid_color) || (series_theme[:solid_color] = solid_color)
+    isnothing(color) || (series_theme[:color] = color)
+    isnothing(linewidth) || (series_theme[:linewidth] = linewidth)
+    series_theme = merge(series_theme, Attributes(;scatter...))
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
     limits!(ax, 0, 1, 0, 1)
     Makie.series!(ax, per_class_pr_curves; labels=class_labels, series_theme...)
@@ -135,27 +135,46 @@ function plot_reliability_calibration_curves!(subfig::FigurePosition,
     return ax
 end
 
+function set_from_kw!(theme, key, kw, default)
+    if haskey(kw, key)
+        theme[key] = getproperty(kw, key)
+    elseif !haskey(theme, key)
+        theme[key] = default
+    end
+    return
+end
+
 function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                                                         calibration_curve::SeriesCurves, calibration_score,
                                                         per_expert_calibration_curves::SeriesCurves,
                                                         per_expert_calibration_scores, optimal_threshold,
-                                                        discrimination_class::AbstractString;
-                                                        marker=:rect, markersize=5, linewidth=2)
-    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter;
-                              marker=marker, markersize=markersize, strokewidth=0)
+                                                        discrimination_class::AbstractString; kw...)
+    kw = values(kw)
+    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter; strokewidth=0)
+    # Hayaah, this theme merging is getting out of hand
+    # but we want kw > BinaryDiscriminationCalibrationCurves > Scatter, so we need to somehow set things
+    # after the theme merging above, especially, since we also pass those to series!,
+    # which then again tries to merge the kw args with the theme.
+    set_from_kw!(scatter_theme, :makersize, kw, 5)
+    set_from_kw!(scatter_theme, :marker, kw, :rect)
+
     per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey,
-                           color=nothing, linewidth=linewidth)
+                           color=nothing)
+    set_from_kw!(per_expert, :linewidth, kw, 2)
     ax = series_plot!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
                       title="Detection calibration", xlabel="Expert agreement rate",
                       ylabel="Predicted positive probability", scatter=scatter_theme, per_expert...)
 
     calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :CalibrationCurve;
-                            solid_color=:navyblue, linewidth=linewidth, marker=:rect,
-                            markersize=markersize, markerstrokewidth=0)
+                            solid_color=:navyblue, markerstrokewidth=0)
+    set_from_kw!(calibration, :makersize, kw, 5)
+    set_from_kw!(calibration, :marker, kw, :rect)
+    set_from_kw!(calibration, :linewidth, kw, 2)
     Makie.series!(ax, calibration_curve; calibration...)
 
     ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
-                            linestyle=:dash, linewidth=linewidth)
+                            linestyle=:dash)
+    set_from_kw!(ideal_theme, :linewidth, kw, 2)
     linesegments!(ax, [0, 1], [0, 1]; label="Ideal", ideal_theme...)
     #TODO: expert agreement histogram underneath?? Maybe important...
     # https://scikit-learn.org/stable/modules/calibration.html
@@ -175,8 +194,6 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     end
     confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
     class_indices = 1:nclasses
-    max_conf = maximum(x -> isnan(x) ? 0.0 : x, confusion)
-
     text_theme = get_theme(subfig, :ConfusionMatrix, :Text; textsize=annotation_text_size)
     heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=(:black, 0.0))
     axis_theme = get_theme(subfig, :ConfusionMatrix, :Axis; xticklabelrotation=pi / 4,
@@ -401,6 +418,20 @@ plot_confusion_matrix(args...; kw...) = axisplot(plot_confusion_matrix!, args; k
 """
 function plot_reliability_calibration_curves(args...; kw...)
     return axisplot(plot_reliability_calibration_curves!, args; kw...)
+end
+
+"""
+    plot_binary_discrimination_calibration_curves!(fig::SubFigure, args...; kw...)
+
+    plot_binary_discrimination_calibration_curves!(calibration_curve::SeriesCurves, calibration_score,
+                                                   per_expert_calibration_curves::SeriesCurves,
+                                                   per_expert_calibration_scores, optimal_threshold,
+                                                   discrimination_class::AbstractString;
+                                                   marker=:rect, markersize=5, linewidth=2)
+
+"""
+function plot_binary_discrimination_calibration_curves(args...; kw...)
+    return axisplot(plot_binary_discrimination_calibration_curves!, args; kw...)
 end
 
 """
