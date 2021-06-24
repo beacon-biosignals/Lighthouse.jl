@@ -120,6 +120,24 @@ with_theme(
 end
 ```
 
+# Binary Discrimination Calibration Curves
+
+```@docs
+Lighthouse.plot_binary_discrimination_calibration_curves
+```
+
+```@example 1
+using Lighthouse: plot_binary_discrimination_calibration_curves
+
+Lighthouse.plot_binary_discrimination_calibration_curves(
+    curves[3],
+    stable_rand(5),
+    curves[[1, 2, 4, 5]],
+    nothing, nothing,
+    "",
+)
+```
+
 # PRG curves
 
 ```@docs
