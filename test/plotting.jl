@@ -26,4 +26,36 @@ using Makie.Colors: Gray
         end
         @testplot kappa_text_placement_single
     end
+
+    @testset "binary discriminiation calibration curves" begin
+        rng = StableRNG(22)
+        curves = [(LinRange(0, 1, 10), range(0, stop=i/2, length=10) .+ (randn(rng, 10) .* 0.1)) for i in -1:3]
+        binary_discrimination_calibration_curves_plot = with_theme(
+                BinaryDiscriminationCalibrationCurves = (
+                    Ideal = (
+                        linewidth = 3,
+                        color = (:green, 0.5)
+                    ),
+                    CalibrationCurve = (
+                        solid_color = :green,
+                        markersize = 50, # should be overwritten by user kw
+                        linewidth = 5,
+                    ),
+                    PerExpert = (
+                        solid_color = :red,
+                        linewidth=1
+                    ),
+                )
+            ) do
+            Lighthouse.plot_binary_discrimination_calibration_curves(
+                curves[3],
+                rand(rng, 5),
+                curves[[1, 2, 4, 5]],
+                nothing, nothing,
+                "",
+                markersize=10
+            )
+        end
+        @testplot binary_discrimination_calibration_curves_plot
+    end
 end

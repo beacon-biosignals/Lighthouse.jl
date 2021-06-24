@@ -167,9 +167,11 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
 
     calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :CalibrationCurve;
                             solid_color=:navyblue, markerstrokewidth=0)
-    set_from_kw!(calibration, :makersize, kw, 5)
+
+    set_from_kw!(calibration, :markersize, kw, 5)
     set_from_kw!(calibration, :marker, kw, :rect)
     set_from_kw!(calibration, :linewidth, kw, 2)
+
     Makie.series!(ax, calibration_curve; calibration...)
 
     ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
