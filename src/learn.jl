@@ -552,6 +552,11 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
         end
     end
 
+    # PR curves
+    plot_dict["per_class_pr_curves"] = [(map(t -> t.true_positive_rate, stats),
+                                         map(t -> t.precision, stats))
+                                        for stats in per_class_stats]
+
     # Cohen's kappa
     kappas = _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
     plot_dict["per_class_kappas"] = kappas.per_class
