@@ -109,9 +109,6 @@ end
         # Test plotting
         plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
         @test isa(plot_data["thresholds"], AbstractVector)
-        prg = plot_prg_curves(plot_data["per_class_prg_curves"],
-                              plot_data["per_class_prg_aucs"], plot_data["class_labels"])
-        @testplot prg
 
         pr = plot_pr_curves(plot_data["per_class_pr_curves"], plot_data["class_labels"])
         @testplot pr

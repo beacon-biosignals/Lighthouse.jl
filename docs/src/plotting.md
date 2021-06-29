@@ -138,27 +138,12 @@ Lighthouse.plot_binary_discrimination_calibration_curves(
 )
 ```
 
-# PRG curves
-
-```@docs
-Lighthouse.plot_prg_curves
-```
-
-```@example 1
-using Lighthouse: plot_prg_curves
-plot_prg_curves(
-    curves,
-    stable_rand(5),
-    classes
-)
-```
-
 ## Theming
 
 ```@example 1
 # The plots with only a series don't have a special keyword
 with_theme(SeriesPlot = series_theme) do
-    plot_prg_curves(
+    plot_pr_curves(
         curves,
         stable_rand(5),
         classes
@@ -279,10 +264,8 @@ data["per_class_IRA_kappas"] = stable_rand(5)
 data["multiclass_IRA_kappas"] = stable_rand()
 
 data["per_class_pr_curves"] = curves
-data["per_class_prg_curves"] = curves
 data["per_class_roc_curves"] = curves
 data["per_class_roc_aucs"] = stable_rand(5)
-data["per_class_prg_aucs"] = stable_rand(5)
 
 data["per_class_reliability_calibration_curves"] = curves
 data["per_class_reliability_calibration_scores"] = stable_rand(5)

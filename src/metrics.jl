@@ -89,11 +89,6 @@ function binary_statistics(confusion::AbstractMatrix, class_index::Integer)
             false_negative_rate=false_negative_rate, precision=precision)
 end
 
-function gain(actual_positives, actual_negatives)
-    π = actual_positives / (actual_positives + actual_negatives)
-    return π / (1 - π)
-end
-
 function binary_statistics(confusion::AbstractMatrix)
     return [binary_statistics(confusion, i) for i in 1:size(confusion, 1)]
 end
