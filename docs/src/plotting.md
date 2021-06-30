@@ -138,20 +138,6 @@ Lighthouse.plot_binary_discrimination_calibration_curves(
 )
 ```
 
-## Theming
-
-```@example 1
-# The plots with only a series don't have a special keyword
-with_theme(SeriesPlot = series_theme) do
-    plot_pr_curves(
-        curves,
-        stable_rand(5),
-        classes
-    )
-end
-```
-
-
 # PR curves
 
 ```@docs
