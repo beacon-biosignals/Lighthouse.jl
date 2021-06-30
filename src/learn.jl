@@ -557,21 +557,6 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
                                          map(t -> t.precision, stats))
                                         for stats in per_class_stats]
 
-    # PRG curves
-    plot_dict["per_class_prg_curves"] = [(map(t -> 1 -
-                                                   gain(t.actual_positives,
-                                                        t.actual_negatives) *
-                                                   (t.false_negatives / t.true_positives),
-                                              stats),
-                                          map(t -> 1 -
-                                                   gain(t.actual_positives,
-                                                        t.actual_negatives) *
-                                                   (t.false_positives / t.true_positives),
-                                              stats)) for stats in per_class_stats]
-
-    plot_dict["per_class_prg_aucs"] = [area_under_curve_unit_square(x, y)
-                                       for (x, y) in plot_dict["per_class_pr_curves"]]
-
     # Cohen's kappa
     kappas = _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
     plot_dict["per_class_kappas"] = kappas.per_class

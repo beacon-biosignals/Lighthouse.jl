@@ -91,16 +91,6 @@ function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurv
                         ylabel=ylabel, scatter=scatter, solid_color=solid_color)
 end
 
-function plot_prg_curves!(subfig::FigurePosition, per_class_prg_curves::SeriesCurves,
-                          per_class_prg_aucs::NumberVector, class_labels::AbstractVector{<:String};
-                          legend=:lt, title="PR-Gain curves", xlabel="True positive rate gain",
-                          ylabel="Precision gain")
-    auc_labels = [@sprintf("%s (AUC F1: %.3f)", class, per_class_prg_aucs[i])
-                  for (i, class) in enumerate(class_labels)]
-    return series_plot!(subfig, per_class_prg_curves, auc_labels; legend=legend, title=title, xlabel=xlabel,
-                        ylabel=ylabel)
-end
-
 function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCurves,
                           per_class_roc_aucs::NumberVector, class_labels::AbstractVector{<:String};
                           legend=:rb, title="ROC curves", xlabel="False positive rate",
@@ -330,14 +320,10 @@ function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=1
     plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data; annotation_text_size=textsize)
 
     # Curves
-
     ax = plot_roc_curves!(fig[2, 1], data["per_class_roc_curves"], data["per_class_roc_aucs"],
                           data["class_labels"]; legend=nothing)
 
     plot_pr_curves!(fig[2, 2], data["per_class_pr_curves"], data["class_labels"]; legend=nothing)
-
-    plot_prg_curves!(fig[2, 3], data["per_class_prg_curves"], data["per_class_prg_aucs"],
-                     data["class_labels"]; legend=nothing)
 
     plot_reliability_calibration_curves!(fig[3, 1], data["per_class_reliability_calibration_curves"],
                                          data["per_class_reliability_calibration_scores"],
@@ -450,24 +436,6 @@ end
 
 """
 plot_pr_curves(args...; kw...) = axisplot(plot_pr_curves!, args; kw...)
-
-"""
-    plot_prg_curves!(subfig::FigurePosition, args...; kw...)
-
-    plot_prg_curves(per_class_prg_curves::SeriesCurves,
-                    per_class_prg_aucs::NumberVector,
-                    class_labels::AbstractVector{<: String};
-                    resolution=(800, 600),
-                    legend=:lt,
-                    title="PR-Gain curves",
-                    xlabel="True positive rate gain",
-                    ylabel="Precision gain",
-                    linewidth=2, scatter=NamedTuple(), color=:darktest)
-
-- `scatter::Union{Nothing, NamedTuple}`: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.
-
-"""
-plot_prg_curves(args...; kw...) = axisplot(plot_prg_curves!, args; kw...)
 
 """
     plot_roc_curves!(subfig::FigurePosition, args...; kw...)
