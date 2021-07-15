@@ -1,4 +1,8 @@
-using Makie: FigurePosition
+if !isdefined(Makie, :FigurePosition)
+    const FigurePosition = Makie.GridPosition
+else
+    using Makie: FigurePosition
+end
 
 # We can't rely on inference to always give us fully typed
 # Vector{<: Number} so we add `{T} where T` to the the mix
@@ -17,7 +21,7 @@ function get_theme(scene, key1::Symbol, key2::Symbol; defaults...)
     return get_theme(Makie.get_scene(scene), key1, key2; defaults...)
 end
 
-function get_theme(fig::Makie.FigurePosition, key1::Symbol, key2::Symbol; defaults...)
+function get_theme(fig::FigurePosition, key1::Symbol, key2::Symbol; defaults...)
     return get_theme(fig.fig, key1, key2; defaults...)
 end
 
