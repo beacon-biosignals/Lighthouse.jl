@@ -1,7 +1,9 @@
 if !isdefined(Makie, :FigurePosition)
     const FigurePosition = Makie.GridPosition
+    get_parent(x::Makie.GridPosition) = x.layout.parent
 else
     using Makie: FigurePosition
+    get_parent(x::FigurePosition) = x.fig
 end
 
 # We can't rely on inference to always give us fully typed
@@ -22,7 +24,7 @@ function get_theme(scene, key1::Symbol, key2::Symbol; defaults...)
 end
 
 function get_theme(fig::FigurePosition, key1::Symbol, key2::Symbol; defaults...)
-    return get_theme(fig.fig, key1, key2; defaults...)
+    return get_theme(get_parent(fig), key1, key2; defaults...)
 end
 
 # This function helps us to get the theme from a scene, that we can apply to our plotting functions
