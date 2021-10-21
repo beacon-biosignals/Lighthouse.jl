@@ -46,7 +46,7 @@ function high_contrast(background_color::Colorant, target_color::Colorant;
     target = LCHab(target_color)
     color = distinguishable_colors(1, [RGB(background_color)]; dropseed=true, lchoices=lchoices,
                                    cchoices=[target.c], hchoices=[target.h])
-    return RGBAf0(color[1], Makie.Colors.alpha(target_color))
+    return RGBAf(color[1], Makie.Colors.alpha(target_color))
 end
 
 """
@@ -230,7 +230,7 @@ end
 function text_attributes(values, groups, bar_colors, bg_color, text_color)
     aligns = NTuple{2,Symbol}[]
     offsets = NTuple{2,Int}[]
-    text_colors = RGBAf0[]
+    text_colors = RGBAf[]
     for (i, k) in enumerate(values)
         group = groups isa AbstractVector ? groups[i] : groups
         bar_color = bar_colors[group]
