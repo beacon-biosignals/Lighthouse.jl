@@ -149,115 +149,120 @@ end
     end
 end
 
-@testset "2-class `learn!(::TestModel, ...)`" begin
-    mktempdir() do tmpdir
-        model = TestClassifier(1000000.0, ["class_$i" for i in 1:2])
-        k, n = length(model.classes), 3
-        rng = StableRNG(23)
-        train_batches = [(rand(rng, 4 * k, n), -rand(rng)) for _ in 1:100]
-        test_batches = [((rand(rng, 4 * k, n),), (n * i - n + 1):(n * i)) for i in 1:10]
-        possible_vote_labels = collect(0:k)
-        votes = [rand(rng, possible_vote_labels) for sample in 1:(n * 10), voter in 1:7]
-        votes[:, [1, 2, 3]] .= votes[:, 4] # Voter 1-3 voted identically to voter 4 (force non-zero agreement)
-        logger = LearnLogger(joinpath(tmpdir, "logs"), "test_run")
-        limit = 5
-        let counted = 0
-            upon_loss_decrease = Lighthouse.upon(logger,
-                                                 "test_set_prediction/mean_loss_per_epoch";
-                                                 condition=<, initial=Inf)
-            callback = n -> begin
-                upon_loss_decrease() do _
-                    counted += n
-                    @info counted n
-                end
+function train_binary_model(tmpdir; rng = StableRNG(23))
+    model = TestClassifier(1000000.0, ["class_$i" for i in 1:2])
+    k, n = length(model.classes), 3
+    train_batches = [(rand(rng, 4 * k, n), -rand(rng)) for _ in 1:100]
+    test_batches = [((rand(rng, 4 * k, n),), (n * i - n + 1):(n * i)) for i in 1:10]
+    possible_vote_labels = collect(0:k)
+    votes = [rand(rng, possible_vote_labels) for sample in 1:(n * 10), voter in 1:7]
+    votes[:, [1, 2, 3]] .= votes[:, 4] # Voter 1-3 voted identically to voter 4 (force non-zero agreement)
+    logger = LearnLogger(joinpath(tmpdir, "logs"), "test_run")
+    limit = 5
+    let counted = 0
+        upon_loss_decrease = Lighthouse.upon(logger,
+                                             "test_set_prediction/mean_loss_per_epoch";
+                                             condition=<, initial=Inf)
+        callback = n -> begin
+            upon_loss_decrease() do _
+                counted += n
+                @info counted n
             end
-            elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
-            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
-                              epoch_limit=limit, post_epoch_callback=callback)
-            @test counted == sum(1:limit)
         end
-        # Binary classification logs some additional metrics
-        @test length(logger.logged["test_set_evaluation/spearman_correlation_per_epoch"]) ==
-              limit
-        plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
-        @test haskey(plot_data, "spearman_correlation")
-
-        # No `optimal_threshold_class` during learning...
-        @test !haskey(plot_data, "optimal_threshold")
-        @test !haskey(plot_data, "optimal_threshold_class")
-
-        # And now, `optimal_threshold_class` during learning
         elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
         Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
-                          epoch_limit=limit, optimal_threshold_class=2,
-                          test_set_logger_prefix="validation_set")
-        plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
-        @test haskey(plot_data, "optimal_threshold")
-        @test haskey(plot_data, "optimal_threshold_class")
-        @test plot_data["optimal_threshold_class"] == 2
-
-        # `optimal_threshold_class` param invalid
-        @test_throws ArgumentError Lighthouse.learn!(model, logger, () -> train_batches,
-                                                     () -> test_batches, votes;
-                                                     epoch_limit=limit,
-                                                     optimal_threshold_class=3)
-
-        # Test `evaluate!` for votes, no votes
-        n_examples = 40
-        num_voters = 20
-        predicted_soft = rand(rng, Float32, n_examples, length(model.classes))
-        predicted_soft .= predicted_soft ./ sum(predicted_soft; dims=2)
-        predicted_hard = map(label -> Lighthouse.onecold(model, label),
-                             eachrow(predicted_soft))
-        votes = [rand(rng, possible_vote_labels)
-                 for sample in 1:n_examples, voter in 1:num_voters]
-        votes[:, 3] .= votes[:, 4] # Voter 4 voted identically to voter 3 (force non-zero agreement)
-        elected_hard = map(row -> majority(rng, row, 1:length(model.classes)),
-                           eachrow(votes))
-
-        evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
-                  logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=nothing)
-        plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
-        @test !haskey(plot_data, "per_class_IRA_kappas")
-        @test !haskey(plot_data, "multiclass_IRA_kappas")
-
-        evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
-                  logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes)
-        plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
-        @test haskey(plot_data, "per_class_IRA_kappas")
-        @test haskey(plot_data, "multiclass_IRA_kappas")
-
-        # Test `evaluate` for different optimal_threshold classes
-        evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
-                  logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
-                  optimal_threshold_class=1)
-        plot_data_1 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
-        evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
-                  logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
-                  optimal_threshold_class=2)
-        plot_data_2 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
-
-        # The thresholds should not be identical (since they are *inclusive* when applied:
-        # values greater than _or equal to_ the threshold are given the class value)
-        @test plot_data_1["optimal_threshold"] != plot_data_2["optimal_threshold"]
-
-        # The two threshold options yield different results
-        thresh_from_roc = Lighthouse._get_optimal_threshold_from_ROC(plot_data_2["per_class_roc_curves"];
-                                                                     thresholds=plot_data_2["thresholds"],
-                                                                     class_of_interest_index=plot_data_2["optimal_threshold_class"])
-        thresh_from_calibration = Lighthouse._calculate_optimal_threshold_from_discrimination_calibration(predicted_soft,
-                                                                                                          votes;
-                                                                                                          thresholds=plot_data_2["thresholds"],
-                                                                                                          class_of_interest_index=plot_data_2["optimal_threshold_class"]).threshold
-        @test !isequal(thresh_from_roc, thresh_from_calibration)
-        @test isequal(thresh_from_calibration, plot_data_2["optimal_threshold"])
-
-        # Test that plotting succeeds (no specialization relative to the multi-class tests)
-        plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
-        all_together = evaluation_metrics_plot(plot_data)
-        #savefig(all_together, "/tmp/binary.png")
-        @testplot all_together
+                          epoch_limit=limit, post_epoch_callback=callback)
+        @test counted == sum(1:limit)
     end
+    return model, logger
+end
+
+
+@testset "2-class `learn!(::TestModel, ...)`" begin
+    tmpdir = mktempdir()
+    model, logger = train_binary_model(tmpdir)
+        
+    # Binary classification logs some additional metrics
+    @test length(logger.logged["test_set_evaluation/spearman_correlation_per_epoch"]) ==
+            limit
+    plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
+    @test haskey(plot_data, "spearman_correlation")
+
+    # No `optimal_threshold_class` during learning...
+    @test !haskey(plot_data, "optimal_threshold")
+    @test !haskey(plot_data, "optimal_threshold_class")
+
+    # And now, `optimal_threshold_class` during learning
+    elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
+    Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
+                        epoch_limit=limit, optimal_threshold_class=2,
+                        test_set_logger_prefix="validation_set")
+    plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
+    @test haskey(plot_data, "optimal_threshold")
+    @test haskey(plot_data, "optimal_threshold_class")
+    @test plot_data["optimal_threshold_class"] == 2
+
+    # `optimal_threshold_class` param invalid
+    @test_throws ArgumentError Lighthouse.learn!(model, logger, () -> train_batches,
+                                                    () -> test_batches, votes;
+                                                    epoch_limit=limit,
+                                                    optimal_threshold_class=3)
+
+    # Test `evaluate!` for votes, no votes
+    n_examples = 40
+    num_voters = 20
+    predicted_soft = rand(rng, Float32, n_examples, length(model.classes))
+    predicted_soft .= predicted_soft ./ sum(predicted_soft; dims=2)
+    predicted_hard = map(label -> Lighthouse.onecold(model, label),
+                            eachrow(predicted_soft))
+    votes = [rand(rng, possible_vote_labels)
+                for sample in 1:n_examples, voter in 1:num_voters]
+    votes[:, 3] .= votes[:, 4] # Voter 4 voted identically to voter 3 (force non-zero agreement)
+    elected_hard = map(row -> majority(rng, row, 1:length(model.classes)),
+                        eachrow(votes))
+
+    evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
+                logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=nothing)
+    plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
+    @test !haskey(plot_data, "per_class_IRA_kappas")
+    @test !haskey(plot_data, "multiclass_IRA_kappas")
+
+    evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
+                logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes)
+    plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
+    @test haskey(plot_data, "per_class_IRA_kappas")
+    @test haskey(plot_data, "multiclass_IRA_kappas")
+
+    # Test `evaluate` for different optimal_threshold classes
+    evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
+                logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
+                optimal_threshold_class=1)
+    plot_data_1 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
+    evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
+                logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
+                optimal_threshold_class=2)
+    plot_data_2 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
+
+    # The thresholds should not be identical (since they are *inclusive* when applied:
+    # values greater than _or equal to_ the threshold are given the class value)
+    @test plot_data_1["optimal_threshold"] != plot_data_2["optimal_threshold"]
+
+    # The two threshold options yield different results
+    thresh_from_roc = Lighthouse._get_optimal_threshold_from_ROC(plot_data_2["per_class_roc_curves"];
+                                                                    thresholds=plot_data_2["thresholds"],
+                                                                    class_of_interest_index=plot_data_2["optimal_threshold_class"])
+    thresh_from_calibration = Lighthouse._calculate_optimal_threshold_from_discrimination_calibration(predicted_soft,
+                                                                                                        votes;
+                                                                                                        thresholds=plot_data_2["thresholds"],
+                                                                                                        class_of_interest_index=plot_data_2["optimal_threshold_class"]).threshold
+    @test !isequal(thresh_from_roc, thresh_from_calibration)
+    @test isequal(thresh_from_calibration, plot_data_2["optimal_threshold"])
+
+    # Test that plotting succeeds (no specialization relative to the multi-class tests)
+    plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
+    all_together = evaluation_metrics_plot(plot_data)
+    #savefig(all_together, "/tmp/binary.png")
+    @testplot all_together
 end
 
 @testset "`_calculate_ira_kappas`" begin

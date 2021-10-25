@@ -471,3 +471,62 @@ plot_roc_curves(args...; kw...) = axisplot(plot_roc_curves!, args; kw...)
                 annotation_text_size=20)
 """
 plot_kappas(args...; kw...) = axisplot(plot_kappas!, args; kw...)
+
+
+function extract_common_entries(results, common_keys)
+    common_entries = Dict()
+    error_str = ""
+    for k in common_keys
+        names_by_entry = Dict{Any, Vector{String}}()
+        for r in results
+            v = get!(names_by_entry, r.data[k], String[])
+            push!(v, r.name)
+        end
+        if length(names_by_entry) > 1
+            error_str *= "\nFound inconsistent entries for `$(k)`:\n\n"
+            for (entry, names) in names_by_entry
+                name_str = join(names, ", ")
+                error_str *= "* $(name_str) had entry $(entry)\n"
+            end
+        else
+            common_entries[k] = first(only(names_by_entry)) # extract only key, which is the entry
+        end
+    end
+    if !isempty(error_str)
+        throw(ArgumentError(error_str))
+    end
+    return common_entries
+end
+
+"""
+    binary_comparison_metrics_plot(results; resolution=(1000, 1000), textsize=12, primary_class=1)
+
+Generates a comparison plot between all the models in `results`. Assumes each element
+of results represents the metrics for a particular model and has a `name` and a `data` field,
+where `data` is the result of [`evaluation_metrics_plot`](@ref).
+"""
+function binary_comparison_metrics_plot(results; resolution=(1000, 1000), textsize=12, primary_class=1)
+    common_entries = extract_common_entries(results, ("class_labels", "optimal_threshold_class"))
+    n_classes = length(common_entries["class_labels"])
+    optimal_threshold_class = common_entries["optimal_threshold_class"]
+    if n_classes != 2
+        throw(ArgumentError("Only binary classifiers supported. Found $(n_classes) classes."))
+    end
+    class = common_entries["class_labels"][optimal_threshold_class]
+
+    fig = Figure(; resolution=resolution, Axis=(titlesize=17,))
+
+    # Curves
+    curves = []
+    aucs = []
+    labels = String[]
+    for (name, data) in results
+        push!(labels, string(name, " ", class))
+        push!(curves, data["per_class_roc_curves"][optimal_threshold_class])
+        push!(aucs, data["per_class_roc_aucs"][optimal_threshold_class])
+        data["class_labels"]; legend=nothing)
+    end
+    ax = plot_roc_curves!(fig[1, 1], curves, aucs, labels)
+
+    return fig
+end
