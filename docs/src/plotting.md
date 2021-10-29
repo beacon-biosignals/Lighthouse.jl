@@ -274,3 +274,32 @@ data["optimal_threshold"] = nothing
 
 evaluation_metrics_plot(data)
 ```
+
+# Binary comparison metrics plot
+
+```@docs
+Lighthouse.binary_comparison_metrics_plot
+```
+
+```@example 1
+using Lighthouse: binary_comparison_metrics_plot
+curves = [(LinRange(0, 1, 10), range(0, stop=i/2, length=10) .+ (stable_randn(10) .* 0.1)) for i in -1:3]
+
+data2 = Dict{String, Any}()
+data2["confusion_matrix"] = stable_rand(5, 5)
+data2["class_labels"] = classes
+
+data2["per_class_kappas"] = stable_rand(5)
+data2["multiclass_kappa"] = stable_rand()
+data2["per_class_IRA_kappas"] = stable_rand(5)
+data2["multiclass_IRA_kappas"] = stable_rand()
+
+data2["per_class_pr_curves"] = curves
+data2["per_class_roc_curves"] = curves
+data2["per_class_roc_aucs"] = stable_rand(5)
+
+data2["per_class_reliability_calibration_curves"] = curves
+data2["per_class_reliability_calibration_scores"] = stable_rand(5)
+
+binary_comparison_metrics_plot([(; name="Model1", data), (; name="Model2", data=data2)])
+```
