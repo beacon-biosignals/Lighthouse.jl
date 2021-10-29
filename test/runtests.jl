@@ -25,9 +25,9 @@ macro testplot(fig_name)
     end
 end
 
-include("comparisons.jl")
 include("plotting.jl")
 include("metrics.jl")
 include("learn.jl")
+include("comparisons.jl")
 include("utilities.jl")
 include("logger.jl")
