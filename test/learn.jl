@@ -149,7 +149,7 @@ end
     end
 end
 
-function train_binary_model(tmpdir; rng = StableRNG(23))
+function train_binary_model(tmpdir; rng = StableRNG(23), verbose=false)
     model = TestClassifier(1000000.0, ["class_$i" for i in 1:2])
     k, n = length(model.classes), 3
     train_batches = [(rand(rng, 4 * k, n), -rand(rng)) for _ in 1:100]
@@ -166,7 +166,7 @@ function train_binary_model(tmpdir; rng = StableRNG(23))
         callback = n -> begin
             upon_loss_decrease() do _
                 counted += n
-                @info counted n
+                verbose && @info counted n
             end
         end
         elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
@@ -174,14 +174,15 @@ function train_binary_model(tmpdir; rng = StableRNG(23))
                           epoch_limit=limit, post_epoch_callback=callback)
         @test counted == sum(1:limit)
     end
-    return model, logger
+    return (; model, logger, limit, votes, train_batches, test_batches, possible_vote_labels)
 end
 
 
 @testset "2-class `learn!(::TestModel, ...)`" begin
     tmpdir = mktempdir()
-    model, logger = train_binary_model(tmpdir)
-        
+    model, logger, limit, votes, train_batches,
+        test_batches, possible_vote_labels = train_binary_model(tmpdir; verbose=true)
+    rng = StableRNG(34)
     # Binary classification logs some additional metrics
     @test length(logger.logged["test_set_evaluation/spearman_correlation_per_epoch"]) ==
             limit

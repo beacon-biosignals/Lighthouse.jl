@@ -499,13 +499,13 @@ function extract_common_entries(results, common_keys)
 end
 
 """
-    binary_comparison_metrics_plot(results; resolution=(1000, 1000), textsize=12, primary_class=1)
+    binary_comparison_metrics_plot(results; resolution=(1000, 1000), textsize=12)
 
 Generates a comparison plot between all the models in `results`. Assumes each element
 of results represents the metrics for a particular model and has a `name` and a `data` field,
 where `data` is the result of [`evaluation_metrics_plot`](@ref).
 """
-function binary_comparison_metrics_plot(results; resolution=(1000, 1000), textsize=12, primary_class=1)
+function binary_comparison_metrics_plot(results; resolution=(1000, 1000), textsize=12)
     common_entries = extract_common_entries(results, ("class_labels", "optimal_threshold_class"))
     n_classes = length(common_entries["class_labels"])
     optimal_threshold_class = common_entries["optimal_threshold_class"]
@@ -524,9 +524,8 @@ function binary_comparison_metrics_plot(results; resolution=(1000, 1000), textsi
         push!(labels, string(name, " ", class))
         push!(curves, data["per_class_roc_curves"][optimal_threshold_class])
         push!(aucs, data["per_class_roc_aucs"][optimal_threshold_class])
-        data["class_labels"]; legend=nothing)
     end
-    ax = plot_roc_curves!(fig[1, 1], curves, aucs, labels)
+    ax = plot_roc_curves!(fig[1, 1], identity.(curves), identity.(aucs), labels)
 
     return fig
 end
