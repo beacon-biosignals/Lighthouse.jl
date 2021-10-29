@@ -301,5 +301,7 @@ data2["per_class_roc_aucs"] = stable_rand(5)
 data2["per_class_reliability_calibration_curves"] = curves
 data2["per_class_reliability_calibration_scores"] = stable_rand(5)
 
+data["optimal_threshold_class"] = data2["optimal_threshold_class"] = 1
+
 binary_comparison_metrics_plot([(; name="Model1", data), (; name="Model2", data=data2)])
 ```
