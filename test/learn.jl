@@ -101,10 +101,16 @@ end
         # Test startified eval
         strata = [Set("group $(j % Int(ceil(sqrt(j))))" for j in 1:(i - 1))
                   for i in 1:size(votes, 1)]
-        plot, plot_data = evaluation_metrics_plot(predicted_hard, predicted_soft,
-                                                  elected_hard, model.classes, 0.0:0.01:1.0;
-                                                  votes=votes, strata=strata)
+        plot_data = evaluation_metrics(predicted_hard, predicted_soft,
+                                        elected_hard, model.classes, 0.0:0.01:1.0;
+                                        votes=votes, strata=strata)
         @test haskey(plot_data, "stratified_kappas")
+        plot = evaluation_metrics_plot(plot_data)
+
+        plot2, plot_data2 = @test_deprecated evaluation_metrics_plot(predicted_hard, predicted_soft,
+                                                                     elected_hard, model.classes, 0.0:0.01:1.0;
+                                                                     votes=votes, strata=strata)
+        @test isequal(plot_data, plot_data2) # check these are the same
 
         # Test plotting
         plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
