@@ -38,6 +38,7 @@ accuracy
 binary_statistics
 cohens_kappa
 calibration_curve
+Lighthouse.evaluation_metrics
 ```
 
 ## Utilities
