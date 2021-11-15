@@ -211,11 +211,12 @@ function evaluate!(predicted_hard_labels::AbstractVector,
     _validate_threshold_class(optimal_threshold_class, classes)
 
     log_resource_info!(logger, logger_prefix; suffix=logger_suffix) do
-        plot, plot_data = evaluation_metrics_plot(predicted_hard_labels,
-                                                  predicted_soft_labels,
-                                                  elected_hard_labels, classes, thresholds;
-                                                  votes=votes,
-                                                  optimal_threshold_class=optimal_threshold_class)
+        plot_data = evaluation_metrics(predicted_hard_labels,
+                                       predicted_soft_labels,
+                                       elected_hard_labels, classes, thresholds;
+                                       votes=votes,
+                                       optimal_threshold_class=optimal_threshold_class)
+        plot = evaluation_metrics_plot(plot_data)
         log_plot!(logger, logger_prefix * "/metrics" * logger_suffix, plot, plot_data)
         if haskey(plot_data, "spearman_correlation")
             log_value!(logger, logger_prefix * "/spearman_correlation" * logger_suffix,
@@ -450,16 +451,16 @@ function _validate_threshold_class(optimal_threshold_class, classes)
 end
 
 """
-    evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
-                            predicted_soft_labels::AbstractMatrix,
-                            elected_hard_labels::AbstractVector,
-                            classes,
-                            thresholds=0.0:0.01:1.0;
-                            votes::Union{Nothing,AbstractMatrix}=nothing,
-                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+    evaluation_metrics(predicted_hard_labels::AbstractVector,
+                       predicted_soft_labels::AbstractMatrix,
+                       elected_hard_labels::AbstractVector,
+                       classes,
+                       thresholds=0.0:0.01:1.0;
+                       votes::Union{Nothing,AbstractMatrix}=nothing,
+                       strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                       optimal_threshold_class::Union{Nothing,Integer}=nothing)
 
-Return a plot and dictionary containing a battery of classifier performance
+Returns dictionary containing a battery of classifier performance
 metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
 agaist `elected_hard_labels`.
 
@@ -491,13 +492,15 @@ Where...
   `predicted_hard_labels`. If present, the input `predicted_hard_labels` will be
   ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
   This is only a valid parameter when `length(classes) == 2`
+
+See also [`evaluation_metrics_plot`](@ref).
 """
-function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
-                                 predicted_soft_labels::AbstractMatrix,
-                                 elected_hard_labels::AbstractVector, classes, thresholds;
-                                 votes::Union{Nothing,AbstractMatrix}=nothing,
-                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                 optimal_threshold_class::Union{Nothing,Integer}=nothing)
+function evaluation_metrics(predicted_hard_labels::AbstractVector,
+                            predicted_soft_labels::AbstractMatrix,
+                            elected_hard_labels::AbstractVector, classes, thresholds;
+                            votes::Union{Nothing,AbstractMatrix}=nothing,
+                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
@@ -596,6 +599,55 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
         plot_dict["spearman_correlation"] = _calculate_spearman_correlation(predicted_soft_labels,
                                                                             votes, classes)
     end
+    return plot_dict
+end
+
+"""
+    evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                            predicted_soft_labels::AbstractMatrix,
+                            elected_hard_labels::AbstractVector,
+                            classes,
+                            thresholds=0.0:0.01:1.0;
+                            votes::Union{Nothing,AbstractMatrix}=nothing,
+                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+
+Return a plot and dictionary containing a battery of classifier performance
+metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
+agaist `elected_hard_labels`.
+
+See [`evaluation_metrics`](@ref) for a description of the arguments.
+
+This method is deprecated in favor of calling `evaluation_metrics`
+and [`evaluation_metrics_plot`](@ref) separately.
+"""
+function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                                 predicted_soft_labels::AbstractMatrix,
+                                 elected_hard_labels::AbstractVector, classes, thresholds;
+                                 votes::Union{Nothing,AbstractMatrix}=nothing,
+                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                 optimal_threshold_class::Union{Nothing,Integer}=nothing)
+
+    Base.depwarn("""
+    ```
+    evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                            predicted_soft_labels::AbstractMatrix,
+                            elected_hard_labels::AbstractVector, classes, thresholds;
+                            votes::Union{Nothing,AbstractMatrix}=nothing,
+                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+    ```
+    has been deprecated in favor of
+    ```
+    plot_dict = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
+                                   elected_hard_labels, classes, thresholds;
+                                   votes, strata, optimal_threshold_class)
+    (evaluation_metrics_plot(plot_dict), plot_dict)
+    ```
+    """, :evaluation_metrics_plot)
+    plot_dict = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
+                                   elected_hard_labels, classes, thresholds;
+                                   votes, strata, optimal_threshold_class)
     return evaluation_metrics_plot(plot_dict), plot_dict
 end
 
