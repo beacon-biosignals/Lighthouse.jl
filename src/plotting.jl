@@ -204,7 +204,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     ax = Axis(subfig; axis_theme...)
 
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
-    ylims!(ax, nclasses, 0)
+    ylims!(ax, nclasses + 0.5, 0.5)
     tightlimits!(ax)
     plot_bg_color = to_color(ax.backgroundcolor[])
     crange = (0.0, 1.0)
