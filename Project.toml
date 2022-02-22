@@ -15,8 +15,8 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 
 [compat]
-CairoMakie = "0.5.2, 0.6, 0.7"
-Makie = "0.15.2, 0.16"
+CairoMakie = "0.7"
+Makie = "0.16.5"
 StatsBase = "0.33"
 TensorBoardLogger = "0.1"
 julia = "1.5"

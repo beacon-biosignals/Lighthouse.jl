@@ -292,7 +292,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         entries = map(c -> PolyElement(; color=c, strokewidth=0, strokecolor=:white), cmap)
         legend = Legend(subfig[1, 1, Bottom()], entries, labels; tellwidth=false, tellheight=true,
                         labelsize=12, padding=(0, 0, 0, 0), framevisible=false, patchsize=(10, 10),
-                        patchlabelgap=6)
+                        patchlabelgap=6, labeljustification=:left)
         legend.margin = (0, 0, 0, 60)
     end
     return ax
