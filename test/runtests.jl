@@ -28,5 +28,6 @@ end
 include("plotting.jl")
 include("metrics.jl")
 include("learn.jl")
+include("comparisons.jl")
 include("utilities.jl")
 include("logger.jl")
