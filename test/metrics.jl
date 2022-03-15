@@ -1,11 +1,9 @@
 @testset "agreement/confusion matrix tests" begin
     hard_label_pairs = zip([1, 1, 3, 1, 3, 1, 2, 1], [2, 2, 1, 1, 3, 2, 3, 1])
     c = confusion_matrix(3, hard_label_pairs)
-    @test c == [
-        2 3 0
-        0 0 1
-        1 0 1
-    ]
+    @test c == [2 3 0
+                0 0 1
+                1 0 1]
     kappa, percent_agreement = cohens_kappa(3, hard_label_pairs)
     chance = Lighthouse._probability_of_chance_agreement(3, hard_label_pairs)
     @test chance == (5 * 3 + 1 * 3 + 2 * 2) / 8^2
@@ -91,6 +89,8 @@
             @test Lighthouse._cohens_kappa(p, p / 2) > 0
         end
     end
+
+    @test_throws ArgumentError cohens_kappa(3, [(4, 5), (8, 2)])
 end
 
 @testset "`calibration_curve`" begin
