@@ -105,7 +105,7 @@ Return `(κ, p₀)` where `κ` is Cohen's kappa and `p₀` percent agreement giv
 their equivalents in [`confusion_matrix`](@ref)).
 """
 function cohens_kappa(class_count, hard_label_pairs)
-    @assert all(issubset(pair, 1:class_count) for pair in hard_label_pairs)
+    all(issubset(pair, 1:class_count) for pair in hard_label_pairs) || throw(ArgumentError("Unexpected class in `hard_label_pairs`."))
     p₀ = accuracy(confusion_matrix(class_count, hard_label_pairs))
     pₑ = _probability_of_chance_agreement(class_count, hard_label_pairs)
     return _cohens_kappa(p₀, pₑ), p₀
