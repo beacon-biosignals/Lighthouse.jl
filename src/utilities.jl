@@ -24,7 +24,7 @@ function area_under_curve(x, y)
     sorted_y = view(y, perms)
     # calculate the trapazoidal method https://en.wikipedia.org/wiki/Trapezoidal_rule
     for i in 2:length(x)
-        auc += middle(sorted_y[i], sorted_y[i-1]) * (sorted_x[i] - sorted_x[i-1])
+        auc += middle(sorted_y[i], sorted_y[i - 1]) * (sorted_x[i] - sorted_x[i - 1])
     end
     return auc
 end
