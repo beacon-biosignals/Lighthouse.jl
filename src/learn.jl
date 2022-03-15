@@ -298,7 +298,7 @@ mean that the voter did not rate that sample.
 """
 function _calculate_ira_kappas(votes, classes)
     # no votes given or only one expert:
-    (isnothing(votes) || size(votes, 2) < 2) && return (per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)
+    (isnothing(votes) || size(votes, 2) < 2) && return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)
 
     all_hard_label_pairs = Array{Int}(undef, 0, 2)
     num_voters = size(votes, 2)
@@ -308,7 +308,7 @@ function _calculate_ira_kappas(votes, classes)
         end
     end
     hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
-    length(hard_label_pairs) > 0 || return nothing  # No common observations voted on
+    length(hard_label_pairs) > 0 || return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)  # No common observations voted on
     length(hard_label_pairs) < 10 &&
         @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
 
@@ -320,7 +320,7 @@ function _calculate_ira_kappas(votes, classes)
                                             hard_label_pairs)
         return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
     end
-    return (per_class_IRA_kappas=per_class_ira, multiclass_IRA_kappas=multiclass_ira)
+    return (; per_class_IRA_kappas = per_class_ira, multiclass_IRA_kappas = multiclass_ira)
 end
 
 function _spearman_corr(predicted_soft_labels, elected_soft_labels)
@@ -550,7 +550,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
         # Recalculate `predicted_hard_labels` with this new threshold
         other_class = optimal_threshold_class == 1 ? 2 : 1
         for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = row[optimal_threshold_class] .>= threshold ?
+            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
                                        optimal_threshold_class : other_class
         end
     else
@@ -566,7 +566,6 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                          map(t -> t.precision, stats))
                                         for stats in per_class_stats]
 
-    
     # Stratified kappas
     if isnothing(strata)
         stratified_kappas = missing
