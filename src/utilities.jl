@@ -13,17 +13,18 @@ end
     area_under_curve(x, y)
 
 Calculates the area under the curve specified by the `x` vector and `y` vector
-using the trapezoidal rule.
+using the trapezoidal rule. If inputs are empty, return `missing`.
 """
 function area_under_curve(x, y)
     length(x) == length(y) || throw(ArgumentError("Length of inputs must match."))
+    length(x) == 0 && return missing
     auc = zero(middle(one(eltype(x)), one(eltype(y))))
     perms = sortperm(x)
     sorted_x = view(x, perms)
     sorted_y = view(y, perms)
     # calculate the trapazoidal method https://en.wikipedia.org/wiki/Trapezoidal_rule
     for i in 2:length(x)
-        auc += middle(sorted_y[i], sorted_y[i - 1]) * (sorted_x[i] - sorted_x[i - 1])
+        auc += middle(sorted_y[i], sorted_y[i-1]) * (sorted_x[i] - sorted_x[i-1])
     end
     return auc
 end
@@ -32,7 +33,7 @@ end
     area_under_curve_unit_square(x, y)
 
 Calculates the area under the curve specified by the `x` vector and `y` vector
-for a unit square, using the trapezoidal rule.
+for a unit square, using the trapezoidal rule. If inputs are empty, return `missing`.
 """
 function area_under_curve_unit_square(x, y)
     length(x) == length(y) || throw(ArgumentError("Length of inputs must match."))
