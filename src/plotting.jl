@@ -46,7 +46,7 @@ function high_contrast(background_color::Colorant, target_color::Colorant;
     target = LCHab(target_color)
     color = distinguishable_colors(1, [RGB(background_color)]; dropseed=true, lchoices=lchoices,
                                    cchoices=[target.c], hchoices=[target.h])
-    return RGBAf0(color[1], Makie.Colors.alpha(target_color))
+    return RGBAf(color[1], Makie.Colors.alpha(target_color))
 end
 
 """
@@ -204,7 +204,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     ax = Axis(subfig; axis_theme...)
 
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
-    ylims!(ax, nclasses, 0)
+    ylims!(ax, nclasses + 0.5, 0.5)
     tightlimits!(ax)
     plot_bg_color = to_color(ax.backgroundcolor[])
     crange = (0.0, 1.0)
@@ -221,7 +221,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
         end
         return high_contrast(bg_color, text_color)
     end
-    annos = vec([(string(confusion[i, j]), Point2f0(j, i)) for i in class_indices, j in class_indices])
+    annos = vec([(string(confusion[i, j]), Point2f(j, i)) for i in class_indices, j in class_indices])
     colors = vec([label_color(i, j) for i in class_indices, j in class_indices])
     text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size, text_theme...)
     return ax
@@ -230,7 +230,7 @@ end
 function text_attributes(values, groups, bar_colors, bg_color, text_color)
     aligns = NTuple{2,Symbol}[]
     offsets = NTuple{2,Int}[]
-    text_colors = RGBAf0[]
+    text_colors = RGBAf[]
     for (i, k) in enumerate(values)
         group = groups isa AbstractVector ? groups[i] : groups
         bar_color = bar_colors[group]
@@ -268,7 +268,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
     if isnothing(per_class_IRA_kappas)
         ax.title = "Algorithm-expert agreement"
         annotations = map(enumerate(per_class_kappas)) do (i, k)
-            return (string(round(k; digits=3)), Point2f0(max(0, k), i))
+            return (string(round(k; digits=3)), Point2f(max(0, k), i))
         end
         aligns, offsets, text_colors = text_attributes(per_class_kappas, 2, bar_colors, bg_color, text_color)
         barplot!(ax, per_class_kappas; direction=:x, color=bar_colors[2])
@@ -283,7 +283,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         # This is a bit hacky, but for now the easiest way to figure out the exact, dodged positions
         rectangles = bars.plots[][1][]
         dodged_y = last.(minimum.(rectangles)) .+ (last.(widths.(rectangles)) ./ 2)
-        textpos = Point2f0.(max.(0, values), dodged_y)
+        textpos = Point2f.(max.(0, values), dodged_y)
 
         labels = string.(round.(values; digits=3))
         aligns, offsets, text_colors = text_attributes(values, groups, bar_colors, bg_color, text_color)
@@ -292,7 +292,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         entries = map(c -> PolyElement(; color=c, strokewidth=0, strokecolor=:white), cmap)
         legend = Legend(subfig[1, 1, Bottom()], entries, labels; tellwidth=false, tellheight=true,
                         labelsize=12, padding=(0, 0, 0, 0), framevisible=false, patchsize=(10, 10),
-                        patchlabelgap=6)
+                        patchlabelgap=6, labeljustification=:left)
         legend.margin = (0, 0, 0, 60)
     end
     return ax
