@@ -98,6 +98,10 @@ end
         @test length(logger.logged["wheeeeeee/time_in_seconds_for_all_time"]) == 1
         @test length(logger.logged["wheeeeeee/metrics_for_all_time"]) == 1
 
+        # Round-trip `onehot` for codecov
+        onehot_hard = map(h -> vec(Lighthouse.onehot(model, h)), predicted_hard)
+        @test map(h -> findfirst(h), onehot_hard) == predicted_hard
+
         # Test startified eval
         strata = [Set("group $(j % Int(ceil(sqrt(j))))" for j in 1:(i - 1))
                   for i in 1:size(votes, 1)]
