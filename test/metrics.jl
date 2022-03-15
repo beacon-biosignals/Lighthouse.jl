@@ -1,11 +1,9 @@
 @testset "agreement/confusion matrix tests" begin
     hard_label_pairs = zip([1, 1, 3, 1, 3, 1, 2, 1], [2, 2, 1, 1, 3, 2, 3, 1])
     c = confusion_matrix(3, hard_label_pairs)
-    @test c == [
-        2 3 0
-        0 0 1
-        1 0 1
-    ]
+    @test c == [2 3 0
+                0 0 1
+                1 0 1]
     kappa, percent_agreement = cohens_kappa(3, hard_label_pairs)
     chance = Lighthouse._probability_of_chance_agreement(3, hard_label_pairs)
     @test chance == (5 * 3 + 1 * 3 + 2 * 2) / 8^2
@@ -92,7 +90,7 @@
         end
     end
 
-    @test_throws ArgumentError cohens_kappa(3, [(4,5),(8,2)])
+    @test_throws ArgumentError cohens_kappa(3, [(4, 5), (8, 2)])
 end
 
 @testset "`calibration_curve`" begin
@@ -101,7 +99,7 @@ end
     bitmask = rand(rng, Bool, 1_000_000)
     bin_count = 12
     bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
-        bin_count=bin_count)
+                                                                    bin_count=bin_count)
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
