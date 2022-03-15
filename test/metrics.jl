@@ -49,22 +49,22 @@
     c = confusion_matrix(k, hard_label_pairs)
     kappa, percent_agreement = cohens_kappa(3, hard_label_pairs)
     @test percent_agreement == accuracy(c)
-    @test isapprox(percent_agreement, 0.5; atol=0.02)
-    @test isapprox(kappa, 0.0; atol=0.02)
+    @test isapprox(percent_agreement, 0.5; atol = 0.02)
+    @test isapprox(kappa, 0.0; atol = 0.02)
     stats = binary_statistics(c, 1)
-    @test isapprox(stats.predicted_positives, 500_000; atol=2000)
-    @test isapprox(stats.predicted_negatives, 500_000; atol=2000)
-    @test isapprox(stats.actual_positives, 500_000; atol=2000)
-    @test isapprox(stats.actual_negatives, 500_000; atol=2000)
-    @test isapprox(stats.true_positives, 250_000; atol=2000)
-    @test isapprox(stats.true_negatives, 250_000; atol=2000)
-    @test isapprox(stats.false_positives, 250_000; atol=2000)
-    @test isapprox(stats.false_negatives, 250_000; atol=2000)
-    @test isapprox(stats.true_positive_rate, 0.5; atol=0.02)
-    @test isapprox(stats.true_negative_rate, 0.5; atol=0.02)
-    @test isapprox(stats.false_positive_rate, 0.5; atol=0.02)
-    @test isapprox(stats.false_negative_rate, 0.5; atol=0.02)
-    @test isapprox(stats.precision, 0.5; atol=0.02)
+    @test isapprox(stats.predicted_positives, 500_000; atol = 2000)
+    @test isapprox(stats.predicted_negatives, 500_000; atol = 2000)
+    @test isapprox(stats.actual_positives, 500_000; atol = 2000)
+    @test isapprox(stats.actual_negatives, 500_000; atol = 2000)
+    @test isapprox(stats.true_positives, 250_000; atol = 2000)
+    @test isapprox(stats.true_negatives, 250_000; atol = 2000)
+    @test isapprox(stats.false_positives, 250_000; atol = 2000)
+    @test isapprox(stats.false_negatives, 250_000; atol = 2000)
+    @test isapprox(stats.true_positive_rate, 0.5; atol = 0.02)
+    @test isapprox(stats.true_negative_rate, 0.5; atol = 0.02)
+    @test isapprox(stats.false_positive_rate, 0.5; atol = 0.02)
+    @test isapprox(stats.false_negative_rate, 0.5; atol = 0.02)
+    @test isapprox(stats.precision, 0.5; atol = 0.02)
 
     @test confusion_matrix(10, ()) == zeros(10, 10)
     @test all(ismissing, cohens_kappa(10, ()))
@@ -91,6 +91,8 @@
             @test Lighthouse._cohens_kappa(p, p / 2) > 0
         end
     end
+
+    @test_throws ArgumentError cohens_kappa(3, [(4,5),(8,2)])
 end
 
 @testset "`calibration_curve`" begin
@@ -99,42 +101,42 @@ end
     bitmask = rand(rng, Bool, 1_000_000)
     bin_count = 12
     bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
-                                                                    bin_count=bin_count)
+        bin_count = bin_count)
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
     @test all(!iszero, totals)
-    @test all(isapprox.(fractions, 0.5; atol=0.02))
-    @test all(isapprox.(totals, length(probs) / bin_count; atol=1000))
+    @test all(isapprox.(fractions, 0.5; atol = 0.02))
+    @test all(isapprox.(totals, length(probs) / bin_count; atol = 1000))
     @test sum(totals) == length(probs)
-    @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
-    @test isapprox(mean_squared_error, inv(bin_count); atol=0.002)
+    @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol = 1)
+    @test isapprox(mean_squared_error, inv(bin_count); atol = 0.002)
 
     rng = StableRNG(42)
-    probs = range(0.0, 1.0; length=1_000_000)
+    probs = range(0.0, 1.0; length = 1_000_000)
     bitmask = [rand(rng) <= p for p in probs]
     bin_count = 10
     bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
-                                                                    bin_count=bin_count)
-    ideal = range(mean(first(bins)), mean(last(bins)); length=bin_count)
+        bin_count = bin_count)
+    ideal = range(mean(first(bins)), mean(last(bins)); length = bin_count)
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
     @test all(!iszero, totals)
-    @test all(isapprox.(fractions, ideal; atol=0.01))
+    @test all(isapprox.(fractions, ideal; atol = 0.01))
     @test all(totals .== 1_000_000 / bin_count)
-    @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
-    @test isapprox(mean_squared_error, 0.0; atol=0.00001)
+    @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol = 1)
+    @test isapprox(mean_squared_error, 0.0; atol = 0.00001)
 
     bitmask = reverse(bitmask)
     bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
-                                                                    bin_count=bin_count)
+        bin_count = bin_count)
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
     @test all(!iszero, totals)
-    @test all(isapprox.(fractions, reverse(ideal); atol=0.01))
+    @test all(isapprox.(fractions, reverse(ideal); atol = 0.01))
     @test all(totals .== 1_000_000 / bin_count)
-    @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
-    @test isapprox(mean_squared_error, 1 / 3; atol=0.01)
+    @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol = 1)
+    @test isapprox(mean_squared_error, 1 / 3; atol = 0.01)
 end
