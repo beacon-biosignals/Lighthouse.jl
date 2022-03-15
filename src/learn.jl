@@ -499,11 +499,11 @@ Where...
 See also [`evaluation_metrics_plot`](@ref).
 """
 function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                            predicted_soft_labels::AbstractMatrix,
-                            elected_hard_labels::AbstractVector, classes, thresholds;
-                            votes::Union{Nothing,AbstractMatrix}=nothing,
-                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                            optimal_threshold_class::Union{Missing,Integer}=missing)
+                                predicted_soft_labels::AbstractMatrix,
+                                elected_hard_labels::AbstractVector, classes, thresholds;
+                                votes::Union{Nothing,AbstractMatrix} = nothing,
+                                strata::Union{Nothing,AbstractVector{Set{T}} where T} = nothing,
+                                optimal_threshold_class::Union{Missing,Integer} = missing)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
@@ -514,10 +514,9 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
 
     # ROC curves
     per_class_roc_curves = [(map(t -> t.false_positive_rate, stats),
-                                          map(t -> t.true_positive_rate, stats))
-                                         for stats in per_class_stats]
-    per_class_roc_aucs = [area_under_curve(x, y)
-                                       for (x, y) in per_class_roc_curves]
+                            map(t -> t.true_positive_rate, stats))
+                                                for stats in per_class_stats]
+    per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
 
     # Optionally calculate optimal threshold
     if !ismissing(optimal_threshold_class)
@@ -533,7 +532,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
             discrimination_calibration_score = c.mse
 
             expert_cal = _calculate_voter_discrimination_calibration(votes;
-                                                                     class_of_interest_index=optimal_threshold_class)
+                class_of_interest_index = optimal_threshold_class)
             per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
             per_expert_discrimination_calibration_scores = expert_cal.mse
         else
@@ -543,8 +542,8 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
             per_expert_discrimination_calibration_scores = missing
             # ...based on ROC curve otherwise
             optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves;
-                                                        thresholds=thresholds,
-                                                        class_of_interest_index=optimal_threshold_class)
+                thresholds = thresholds,
+                class_of_interest_index = optimal_threshold_class)
         end
 
         # Recalculate `predicted_hard_labels` with this new threshold
@@ -563,17 +562,17 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
 
     # PR curves
     per_class_pr_curves = [(map(t -> t.true_positive_rate, stats),
-                                         map(t -> t.precision, stats))
-                                        for stats in per_class_stats]
+        map(t -> t.precision, stats))
+                           for stats in per_class_stats]
 
     # Stratified kappas
     if isnothing(strata)
         stratified_kappas = missing
     else
         stratified_kappas = _calculate_stratified_ea_kappas(predicted_hard_labels,
-                                                                         elected_hard_labels,
-                                                                         class_count,
-                                                                         strata)
+            elected_hard_labels,
+            class_count,
+            strata)
     end
 
     # Reliability calibration curves
@@ -582,16 +581,16 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
         return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
     end
     per_class_reliability_calibration_curves = map(x -> (mean.(x.bins),
-                                                                      x.fractions),
-                                                                per_class_reliability_calibration)
+            x.fractions),
+        per_class_reliability_calibration)
     per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
-                                                                per_class_reliability_calibration)
+        per_class_reliability_calibration)
 
 
     # Log Spearman correlation, iff this is a binary classification problem
     if length(classes) == 2 && !isnothing(votes)
         spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels,
-                                                                            votes, classes)
+            votes, classes)
     else
         spearman_correlation = missing
     end
@@ -601,15 +600,16 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
         spearman_correlation, per_class_reliability_calibration_curves, per_class_reliability_calibration_scores,
         _calculate_ira_kappas(votes, classes)...,
         _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)...,
-        stratified_kappas,per_class_pr_curves,
+        stratified_kappas, per_class_pr_curves,
         per_class_roc_curves, per_class_roc_aucs,
         discrimination_calibration_curve,
         discrimination_calibration_score,
         per_expert_discrimination_calibration_curves,
         per_expert_discrimination_calibration_scores,
         optimal_threshold,
-        thresholds,
-        )
+        optimal_threshold_class,
+        thresholds
+    )
 end
 
 function evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)

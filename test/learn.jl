@@ -266,10 +266,12 @@ end
     end
 end
 
-@testset "`_calculate_ira_kappas`" begin
+@testset "Invalid `_calculate_ira_kappas`" begin
     classes = ["roy", "gee", "biv"]
-    @test isnothing(Lighthouse._calculate_ira_kappas([1; 1; 1; 1], classes))  # Only one voter...
-    @test isnothing(Lighthouse._calculate_ira_kappas([1 0; 1 0; 0 1], classes))  # No observations in common...
+    @test isequal(Lighthouse._calculate_ira_kappas([1; 1; 1; 1], classes),
+        (; per_class_IRA_kappas = missing, multiclass_IRA_kappas = missing))  # Only one voter...
+    @test isequal(Lighthouse._calculate_ira_kappas([1 0; 1 0; 0 1], classes),
+        (; per_class_IRA_kappas = missing, multiclass_IRA_kappas = missing))  # No observations in common...
 end
 
 @testset "Calculate `_spearman_corr`" begin
