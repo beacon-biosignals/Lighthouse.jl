@@ -6,6 +6,7 @@ using Lighthouse: plot_reliability_calibration_curves, plot_pr_curves,
                   evaluation_metrics_plot, evaluation_metrics
 using Base.Threads
 using CairoMakie
+using Legolas, Tables
 
 # Needs to be set for figures
 # returning true for showable("image/png", obj)
@@ -23,6 +24,21 @@ macro testplot(fig_name)
         @test fig isa Makie.FigureLike
         save($(path), fig)
     end
+end
+
+function test_roundtrip_evaluation(row_dict::Dict{String,Any})
+    row = Lighthouse.EvaluationRow(row_dict)
+    rt_row = roundtrip_row(row)
+    @test isequal(rt_row, row)
+    @test Lighthouse._evaluation_row_dict(rt_row) == row_dict
+    return true
+end
+
+function roundtrip_row(row::Lighthouse.EvaluationRow)
+    p = mktempdir() * "rt_test.arrow"
+    tbl = [row]
+    Legolas.write(p, tbl, Lighthouse.EVALUATION_ROW_SCHEMA)
+    return Lighthouse.EvaluationRow(only(Tables.rows(Legolas.read(p))))
 end
 
 include("plotting.jl")

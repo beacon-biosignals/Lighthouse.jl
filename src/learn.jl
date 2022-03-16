@@ -620,10 +620,6 @@ function evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
     return _evaluation_row_dict(row)
 end
 
-function _evaluation_row_dict(row::EvaluationRow)
-    return Dict(string(k) => v for (k, v) in pairs(NamedTuple(row)) if !ismissing(v))
-end
-
 """
     evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
                             predicted_soft_labels::AbstractMatrix,

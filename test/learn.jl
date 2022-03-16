@@ -22,16 +22,6 @@ function Lighthouse.loss_and_prediction(c::TestClassifier, dummy_input_batch)
     return c.dummy_loss, dummy_soft_label_batch
 end
 
-function test_roundtrip_results(results_dict)
-    row = evaluation_row(results_dict)
-    p = mktempdir() * "rt_test.arrow"
-    #todo write this to tempdir
-    rt_row = nothing # read this from tempdir
-    @test rt_row == row
-    @test _evaluation_row_dict(rt_row) == results_dict
-    return true
-end
-
 @testset "Multi-class learn!(::TestModel, ...)" begin
     mktempdir() do tmpdir
         model = TestClassifier(1000000.0, ["class_$i" for i in 1:5])
@@ -122,7 +112,7 @@ end
         @test haskey(plot_data, "stratified_kappas")
         plot = evaluation_metrics_plot(plot_data)
 
-        @test test_roundtrip_results(plot_data)
+        @test test_roundtrip_evaluation(plot_data)
 
         plot2, plot_data2 = @test_deprecated evaluation_metrics_plot(predicted_hard,
                                                                      predicted_soft,

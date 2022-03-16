@@ -1,22 +1,16 @@
-vec_to_mat(mat::AbstractMatrix) = mat
+function vec_to_mat(mat::AbstractMatrix)
+    @info "here"
+    return mat
+end
 function vec_to_mat(vec::AbstractVector)
+    @info "ok..."
     n = isqrt(length(vec))
     return reshape(vec, n, n)
 end
-vec_to_mat(::Missing) = missing
+vec_to_mat(x::Missing) = (@info "why"; @info typeof(x); return missing)
 
-"""
-    evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
-
-Convert `Dict` of  [`evaluation_metrics`](@ref) results (e.g. from Lighthouse <v0.14.0)
-into an [`EvaluationRow`](@ref).
-"""
-evaluation_row(row::EvaluationRow) = row
-function evaluation_row(evaluation_row_dict::Dict)
-    row = (; Dict(Symbol(k) => v for (k, v) in pairs(evaluation_row_dict))...)
-    return EvaluationRow(row)
-end
-
+# Redefinition is workaround for https://github.com/beacon-biosignals/Legolas.jl/issues/9
+const EVALUATION_ROW_SCHEMA = Legolas.Schema("lighthouse.evaluation@1")
 const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                    class_labels::Union{Missing,Vector{String}},
                                    confusion_matrix::Union{Missing,Matrix{Int64}} = vec_to_mat(confusion_matrix),
@@ -59,3 +53,27 @@ const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                                                                 Float64,
                                                                                 Float64}}},
                                    thresholds::Union{Missing,Vector{Float64}})
+
+"""
+    EvaluationRow(evaluation_row_dict::Dict{String, Any}) -> EvaluationRow
+
+Convert `Dict` of  [`evaluation_metrics`](@ref) results (e.g. from Lighthouse <v0.14.0)
+into an [`EvaluationRow`](@ref).
+"""
+function EvaluationRow(evaluation_row_dict::Dict{String,Any})
+    @info "this"
+    row = (; Dict(Symbol(k) => v for (k, v) in pairs(evaluation_row_dict))...)
+    return EvaluationRow(row)
+end
+
+
+"""
+    _evaluation_row_dict(row::EvaluationRow) -> Dict{String,Any}
+
+Convert [`EvaluationRow`](@ref) into `::Dict{String, Any}` results, as are
+output by `[`evaluation_metrics`](@ref)` (and predated use of `EvaluationRow` in
+Lighthouse <v0.14.0.
+"""
+function _evaluation_row_dict(row::EvaluationRow)
+    return Dict(string(k) => v for (k, v) in pairs(NamedTuple(row)) if !ismissing(v))
+end
