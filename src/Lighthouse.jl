@@ -7,6 +7,7 @@ using TensorBoardLogger
 using Makie
 using Printf
 using Legolas
+using Arrow
 
 include("plotting.jl")
 
@@ -20,9 +21,9 @@ include("classifier.jl")
 export AbstractClassifier
 
 include("row.jl")
+# TODO: export EvaluationRow ?
 
 include("learn.jl")
 export LearnLogger, learn!, upon, evaluate!, predict!
-
 
 end # module

@@ -1,19 +1,19 @@
-function vec_to_mat(mat::AbstractMatrix)
-    @info "here"
-    return mat
-end
+# Arrow can't handle matrices---so when we write/read matrices, we have to pack and unpack them o_O
+# https://github.com/apache/arrow-julia/issues/125
+vec_to_mat(mat::AbstractMatrix) = mat
+
 function vec_to_mat(vec::AbstractVector)
-    @info "ok..."
     n = isqrt(length(vec))
     return reshape(vec, n, n)
 end
-vec_to_mat(x::Missing) = (@info "why"; @info typeof(x); return missing)
+
+vec_to_mat(x::Missing) = return missing
 
 # Redefinition is workaround for https://github.com/beacon-biosignals/Legolas.jl/issues/9
 const EVALUATION_ROW_SCHEMA = Legolas.Schema("lighthouse.evaluation@1")
 const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                    class_labels::Union{Missing,Vector{String}},
-                                   confusion_matrix::Union{Missing,Matrix{Int64}} = vec_to_mat(confusion_matrix),
+                                   confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix), #TODO: file issue to make Matrix{Int64} in future
                                    discrimination_calibration_curve::Union{Missing,
                                                                            Tuple{Vector{Float64},
                                                                                  Vector{Union{Missing,
@@ -60,12 +60,11 @@ const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
 Convert `Dict` of  [`evaluation_metrics`](@ref) results (e.g. from Lighthouse <v0.14.0)
 into an [`EvaluationRow`](@ref).
 """
-function EvaluationRow(evaluation_row_dict::Dict{String,Any})
-    @info "this"
-    row = (; Dict(Symbol(k) => v for (k, v) in pairs(evaluation_row_dict))...)
+function Legolas.Row{S}(evaluation_row_dict::Dict) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
+                                                                            1}}
+    row = (; (Symbol(k) => v for (k, v) in pairs(evaluation_row_dict))...)
     return EvaluationRow(row)
 end
-
 
 """
     _evaluation_row_dict(row::EvaluationRow) -> Dict{String,Any}
