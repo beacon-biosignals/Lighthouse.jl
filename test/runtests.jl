@@ -26,11 +26,29 @@ macro testplot(fig_name)
     end
 end
 
-function test_roundtrip_evaluation(row_dict::Dict{String,S}) where S
+function test_roundtrip_evaluation(row_dict::Dict{String,S}) where {S}
     row = Lighthouse.EvaluationRow(row_dict)
     rt_row = roundtrip_row(row)
-    @test isequal(rt_row, row)
-    @test Lighthouse._evaluation_row_dict(rt_row) == row_dict
+
+    # Make sure row roundtrips correctly
+    @test issetequal(keys(row), keys(rt_row))
+    for (k, v) in pairs(row)
+        if ismissing(v)
+            @test ismissing(rt_row[k])
+        else
+            @test issetequal(v, rt_row[k])
+        end
+    end
+
+    # Make sure originating dictionary roundtrips correctly
+    rt_dict = Lighthouse._evaluation_row_dict(rt_row)
+    for (k, v) in pairs(row_dict)
+        if ismissing(v)
+            @test ismissing(rt_dict[k])
+        else
+            @test issetequal(v, rt_dict[k])
+        end
+    end
     return true
 end
 

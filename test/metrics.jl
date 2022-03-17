@@ -65,8 +65,8 @@
     @test isapprox(stats.precision, 0.5; atol=0.02)
 
     @test confusion_matrix(10, ()) == zeros(10, 10)
-    @test all(ismissing, cohens_kappa(10, ()))
-    @test ismissing(accuracy(zeros(10, 10)))
+    @test all(isnan, cohens_kappa(10, ()))
+    @test isnan(accuracy(zeros(10, 10)))
     stats = binary_statistics(zeros(10, 10), 1)
     @test stats.predicted_positives == 0
     @test stats.predicted_negatives == 0
@@ -80,7 +80,7 @@
     @test stats.true_negative_rate == 1
     @test stats.false_positive_rate == 0
     @test stats.false_negative_rate == 0
-    @test ismissing(stats.precision)
+    @test isnan(stats.precision)
 
     for p in 0:0.1:1
         @test Lighthouse._cohens_kappa(p, p) == 0
@@ -103,6 +103,7 @@ end
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
+    @test all(!isnan, fractions)
     @test all(!iszero, totals)
     @test all(isapprox.(fractions, 0.5; atol=0.02))
     @test all(isapprox.(totals, length(probs) / bin_count; atol=1000))
@@ -120,6 +121,7 @@ end
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
+    @test all(!isnan, fractions)
     @test all(!iszero, totals)
     @test all(isapprox.(fractions, ideal; atol=0.01))
     @test all(totals .== 1_000_000 / bin_count)
@@ -132,9 +134,21 @@ end
     @test bin_count == length(bins)
     @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
     @test all(!ismissing, fractions)
+    @test all(!isnan, fractions)
     @test all(!iszero, totals)
     @test all(isapprox.(fractions, reverse(ideal); atol=0.01))
     @test all(totals .== 1_000_000 / bin_count)
     @test isapprox(ceil(mean(fractions) * length(bitmask)), count(bitmask); atol=1)
     @test isapprox(mean_squared_error, 1 / 3; atol=0.01)
+
+    # Handle garbage input---ensure non-existant results are NaN
+    probs = fill(-1, 40)
+    bitmask = zeros(Bool, 40)
+    bins, fractions, totals, mean_squared_error = calibration_curve(probs, bitmask;
+                                                                    bin_count)
+    @test bin_count == length(bins)
+    @test first(first(bins)) == 0.0 && last(last(bins)) == 1.0
+    @test all(isnan, fractions)
+    @test all(iszero, totals)
+    @test isnan(mean_squared_error)
 end

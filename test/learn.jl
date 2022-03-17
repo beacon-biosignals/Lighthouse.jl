@@ -107,8 +107,7 @@ end
         strata = [Set("group $(j % Int(ceil(sqrt(j))))" for j in 1:(i - 1))
                   for i in 1:size(votes, 1)]
         plot_data = evaluation_metrics(predicted_hard, predicted_soft, elected_hard,
-                                       model.classes, 0.0:0.01:1.0; votes=votes,
-                                       strata=strata)
+                                       model.classes, 0.0:0.01:1.0; votes, strata)
         @test haskey(plot_data, "stratified_kappas")
         plot = evaluation_metrics_plot(plot_data)
 
@@ -122,12 +121,14 @@ end
                                                                      votes=votes,
                                                                      strata=strata)
         @test isequal(plot_data, plot_data2) # check these are the same
-        @test test_roundtrip_results(plot_data2)
+        @test test_roundtrip_evaluation(plot_data2)
 
         # Test plotting
         plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
         @test isa(plot_data["thresholds"], AbstractVector)
 
+        @test isa(last(plot_data["per_class_pr_curves"]),
+                  Tuple{Vector{Float64},Vector{Float64}})
         pr = plot_pr_curves(plot_data["per_class_pr_curves"], plot_data["class_labels"])
         @testplot pr
 
@@ -202,7 +203,7 @@ end
               limit
         plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
         @test haskey(plot_data, "spearman_correlation")
-        @test test_roundtrip_results(plot_data)
+        @test test_roundtrip_evaluation(plot_data)
 
         # No `optimal_threshold_class` during learning...
         @test !haskey(plot_data, "optimal_threshold")
@@ -217,7 +218,7 @@ end
         @test haskey(plot_data, "optimal_threshold")
         @test haskey(plot_data, "optimal_threshold_class")
         @test plot_data["optimal_threshold_class"] == 2
-        @test test_roundtrip_results(plot_data)
+        @test test_roundtrip_evaluation(plot_data)
 
         # `optimal_threshold_class` param invalid
         @test_throws ArgumentError Lighthouse.learn!(model, logger, () -> train_batches,
@@ -243,14 +244,14 @@ end
         plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         @test !haskey(plot_data, "per_class_IRA_kappas")
         @test !haskey(plot_data, "multiclass_IRA_kappas")
-        @test test_roundtrip_results(plot_data)
+        @test test_roundtrip_evaluation(plot_data)
 
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes)
         plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         @test haskey(plot_data, "per_class_IRA_kappas")
         @test haskey(plot_data, "multiclass_IRA_kappas")
-        @test test_roundtrip_results(plot_data)
+        @test test_roundtrip_evaluation(plot_data)
 
         # Test `evaluate` for different optimal_threshold classes
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
@@ -261,7 +262,7 @@ end
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
                   optimal_threshold_class=2)
         plot_data_2 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
-        @test test_roundtrip_results(plot_data_2)
+        @test test_roundtrip_evaluation(plot_data_2)
 
         # The thresholds should not be identical (since they are *inclusive* when applied:
         # values greater than _or equal to_ the threshold are given the class value)

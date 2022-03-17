@@ -238,7 +238,8 @@ function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_lab
               group => (per_class=k.per_class_kappas, multiclass=k.multiclass_kappa,
                         n=sum(index)))
     end
-    return sort(kappas; by=p -> last(p).multiclass)
+    kappas = sort(kappas; by=p -> last(p).multiclass)
+    return [k = v for (k, v) in kappas]
 end
 
 """
@@ -369,7 +370,6 @@ Where...
 function _calculate_spearman_correlation(predicted_soft_labels, votes, classes)
     length(classes) > 2 && throw(ArgumentError("Only valid for 2-class problems"))
     if !all(x -> x ≈ 1, sum(predicted_soft_labels; dims=2))
-        @info predicted_soft_labels
         throw(ArgumentError("Input probabiliities fail softmax assumption"))
     end
 
