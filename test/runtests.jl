@@ -26,7 +26,7 @@ macro testplot(fig_name)
     end
 end
 
-function test_roundtrip_evaluation(row_dict::Dict{String,Any})
+function test_roundtrip_evaluation(row_dict::Dict{String,S}) where S
     row = Lighthouse.EvaluationRow(row_dict)
     rt_row = roundtrip_row(row)
     @test isequal(rt_row, row)
