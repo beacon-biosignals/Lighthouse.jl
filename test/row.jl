@@ -37,7 +37,7 @@ end
     predicted_hard_labels = map(argmax, eachrow(predicted_soft_labels))
 
     # ...single labeler
-    elected_hard_one_labeller = predicted_hard[[1:50..., 1:50...]]  # Force 50% TP overall
+    elected_hard_one_labeller = predicted_hard_labels[[1:50..., 1:50...]]  # Force 50% TP overall
     votes = missing #todo: should maybe be "nothing" for serialization roundtrip, but this is what our previous default was...
 
     table, rt_inputs = test_roundtrip_observation_table(; predicted_soft_labels,
