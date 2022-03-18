@@ -34,7 +34,7 @@ end
     num_observations = 100
     classes = ["A", "B", "C", "D"]
     predicted_soft_labels = rand(StableRNG(22), Float32, num_observations, length(classes))
-    predicted_hard_labels = map(argmax, eachrow(predicted_soft))
+    predicted_hard_labels = map(argmax, eachrow(predicted_soft_labels))
 
     # ...single labeler
     elected_hard_one_labeller = predicted_hard[[1:50..., 1:50...]]  # Force 50% TP overall
