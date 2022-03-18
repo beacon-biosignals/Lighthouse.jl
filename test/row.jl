@@ -6,17 +6,15 @@
     @test_throws DimensionMismatch Lighthouse.vec_to_mat(collect(1:6)) # Invalid dimensions
 end
 
-@testset "`EvaluationRow`" begin
-    # Basic roundtrip
+@testset "`EvaluationRow` basics" begin
+    # Most EvaluationRow testing happens via the `test_evaluation_metrics_roundtrip`
+    # in test/learn.jl
+
+    # Roundtrip from dict
     dict = Dict("class_labels" => ["foo", "bar"], "multiclass_kappa" => 3)
     test_evaluation_metrics_roundtrip(dict)
 
-    # Don't lose extra columns (basic Legolas functionality)
-    extra_dict = Dict("class_labels" => ["foo", "bar"], "multiclass_kappa" => 3,
-                      "rabbit" => 2432)
-    test_evaluation_metrics_roundtrip(extra_dict)
-
-    # Handle fun cases
+    # Handle fun case
     mat_dict = Dict("confusion_matrix" => [3 5 6; 6 7 8; 9 10 11])
     test_evaluation_metrics_roundtrip(mat_dict)
 end
