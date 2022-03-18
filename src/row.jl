@@ -138,7 +138,7 @@ function _evaluation_row_dict(row::EvaluationRow)
 end
 
 #####
-##### `LabeledInputRow`
+##### `ObservationRow`
 #####
 
 # Redefinition is workaround for https://github.com/beacon-biosignals/Legolas.jl/issues/9
