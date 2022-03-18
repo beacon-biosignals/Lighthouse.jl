@@ -9,14 +9,14 @@ end
 @testset "`EvaluationRow`" begin
     # Basic roundtrip
     dict = Dict("class_labels" => ["foo", "bar"], "multiclass_kappa" => 3)
-    @test test_roundtrip_evaluation(dict)
+    test_evaluation_metrics_roundtrip(dict)
 
     # Don't lose extra columns (basic Legolas functionality)
     extra_dict = Dict("class_labels" => ["foo", "bar"], "multiclass_kappa" => 3,
                       "rabbit" => 2432)
-    @test test_roundtrip_evaluation(extra_dict)
+    test_evaluation_metrics_roundtrip(extra_dict)
 
     # Handle fun cases
     mat_dict = Dict("confusion_matrix" => [3 5 6; 6 7 8; 9 10 11])
-    @test test_roundtrip_evaluation(mat_dict)
+    test_evaluation_metrics_roundtrip(mat_dict)
 end

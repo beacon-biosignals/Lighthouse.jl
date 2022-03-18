@@ -13,7 +13,7 @@ vec_to_mat(x::Missing) = return missing
 const EVALUATION_ROW_SCHEMA = Legolas.Schema("lighthouse.evaluation@1")
 const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                    class_labels::Union{Missing,Vector{String}},
-                                   confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix), #TODO: file issue to make Matrix{Int64} in future
+                                   confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
                                    discrimination_calibration_curve::Union{Missing,
                                                                            Tuple{Vector{Float64},
                                                                                  Vector{Float64}}},
@@ -22,6 +22,7 @@ const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                    multiclass_kappa::Union{Missing,Float64},
                                    optimal_threshold::Union{Missing,Float64},
                                    optimal_threshold_class::Union{Missing,Int64},
+                                   per_class_IRA_kappas::Union{Missing,Vector{Float64}},
                                    per_class_kappas::Union{Missing,Vector{Float64}},
                                    stratified_kappas::Union{Missing,
                                                             Vector{NamedTuple{(:per_class,
