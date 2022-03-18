@@ -75,7 +75,7 @@ end
 
 Convert [`EvaluationRow`](@ref) into `::Dict{String, Any}` results, as are
 output by `[`evaluation_metrics`](@ref)` (and predated use of `EvaluationRow` in
-Lighthouse <v0.14.0.
+Lighthouse <v0.14.0).
 """
 function _evaluation_row_dict(row::EvaluationRow)
     return Dict(string(k) => v for (k, v) in pairs(NamedTuple(row)) if !ismissing(v))
