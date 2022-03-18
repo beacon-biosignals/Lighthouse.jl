@@ -8,6 +8,7 @@ using Makie
 using Printf
 using Legolas
 using Arrow
+using DataFrames
 
 include("plotting.jl")
 

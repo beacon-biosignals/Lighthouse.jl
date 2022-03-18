@@ -454,6 +454,7 @@ function _validate_threshold_class(optimal_threshold_class, classes)
 end
 
 """
+    evaluation_metrics_row(tbl_of_observations, classes, thresholds; strata, optimal_threshold_class) #TODO match api
     evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                            predicted_soft_labels::AbstractMatrix,
                            elected_hard_labels::AbstractVector,
@@ -498,6 +499,15 @@ Where...
 
 See also [`evaluation_metrics_plot`](@ref).
 """
+function evaluation_metrics_row(observation_table, classes, thresholds; strata,
+                                optimal_threshold_class)
+    inputs = _obervation_table_to_inputs(observation_table)
+    return evaluation_metrics_row(inputs.predicted_hard_labels,
+                                  inputs.predicted_soft_labels, inputs.elected_hard_labels,
+                                  classes, thresholds; inputs.votes, strata,
+                                  optimal_threshold_class)
+end
+
 function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 predicted_soft_labels::AbstractMatrix,
                                 elected_hard_labels::AbstractVector, classes, thresholds;
