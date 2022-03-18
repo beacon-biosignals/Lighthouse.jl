@@ -211,8 +211,7 @@ function evaluate!(predicted_hard_labels::AbstractVector,
     _validate_threshold_class(optimal_threshold_class, classes)
 
     log_resource_info!(logger, logger_prefix; suffix=logger_suffix) do
-        plot_data = evaluation_metrics(predicted_hard_labels,
-                                       predicted_soft_labels,
+        plot_data = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
                                        elected_hard_labels, classes, thresholds;
                                        votes=votes,
                                        optimal_threshold_class=optimal_threshold_class)
@@ -226,8 +225,6 @@ function evaluate!(predicted_hard_labels::AbstractVector,
     return nothing
 end
 
-
-
 function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_labels,
                                          class_count, strata)
     groups = reduce(∪, strata)
@@ -238,17 +235,19 @@ function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_lab
         elected = elected_hard_labels[index]
         k = _calculate_ea_kappas(predicted, elected, class_count)
         push!(kappas,
-              group => (per_class=k.per_class, multiclass=k.multiclass, n=sum(index)))
+              group => (per_class=k.per_class_kappas, multiclass=k.multiclass_kappa,
+                        n=sum(index)))
     end
-    return sort(kappas; by=p -> last(p).multiclass)
+    kappas = sort(kappas; by=p -> last(p).multiclass)
+    return [k = v for (k, v) in kappas]
 end
 
 """
     _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, classes)
 
-Return `NamedTuple` with keys `:per_class`, `:multiclass` containing the Cohen's
+Return `NamedTuple` with keys `:per_class_kappas`, `:multiclass_kappa` containing the Cohen's
 Kappa per-class and over all classes, respectively. The value of output key
-`:per_class` is an `Array` such that item `i` is the Cohen's kappa calculated
+`:per_class_kappas` is an `Array` such that item `i` is the Cohen's kappa calculated
 for class `i`.
 
 Where...
@@ -272,15 +271,15 @@ function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_
         elected = ((label == class_index) + 1 for label in elected_hard_labels)
         return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, zip(predicted, elected)))
     end
-    return (per_class=per_class, multiclass=multiclass)
+    return (per_class_kappas=per_class, multiclass_kappa=multiclass)
 end
 
 """
     _calculate_ira_kappas(votes, classes)
 
-Return `NamedTuple` with keys `:per_class`, `:multiclass` containing the Cohen's
+Return `NamedTuple` with keys `:per_class_IRA_kappas`, `:multiclass_IRA_kappas` containing the Cohen's
 Kappa for inter-rater agreement (IRA) per-class and over all classes, respectively.
-The value of output key `:per_class` is an `Array` such that item `i` is the
+The value of output key `:per_class_IRA_kappas` is an `Array` such that item `i` is the
 IRA kappa calculated for class `i`.
 
 Where...
@@ -292,12 +291,14 @@ Where...
 
 - `classes` all possible classes voted on.
 
-Returns `nothing` if `votes` has only a single voter (i.e., a single column) or if
+Returns `(per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)` if `votes` has only a single voter (i.e., a single column) or if
 no two voters rated the same sample. Note that vote entries of `0` are taken to
 mean that the voter did not rate that sample.
 """
 function _calculate_ira_kappas(votes, classes)
-    (isnothing(votes) || size(votes, 2) < 2) && return nothing  # no votes given or only one expert
+    # no votes given or only one expert:
+    (isnothing(votes) || size(votes, 2) < 2) &&
+        return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)
 
     all_hard_label_pairs = Array{Int}(undef, 0, 2)
     num_voters = size(votes, 2)
@@ -307,7 +308,8 @@ function _calculate_ira_kappas(votes, classes)
         end
     end
     hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
-    length(hard_label_pairs) > 0 || return nothing  # No common observations voted on
+    length(hard_label_pairs) > 0 ||
+        return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)  # No common observations voted on
     length(hard_label_pairs) < 10 &&
         @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
 
@@ -319,7 +321,7 @@ function _calculate_ira_kappas(votes, classes)
                                             hard_label_pairs)
         return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
     end
-    return (per_class=per_class_ira, multiclass=multiclass_ira)
+    return (; per_class_IRA_kappas=per_class_ira, multiclass_IRA_kappas=multiclass_ira)
 end
 
 function _spearman_corr(predicted_soft_labels, elected_soft_labels)
@@ -368,7 +370,6 @@ Where...
 function _calculate_spearman_correlation(predicted_soft_labels, votes, classes)
     length(classes) > 2 && throw(ArgumentError("Only valid for 2-class problems"))
     if !all(x -> x ≈ 1, sum(predicted_soft_labels; dims=2))
-        @info predicted_soft_labels
         throw(ArgumentError("Input probabiliities fail softmax assumption"))
     end
 
@@ -429,7 +430,7 @@ function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
     opt_point = nothing
     threshold_idx = 1
     for point in zip(per_class_roc_curves[class_of_interest_index][1],
-            per_class_roc_curves[class_of_interest_index][2])
+                     per_class_roc_curves[class_of_interest_index][2])
         d = dist((0, 1), point)
         if d < min
             min = d
@@ -442,7 +443,9 @@ function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
 end
 
 function _validate_threshold_class(optimal_threshold_class, classes)
-    isnothing(optimal_threshold_class) && return nothing
+    if ismissing(optimal_threshold_class) || isnothing(optimal_threshold_class)
+        return nothing
+    end
     length(classes) == 2 ||
         throw(ArgumentError("Only valid for binary classification problems"))
     optimal_threshold_class in Set([1, 2]) ||
@@ -451,16 +454,16 @@ function _validate_threshold_class(optimal_threshold_class, classes)
 end
 
 """
-    evaluation_metrics(predicted_hard_labels::AbstractVector,
-                       predicted_soft_labels::AbstractMatrix,
-                       elected_hard_labels::AbstractVector,
-                       classes,
-                       thresholds=0.0:0.01:1.0;
-                       votes::Union{Nothing,AbstractMatrix}=nothing,
-                       strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                       optimal_threshold_class::Union{Nothing,Integer}=nothing)
+    evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                           predicted_soft_labels::AbstractMatrix,
+                           elected_hard_labels::AbstractVector,
+                           classes,
+                           thresholds=0.0:0.01:1.0;
+                           votes::Union{Nothing,AbstractMatrix}=nothing,
+                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                           optimal_threshold_class::Union{Nothing,Integer}=nothing)
 
-Returns dictionary containing a battery of classifier performance
+Returns `EvaluationRow` containing a battery of classifier performance
 metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
 agaist `elected_hard_labels`.
 
@@ -495,12 +498,12 @@ Where...
 
 See also [`evaluation_metrics_plot`](@ref).
 """
-function evaluation_metrics(predicted_hard_labels::AbstractVector,
-                            predicted_soft_labels::AbstractMatrix,
-                            elected_hard_labels::AbstractVector, classes, thresholds;
-                            votes::Union{Nothing,AbstractMatrix}=nothing,
-                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                                predicted_soft_labels::AbstractMatrix,
+                                elected_hard_labels::AbstractVector, classes, thresholds;
+                                votes::Union{Nothing,AbstractMatrix}=nothing,
+                                strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Integer}=missing)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
@@ -508,22 +511,15 @@ function evaluation_metrics(predicted_hard_labels::AbstractVector,
     class_labels = string.(class_vector)
     per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
                                                      elected_hard_labels, thresholds)
-    plot_dict = Dict()
-    plot_dict["class_labels"] = class_labels
-    plot_dict["thresholds"] = thresholds
 
     # ROC curves
-    plot_dict["per_class_roc_curves"] = [(map(t -> t.false_positive_rate, stats),
-                                          map(t -> t.true_positive_rate, stats))
-                                         for stats in per_class_stats]
-    plot_dict["per_class_roc_aucs"] = [area_under_curve(x, y)
-                                       for (x, y) in plot_dict["per_class_roc_curves"]]
+    per_class_roc_curves = [(map(t -> t.false_positive_rate, stats),
+                             map(t -> t.true_positive_rate, stats))
+                            for stats in per_class_stats]
+    per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
 
     # Optionally calculate optimal threshold
-    if !isnothing(optimal_threshold_class)
-        plot_dict["optimal_threshold_class"] = optimal_threshold_class
-        threshold = nothing
-
+    if !ismissing(optimal_threshold_class)
         # If votes exist, calculate the threshold based on comparing against
         # vote probabilities. Otherwise, use the ROC curve.
         if !isnothing(votes)
@@ -531,75 +527,97 @@ function evaluation_metrics(predicted_hard_labels::AbstractVector,
                                                                              votes;
                                                                              thresholds=thresholds,
                                                                              class_of_interest_index=optimal_threshold_class)
-            threshold = c.threshold
-            plot_dict["discrimination_calibration_curve"] = c.plot_curve_data
-            plot_dict["discrimination_calibration_score"] = c.mse
+            optimal_threshold = c.threshold
+            discrimination_calibration_curve = c.plot_curve_data
+            discrimination_calibration_score = c.mse
 
             expert_cal = _calculate_voter_discrimination_calibration(votes;
                                                                      class_of_interest_index=optimal_threshold_class)
-            plot_dict["per_expert_discrimination_calibration_curves"] = expert_cal.plot_curve_data
-            plot_dict["per_expert_discrimination_calibration_scores"] = expert_cal.mse
+            per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
+            per_expert_discrimination_calibration_scores = expert_cal.mse
         else
+            discrimination_calibration_curve = missing
+            discrimination_calibration_score = missing
+            per_expert_discrimination_calibration_curves = missing
+            per_expert_discrimination_calibration_scores = missing
             # ...based on ROC curve otherwise
-            threshold = _get_optimal_threshold_from_ROC(plot_dict["per_class_roc_curves"];
-                                                        thresholds=thresholds,
-                                                        class_of_interest_index=optimal_threshold_class)
+            optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves;
+                                                                thresholds=thresholds,
+                                                                class_of_interest_index=optimal_threshold_class)
         end
-        plot_dict["optimal_threshold"] = threshold
 
         # Recalculate `predicted_hard_labels` with this new threshold
         other_class = optimal_threshold_class == 1 ? 2 : 1
         for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = row[optimal_threshold_class] .>= threshold ?
+            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
                                        optimal_threshold_class : other_class
         end
+    else
+        discrimination_calibration_curve = missing
+        discrimination_calibration_score = missing
+        per_expert_discrimination_calibration_curves = missing
+        per_expert_discrimination_calibration_scores = missing
+        optimal_threshold = missing
     end
 
     # PR curves
-    plot_dict["per_class_pr_curves"] = [(map(t -> t.true_positive_rate, stats),
-                                         map(t -> t.precision, stats))
-                                        for stats in per_class_stats]
-
-    # Cohen's kappa
-    kappas = _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
-    plot_dict["per_class_kappas"] = kappas.per_class
-    plot_dict["multiclass_kappa"] = kappas.multiclass
-    ira = _calculate_ira_kappas(votes, classes)
-    if !isnothing(ira)
-        plot_dict["per_class_IRA_kappas"] = ira.per_class
-        plot_dict["multiclass_IRA_kappas"] = ira.multiclass
-    end
+    per_class_pr_curves = [(map(t -> t.true_positive_rate, stats),
+                            map(t -> t.precision, stats)) for stats in per_class_stats]
 
     # Stratified kappas
-    if !isnothing(strata)
-        plot_dict["stratified_kappas"] = _calculate_stratified_ea_kappas(predicted_hard_labels,
-                                                                         elected_hard_labels,
-                                                                         class_count,
-                                                                         strata)
+    if isnothing(strata)
+        stratified_kappas = missing
+    else
+        stratified_kappas = _calculate_stratified_ea_kappas(predicted_hard_labels,
+                                                            elected_hard_labels,
+                                                            class_count, strata)
     end
 
     # Reliability calibration curves
-    per_class_reliability_calibration_curves = map(1:class_count) do class_index
+    per_class_reliability_calibration = map(1:class_count) do class_index
         class_probabilities = view(predicted_soft_labels, :, class_index)
         return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
     end
-    plot_dict["per_class_reliability_calibration_curves"] = map(x -> (mean.(x.bins),
-                                                                      x.fractions),
-                                                                per_class_reliability_calibration_curves)
-    plot_dict["per_class_reliability_calibration_scores"] = map(x -> x.mean_squared_error,
-                                                                per_class_reliability_calibration_curves)
-
-    # Confusion matrix
-    plot_dict["confusion_matrix"] = confusion_matrix(class_count,
-                                                     zip(predicted_hard_labels,
-                                                         elected_hard_labels))
+    per_class_reliability_calibration_curves = map(x -> (mean.(x.bins), x.fractions),
+                                                   per_class_reliability_calibration)
+    per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
+                                                   per_class_reliability_calibration)
 
     # Log Spearman correlation, iff this is a binary classification problem
     if length(classes) == 2 && !isnothing(votes)
-        plot_dict["spearman_correlation"] = _calculate_spearman_correlation(predicted_soft_labels,
-                                                                            votes, classes)
+        spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels, votes,
+                                                               classes)
+    else
+        spearman_correlation = missing
     end
-    return plot_dict
+
+    return EvaluationRow(; class_labels,
+                         confusion_matrix=confusion_matrix(class_count,
+                                                           zip(predicted_hard_labels,
+                                                               elected_hard_labels)),
+                         spearman_correlation, per_class_reliability_calibration_curves,
+                         per_class_reliability_calibration_scores,
+                         _calculate_ira_kappas(votes, classes)...,
+                         _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels,
+                                              class_count)..., stratified_kappas,
+                         per_class_pr_curves, per_class_roc_curves, per_class_roc_aucs,
+                         discrimination_calibration_curve, discrimination_calibration_score,
+                         per_expert_discrimination_calibration_curves,
+                         per_expert_discrimination_calibration_scores, optimal_threshold,
+                         optimal_threshold_class, thresholds)
+end
+
+"""
+    evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
+
+Return [`evaluation_metrics_row`](@ref) after converting output `EvaluationRow`
+into a `Dict`. For argument details, see [`evaluation_metrics_row`](@ref).
+"""
+function evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
+    row = evaluation_metrics_row(args...;
+                                 optimal_threshold_class=something(optimal_threshold_class,
+                                                                   missing), kwargs...)
+    return _evaluation_row_dict(row)
 end
 
 """
@@ -627,7 +645,6 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
                                  votes::Union{Nothing,AbstractMatrix}=nothing,
                                  strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
                                  optimal_threshold_class::Union{Nothing,Integer}=nothing)
-
     Base.depwarn("""
     ```
     evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
@@ -646,8 +663,8 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
     ```
     """, :evaluation_metrics_plot)
     plot_dict = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
-                                   elected_hard_labels, classes, thresholds;
-                                   votes, strata, optimal_threshold_class)
+                                   elected_hard_labels, classes, thresholds; votes, strata,
+                                   optimal_threshold_class)
     return evaluation_metrics_plot(plot_dict), plot_dict
 end
 
@@ -763,7 +780,8 @@ function learn!(model::AbstractClassifier, logger, get_train_batches, get_test_b
             predict!(model, predicted, get_test_batches(), logger;
                      logger_prefix="$(test_set_logger_prefix)_prediction")
             evaluate!(map(label -> onecold(model, label), eachrow(predicted)), predicted,
-                      elected, classes(model), logger; logger_prefix="$(test_set_logger_prefix)_evaluation",
+                      elected, classes(model), logger;
+                      logger_prefix="$(test_set_logger_prefix)_evaluation",
                       logger_suffix="_per_epoch", votes=votes,
                       optimal_threshold_class=optimal_threshold_class)
             post_epoch_callback(current_epoch)

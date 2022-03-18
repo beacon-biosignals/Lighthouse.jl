@@ -6,6 +6,7 @@ using StatsBase: StatsBase
 using TensorBoardLogger
 using Makie
 using Printf
+using Legolas
 
 include("plotting.jl")
 
@@ -17,6 +18,9 @@ export confusion_matrix, accuracy, binary_statistics, cohens_kappa, calibration_
 
 include("classifier.jl")
 export AbstractClassifier
+
+include("row.jl")
+export EvaluationRow
 
 include("learn.jl")
 export LearnLogger, learn!, upon, evaluate!, predict!

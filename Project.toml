@@ -1,10 +1,11 @@
 name = "Lighthouse"
 uuid = "ac2c24cd-07f0-4848-96b2-1b82c3ea0e59"
 authors = ["Beacon Biosignals, Inc."]
-version = "0.13.4"
+version = "0.14.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Legolas = "741b9549-f6ed-4911-9fbf-4a1c0c97f0cd"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
@@ -16,15 +17,18 @@ TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 
 [compat]
 CairoMakie = "0.7"
+Legolas = "0.3"
 Makie = "0.16.5"
 StatsBase = "0.33"
+Tables = "1.7"
 TensorBoardLogger = "0.1"
-julia = "1.5"
+julia = "1.6"
 
 [extras]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "CairoMakie", "StableRNGs"]
+test = ["Test", "CairoMakie", "StableRNGs", "Tables"]
