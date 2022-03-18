@@ -21,7 +21,7 @@ include("classifier.jl")
 export AbstractClassifier
 
 include("row.jl")
-# TODO: export EvaluationRow ?
+export EvaluationRow
 
 include("learn.jl")
 export LearnLogger, learn!, upon, evaluate!, predict!

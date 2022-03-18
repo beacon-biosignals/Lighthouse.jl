@@ -38,9 +38,9 @@ accuracy
 binary_statistics
 cohens_kappa
 calibration_curve
+EvaluationRow
 Lighthouse.evaluation_metrics
 Lighthouse._evaluation_row_dict
-Lighthouse.EvaluationRow
 Lighthouse.evaluation_metrics_row
 ```
 
