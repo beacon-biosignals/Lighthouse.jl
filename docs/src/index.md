@@ -40,7 +40,7 @@ cohens_kappa
 calibration_curve
 Lighthouse.evaluation_metrics
 Lighthouse._evaluation_row_dict
-Lighthouse.Row :: Union{Tuple{Dict}, Tuple{S}} where S<:Legolas.Schema{Symbol("lighthouse.evaluation"), 1}
+Lighthouse.EvaluationRow
 Lighthouse.evaluation_metrics_row
 ```
 
