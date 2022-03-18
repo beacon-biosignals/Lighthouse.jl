@@ -41,7 +41,7 @@ end
             callback = n -> begin
                 upon_loss_decrease() do _
                     counted += n
-                    @info counted n
+                    @debug counted n
                 end
             end
             elected = majority.((rng,), eachrow(votes),
@@ -189,7 +189,7 @@ end
             callback = n -> begin
                 upon_loss_decrease() do _
                     counted += n
-                    @info counted n
+                    @debug counted n
                 end
             end
             elected = majority.((rng,), eachrow(votes),
