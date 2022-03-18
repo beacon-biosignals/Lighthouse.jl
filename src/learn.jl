@@ -456,7 +456,7 @@ end
 """
     evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                           optimal_threshold_class::Union{Nothing,Integer}=nothing)
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
     evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                            predicted_soft_labels::AbstractMatrix,
                            elected_hard_labels::AbstractVector,
@@ -464,7 +464,7 @@ end
                            thresholds=0.0:0.01:1.0;
                            votes::Union{Nothing,AbstractMatrix}=nothing,
                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                           optimal_threshold_class::Union{Nothing,Integer}=nothing)
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
 
 Returns `EvaluationRow` containing a battery of classifier performance
 metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
@@ -499,11 +499,15 @@ Where...
   ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
   This is only a valid parameter when `length(classes) == 2`
 
+Alternatively, an `observation_table` that consists of rows of type [`ObservationRow`](@ref)
+can be passed in in place of `predicted_soft_labels`,`predicted_hard_labels`,`elected_hard_labels`,
+and `votes`.
+
 See also [`evaluation_metrics_plot`](@ref).
 """
 function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Nothing,Integer}=nothing)
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
     inputs = _obervation_table_to_inputs(observation_table)
     return evaluation_metrics_row(inputs.predicted_hard_labels,
                                   inputs.predicted_soft_labels, inputs.elected_hard_labels,
@@ -517,7 +521,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 thresholds=0.0:0.01:1.0;
                                 votes::Union{Nothing,AbstractMatrix}=nothing,
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Missing,Integer}=missing)
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
