@@ -27,7 +27,7 @@ macro testplot(fig_name)
     end
 end
 
-const EVALUATION_ROW_KEYS = string.(keys(Lighthouse.EvaluationRow()))
+const EVALUATION_ROW_KEYS = string.(keys(EvaluationRow()))
 
 function test_evaluation_metrics_roundtrip(row_dict::Dict{String,S}) where {S}
     # Make sure we're capturing all metrics keys in our Schema
@@ -35,7 +35,7 @@ function test_evaluation_metrics_roundtrip(row_dict::Dict{String,S}) where {S}
     @test isempty(keys_not_in_schema)
 
     # Do the roundtripping (will fail if schema types do not validate after roundtrip)
-    row = Lighthouse.EvaluationRow(row_dict)
+    row = EvaluationRow(row_dict)
     rt_row = roundtrip_row(row)
 
     # Make sure full row roundtrips correctly
@@ -60,11 +60,11 @@ function test_evaluation_metrics_roundtrip(row_dict::Dict{String,S}) where {S}
     return nothing
 end
 
-function roundtrip_row(row::Lighthouse.EvaluationRow)
+function roundtrip_row(row::EvaluationRow)
     p = mktempdir() * "rt_test.arrow"
     tbl = [row]
     Legolas.write(p, tbl, Lighthouse.EVALUATION_ROW_SCHEMA)
-    return Lighthouse.EvaluationRow(only(Tables.rows(Legolas.read(p))))
+    return EvaluationRow(only(Tables.rows(Legolas.read(p))))
 end
 
 include("plotting.jl")

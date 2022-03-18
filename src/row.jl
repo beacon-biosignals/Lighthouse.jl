@@ -1,3 +1,8 @@
+
+#####
+##### `EvaluationRow`
+#####
+
 # Arrow can't handle matrices---so when we write/read matrices, we have to pack and unpack them o_O
 # https://github.com/apache/arrow-julia/issues/125
 vec_to_mat(mat::AbstractMatrix) = mat
@@ -8,10 +13,6 @@ function vec_to_mat(vec::AbstractVector)
 end
 
 vec_to_mat(x::Missing) = return missing
-
-#####
-##### `EvaluationRow`
-#####
 
 # Redefinition is workaround for https://github.com/beacon-biosignals/Legolas.jl/issues/9
 const EVALUATION_ROW_SCHEMA = Legolas.Schema("lighthouse.evaluation@1")
