@@ -7,7 +7,6 @@ using TensorBoardLogger
 using Makie
 using Printf
 using Legolas
-using Arrow
 
 include("plotting.jl")
 
