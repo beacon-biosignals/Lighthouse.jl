@@ -39,6 +39,9 @@ binary_statistics
 cohens_kappa
 calibration_curve
 Lighthouse.evaluation_metrics
+Lighthouse._evaluation_row_dict
+Lighthouse.Row
+Lighthouse.evaluation_metrics_row
 ```
 
 ## Utilities
