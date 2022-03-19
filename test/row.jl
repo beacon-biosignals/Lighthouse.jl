@@ -20,8 +20,8 @@ end
 end
 
 function test_roundtrip_observation_table(; kwargs...)
-    table = Lighthouse._inputs_to_obervation_table(; kwargs...)
-    rt_inputs = Lighthouse._obervation_table_to_inputs(table)
+    table = Lighthouse._inputs_to_observation_table(; kwargs...)
+    rt_inputs = Lighthouse._observation_table_to_inputs(table)
     @test issetequal(keys(kwargs), keys(rt_inputs))
     for k in keys(kwargs)
         @test isequal(kwargs[k], rt_inputs[k]) || k
@@ -72,30 +72,30 @@ end
     metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
     @test isequal(metrics_from_inputs, metrics_from_table)
 
-    df_table = Lighthouse._inputs_to_obervation_table(; predicted_soft_labels,
-                                                      predicted_hard_labels,
-                                                      elected_hard_labels=elected_hard_multilabeller,
-                                                      votes)
+    df_table = Lighthouse._inputs_to_observation_table(; predicted_soft_labels,
+                                                       predicted_hard_labels,
+                                                       elected_hard_labels=elected_hard_multilabeller,
+                                                       votes)
     @test isa(df_table, DataFrame)
     r_table = [ObservationRow(r) for r in eachrow(df_table)]
 
     # ...can we handle both dataframe input and more generic row iterators?
-    output_r = Lighthouse._obervation_table_to_inputs(r_table)
-    output_dft = Lighthouse._obervation_table_to_inputs(df_table)
+    output_r = Lighthouse._observation_table_to_inputs(r_table)
+    output_dft = Lighthouse._observation_table_to_inputs(df_table)
     @test isequal(output_r, output_dft)
 
     # Safety last!
     transform!(df_table, :votes => ByRow(v -> isodd(sum(v)) ? missing : v);
                renamecols=false)
-    @test_throws ArgumentError Lighthouse._obervation_table_to_inputs(df_table)
+    @test_throws ArgumentError Lighthouse._observation_table_to_inputs(df_table)
 
     transform!(df_table, :votes => ByRow(v -> ismissing(v) ? [1, 2, 3] : v);
                renamecols=false)
-    @test_throws ArgumentError Lighthouse._obervation_table_to_inputs(df_table)
+    @test_throws ArgumentError Lighthouse._observation_table_to_inputs(df_table)
 
-    @test_throws DimensionMismatch Lighthouse._inputs_to_obervation_table(;
-                                                                          predicted_soft_labels,
-                                                                          predicted_hard_labels=predicted_hard_labels[1:4],
-                                                                          elected_hard_labels=elected_hard_multilabeller,
-                                                                          votes)
+    @test_throws DimensionMismatch Lighthouse._inputs_to_observation_table(;
+                                                                           predicted_soft_labels,
+                                                                           predicted_hard_labels=predicted_hard_labels[1:4],
+                                                                           elected_hard_labels=elected_hard_multilabeller,
+                                                                           votes)
 end

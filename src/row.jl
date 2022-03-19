@@ -159,7 +159,7 @@ const ObservationRow = Legolas.@row("lighthouse.observation@1",
                                     elected_hard_labels::Int64,
                                     votes::Union{Missing,Vector{Int64}})
 
-function _obervation_table_to_inputs(observation_table)
+function _observation_table_to_inputs(observation_table)
     Legolas.validate(observation_table, OBSERVATION_ROW_SCHEMA)
     df_table = DataFrame(observation_table; copycols=false)
     votes = missing
@@ -173,7 +173,7 @@ function _obervation_table_to_inputs(observation_table)
             df_table.elected_hard_labels, votes)
 end
 
-function _inputs_to_obervation_table(; predicted_hard_labels::AbstractVector,
+function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
                                      predicted_soft_labels::AbstractMatrix,
                                      elected_hard_labels::AbstractVector,
                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing)

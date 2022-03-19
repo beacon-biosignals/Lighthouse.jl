@@ -509,7 +509,7 @@ See also [`evaluation_metrics_plot`](@ref).
 function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
                                 optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
-    inputs = _obervation_table_to_inputs(observation_table)
+    inputs = _observation_table_to_inputs(observation_table)
     return evaluation_metrics_row(inputs.predicted_hard_labels,
                                   inputs.predicted_soft_labels, inputs.elected_hard_labels,
                                   classes, thresholds; inputs.votes, strata,
