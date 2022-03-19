@@ -26,7 +26,7 @@ function test_roundtrip_observation_table(; kwargs...)
     for k in keys(kwargs)
         @test isequal(kwargs[k], rt_inputs[k]) || k
     end
-    return table, rt_inputs
+    return table
 end
 
 @testset "`ObservationRow`" begin
@@ -36,17 +36,22 @@ end
     predicted_soft_labels = rand(StableRNG(22), Float32, num_observations, length(classes))
     predicted_hard_labels = map(argmax, eachrow(predicted_soft_labels))
 
-    # ...single labeler
+    # Single labeler: round-trip `ObservationRow``...
     elected_hard_one_labeller = predicted_hard_labels[[1:50..., 1:50...]]  # Force 50% TP overall
-    votes = missing #todo: should maybe be "nothing" for serialization roundtrip, but this is what our previous default was...
+    votes = missing
+    table = test_roundtrip_observation_table(; predicted_soft_labels, predicted_hard_labels,
+                                             elected_hard_labels=elected_hard_one_labeller,
+                                             votes)
 
-    table, rt_inputs = test_roundtrip_observation_table(; predicted_soft_labels,
-                                                        predicted_hard_labels,
-                                                        elected_hard_labels=elected_hard_one_labeller,
-                                                        votes)
-    # @test isequal(evaluation_metrics_row(table), evaluation_metrics_row(rt_inputs))
+    # ...and parity in evaluation_metrics calculation:
+    metrics_from_inputs = Lighthouse.evaluation_metrics_row(predicted_hard_labels,
+                                                            predicted_soft_labels,
+                                                            elected_hard_one_labeller,
+                                                            classes; votes)
+    metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
+    @test isequal(metrics_from_inputs, metrics_from_table)
 
-    # ...multilabeler
+    # Multiple labelers: round-trip `ObservationRow``...
     num_voters = 5
     possible_vote_labels = collect(0:length(classes)) # vote 0 == "no vote"
     vote_rng = StableRNG(22)
@@ -55,8 +60,17 @@ end
     votes[:, 3] .= votes[:, 4] # Voter 4 voted identically to voter 3 (force non-zero agreement)
     elected_hard_multilabeller = map(row -> majority(vote_rng, row, 1:length(classes)),
                                      eachrow(votes))
-    test_roundtrip_observation_table(; predicted_soft_labels, predicted_hard_labels,
-                                     elected_hard_labels=elected_hard_multilabeller, votes)
+    table = test_roundtrip_observation_table(; predicted_soft_labels, predicted_hard_labels,
+                                             elected_hard_labels=elected_hard_multilabeller,
+                                             votes)
+
+    # ...is there parity in evaluation_metrics calculations?
+    metrics_from_inputs = Lighthouse.evaluation_metrics_row(predicted_hard_labels,
+                                                            predicted_soft_labels,
+                                                            elected_hard_multilabeller,
+                                                            classes; votes)
+    metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
+    @test isequal(metrics_from_inputs, metrics_from_table)
 
     df_table = Lighthouse._inputs_to_obervation_table(; predicted_soft_labels,
                                                       predicted_hard_labels,
@@ -65,7 +79,7 @@ end
     @test isa(df_table, DataFrame)
     r_table = [ObservationRow(r) for r in eachrow(df_table)]
 
-    # Can handle both dataframe input and more generic row iterators
+    # ...can we handle both dataframe input and more generic row iterators?
     output_r = Lighthouse._obervation_table_to_inputs(r_table)
     output_dft = Lighthouse._obervation_table_to_inputs(df_table)
     @test isequal(output_r, output_dft)
