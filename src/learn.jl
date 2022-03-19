@@ -606,7 +606,6 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     else
         spearman_correlation = missing
     end
-    @info "here"
     return EvaluationRow(; class_labels,
                          confusion_matrix=confusion_matrix(class_count,
                                                            zip(predicted_hard_labels,
