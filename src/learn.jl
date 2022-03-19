@@ -274,6 +274,8 @@ function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_
     return (per_class_kappas=per_class, multiclass_kappa=multiclass)
 end
 
+issomething(x) = !isnothing(x) && !ismissing(x)
+
 """
     _calculate_ira_kappas(votes, classes)
 
@@ -451,8 +453,6 @@ function _validate_threshold_class(optimal_threshold_class, classes)
         throw(ArgumentError("Invalid threshold class"))
     return nothing
 end
-
-issomething(x) = !isnothing(x) && !ismissing(x)
 
 """
     evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
