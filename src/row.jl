@@ -145,10 +145,10 @@ end
 const OBSERVATION_ROW_SCHEMA = Legolas.Schema("lighthouse.observation@1")
 """
     const ObservationRow = Legolas.@row("lighthouse.observation@1",
-                                    predicted_hard_labels::Int64,
-                                    predicted_soft_labels::Vector{Float32},
-                                    elected_hard_labels::Int64,
-                                    votes::Union{Missing,Vector{Int64}})
+                                        predicted_hard_labels::Int64,
+                                        predicted_soft_labels::Vector{Float32},
+                                        elected_hard_labels::Int64,
+                                        votes::Union{Missing,Vector{Int64}})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.observation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing the per-observation input values required to compute [`evaluation_metrics_row`](@ref).
