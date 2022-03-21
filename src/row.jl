@@ -145,18 +145,18 @@ end
 const OBSERVATION_ROW_SCHEMA = Legolas.Schema("lighthouse.observation@1")
 """
     const ObservationRow = Legolas.@row("lighthouse.observation@1",
-                                        predicted_hard_labels::Int64,
+                                        predicted_hard_label::Int64,
                                         predicted_soft_labels::Vector{Float32},
-                                        elected_hard_labels::Int64,
+                                        elected_hard_label::Int64,
                                         votes::Union{Missing,Vector{Int64}})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.observation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing the per-observation input values required to compute [`evaluation_metrics_row`](@ref).
 """
 const ObservationRow = Legolas.@row("lighthouse.observation@1",
-                                    predicted_hard_labels::Int64,
+                                    predicted_hard_label::Int64,
                                     predicted_soft_labels::Vector{Float32},
-                                    elected_hard_labels::Int64,
+                                    elected_hard_label::Int64,
                                     votes::Union{Missing,Vector{Int64}})
 
 function _observation_table_to_inputs(observation_table)
@@ -169,17 +169,18 @@ function _observation_table_to_inputs(observation_table)
     votes = any(ismissing, df_table.votes) ? missing :
             transpose(reduce(hcat, df_table.votes))
 
-    predicted_soft_labels = reduce(hcat, df_table.predicted_soft_labels)'
-    return (; df_table.predicted_hard_labels, predicted_soft_labels,
-            df_table.elected_hard_labels, votes)
+    predicted_soft_labels = reduce(hcat, df_table.predicted_soft_label)'
+    return (; predicted_hard_labels=df_table.predicted_hard_label, predicted_soft_labels,
+            elected_hard_labels=df_table.elected_hard_label, votes)
 end
 
 function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
-                                     predicted_soft_labels::AbstractMatrix,
-                                     elected_hard_labels::AbstractVector,
-                                     votes::Union{Nothing,Missing,AbstractMatrix}=nothing)
+                                      predicted_soft_labels::AbstractMatrix,
+                                      elected_hard_labels::AbstractVector,
+                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing)
     votes = has_value(votes) ? collect(eachrow(votes)) : missing
-    observations = DataFrame(; predicted_hard_labels, elected_hard_labels,
+    observations = DataFrame(; predicted_hard_label=predicted_hard_labels,
+                             elected_hard_label=elected_hard_labels,
                              predicted_soft_labels=collect(eachrow(predicted_soft_labels)),
                              votes)
     observation_table = DataFrame([ObservationRow(r) for r in eachrow(observations)])
