@@ -262,7 +262,6 @@ evaluation_metrics_plot(data)
 Optionally, one can also add a binary discrimination calibration curve plot:
 
 ```@example 1
-
 data["discrimination_calibration_curve"] = (LinRange(0, 1, 10), LinRange(0,1, 10) .+ 0.1randn(10))
 data["per_expert_discrimination_calibration_curves"] = curves
 
@@ -277,7 +276,6 @@ evaluation_metrics_plot(data)
 
 Plots can also be generated directly from an `EvaluationRow`:
 ```@example 1
-
 data_row = EvaluationRow(data)
 evaluation_metrics_plot(data_row)
 ```
