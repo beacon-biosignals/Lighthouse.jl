@@ -274,6 +274,8 @@ function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_
     return (per_class_kappas=per_class, multiclass_kappa=multiclass)
 end
 
+has_value(x) = !isnothing(x) && !ismissing(x)
+
 """
     _calculate_ira_kappas(votes, classes)
 
@@ -297,8 +299,9 @@ mean that the voter did not rate that sample.
 """
 function _calculate_ira_kappas(votes, classes)
     # no votes given or only one expert:
-    (isnothing(votes) || size(votes, 2) < 2) &&
+    if !has_value(votes) || size(votes, 2) < 2
         return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)
+    end
 
     all_hard_label_pairs = Array{Int}(undef, 0, 2)
     num_voters = size(votes, 2)
@@ -443,9 +446,7 @@ function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
 end
 
 function _validate_threshold_class(optimal_threshold_class, classes)
-    if ismissing(optimal_threshold_class) || isnothing(optimal_threshold_class)
-        return nothing
-    end
+    has_value(optimal_threshold_class) || return nothing
     length(classes) == 2 ||
         throw(ArgumentError("Only valid for binary classification problems"))
     optimal_threshold_class in Set([1, 2]) ||
@@ -454,14 +455,17 @@ function _validate_threshold_class(optimal_threshold_class, classes)
 end
 
 """
+    evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
     evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                            predicted_soft_labels::AbstractMatrix,
                            elected_hard_labels::AbstractVector,
                            classes,
                            thresholds=0.0:0.01:1.0;
-                           votes::Union{Nothing,AbstractMatrix}=nothing,
+                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                           optimal_threshold_class::Union{Nothing,Integer}=nothing)
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
 
 Returns `EvaluationRow` containing a battery of classifier performance
 metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
@@ -496,14 +500,29 @@ Where...
   ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
   This is only a valid parameter when `length(classes) == 2`
 
+Alternatively, an `observation_table` that consists of rows of type [`ObservationRow`](@ref)
+can be passed in in place of `predicted_soft_labels`,`predicted_hard_labels`,`elected_hard_labels`,
+and `votes`.
+
 See also [`evaluation_metrics_plot`](@ref).
 """
+function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+                                strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+    inputs = _observation_table_to_inputs(observation_table)
+    return evaluation_metrics_row(inputs.predicted_hard_labels,
+                                  inputs.predicted_soft_labels, inputs.elected_hard_labels,
+                                  classes, thresholds; inputs.votes, strata,
+                                  optimal_threshold_class)
+end
+
 function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 predicted_soft_labels::AbstractMatrix,
-                                elected_hard_labels::AbstractVector, classes, thresholds;
-                                votes::Union{Nothing,AbstractMatrix}=nothing,
+                                elected_hard_labels::AbstractVector, classes,
+                                thresholds=0.0:0.01:1.0;
+                                votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Missing,Integer}=missing)
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
@@ -519,10 +538,10 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
 
     # Optionally calculate optimal threshold
-    if !ismissing(optimal_threshold_class)
+    if has_value(optimal_threshold_class)
         # If votes exist, calculate the threshold based on comparing against
         # vote probabilities. Otherwise, use the ROC curve.
-        if !isnothing(votes)
+        if has_value(votes)
             c = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                              votes;
                                                                              thresholds=thresholds,
@@ -565,13 +584,10 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                             map(t -> t.precision, stats)) for stats in per_class_stats]
 
     # Stratified kappas
-    if isnothing(strata)
-        stratified_kappas = missing
-    else
-        stratified_kappas = _calculate_stratified_ea_kappas(predicted_hard_labels,
-                                                            elected_hard_labels,
-                                                            class_count, strata)
-    end
+    stratified_kappas = has_value(strata) ?
+                        _calculate_stratified_ea_kappas(predicted_hard_labels,
+                                                        elected_hard_labels, class_count,
+                                                        strata) : missing
 
     # Reliability calibration curves
     per_class_reliability_calibration = map(1:class_count) do class_index
@@ -584,13 +600,12 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                                    per_class_reliability_calibration)
 
     # Log Spearman correlation, iff this is a binary classification problem
-    if length(classes) == 2 && !isnothing(votes)
+    if length(classes) == 2 && has_value(votes)
         spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels, votes,
                                                                classes)
     else
         spearman_correlation = missing
     end
-
     return EvaluationRow(; class_labels,
                          confusion_matrix=confusion_matrix(class_count,
                                                            zip(predicted_hard_labels,

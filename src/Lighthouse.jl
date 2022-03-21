@@ -7,6 +7,7 @@ using TensorBoardLogger
 using Makie
 using Printf
 using Legolas
+using Tables
 
 include("plotting.jl")
 
@@ -20,7 +21,7 @@ include("classifier.jl")
 export AbstractClassifier
 
 include("row.jl")
-export EvaluationRow
+export EvaluationRow, ObservationRow
 
 include("learn.jl")
 export LearnLogger, learn!, upon, evaluate!, predict!

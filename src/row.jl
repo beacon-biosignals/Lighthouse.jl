@@ -1,3 +1,8 @@
+
+#####
+##### `EvaluationRow`
+#####
+
 # Arrow can't handle matrices---so when we write/read matrices, we have to pack and unpack them o_O
 # https://github.com/apache/arrow-julia/issues/125
 vec_to_mat(mat::AbstractMatrix) = mat
@@ -130,4 +135,63 @@ Lighthouse <v0.14.0).
 """
 function _evaluation_row_dict(row::EvaluationRow)
     return Dict(string(k) => v for (k, v) in pairs(NamedTuple(row)) if !ismissing(v))
+end
+
+#####
+##### `ObservationRow`
+#####
+
+# Redefinition is workaround for https://github.com/beacon-biosignals/Legolas.jl/issues/9
+const OBSERVATION_ROW_SCHEMA = Legolas.Schema("lighthouse.observation@1")
+"""
+    const ObservationRow = Legolas.@row("lighthouse.observation@1",
+                                        predicted_hard_label::Int64,
+                                        predicted_soft_labels::Vector{Float32},
+                                        elected_hard_label::Int64,
+                                        votes::Union{Missing,Vector{Int64}})
+
+A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.observation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
+representing the per-observation input values required to compute [`evaluation_metrics_row`](@ref).
+"""
+const ObservationRow = Legolas.@row("lighthouse.observation@1",
+                                    predicted_hard_label::Int64,
+                                    predicted_soft_labels::Vector{Float32},
+                                    elected_hard_label::Int64,
+                                    votes::Union{Missing,Vector{Int64}})
+
+function _observation_table_to_inputs(observation_table)
+    Legolas.validate(observation_table, OBSERVATION_ROW_SCHEMA)
+    df_table = Tables.columns(observation_table)
+    votes = missing
+    if any(ismissing, df_table.votes) && !all(ismissing, df_table.votes)
+        throw(ArgumentError("`:votes` must either be all `missing` or contain no `missing`"))
+    end
+    votes = any(ismissing, df_table.votes) ? missing :
+            transpose(reduce(hcat, df_table.votes))
+
+    predicted_soft_labels = transpose(reduce(hcat, df_table.predicted_soft_labels))
+    return (; predicted_hard_labels=df_table.predicted_hard_label, predicted_soft_labels,
+            elected_hard_labels=df_table.elected_hard_label, votes)
+end
+
+function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
+                                      predicted_soft_labels::AbstractMatrix,
+                                      elected_hard_labels::AbstractVector,
+                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing)
+    votes_itr = has_value(votes) ? eachrow(votes) :
+                (missing for _ in 1:length(predicted_hard_labels))
+    predicted_soft_labels_itr = eachrow(predicted_soft_labels)
+    if !(length(predicted_hard_labels) == length(predicted_soft_labels_itr) ==
+         length(elected_hard_labels) == length(votes_itr))
+        throw(DimensionMismatch("Inputs do not all have the same number of observations"))
+    end
+    observation_table = map(predicted_hard_labels, elected_hard_labels,
+                            predicted_soft_labels_itr,
+                            votes_itr) do predicted_hard_label, elected_hard_label,
+                                          predicted_soft_labels, votes
+        return ObservationRow(; predicted_hard_label, elected_hard_label,
+                              predicted_soft_labels, votes)
+    end
+    Legolas.validate(observation_table, OBSERVATION_ROW_SCHEMA)
+    return observation_table
 end

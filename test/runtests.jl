@@ -7,6 +7,7 @@ using Lighthouse: plot_reliability_calibration_curves, plot_pr_curves,
 using Base.Threads
 using CairoMakie
 using Legolas, Tables
+using DataFrames
 
 # Needs to be set for figures
 # returning true for showable("image/png", obj)
