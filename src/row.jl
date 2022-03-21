@@ -167,7 +167,8 @@ function _observation_table_to_inputs(observation_table)
         throw(ArgumentError("`:votes` must either be all `missing` or contain no `missing`"))
     end
     votes = any(ismissing, df_table.votes) ? missing :
-            reduce(hcat, df_table.votes)'
+            transpose(reduce(hcat, df_table.votes))
+
     predicted_soft_labels = reduce(hcat, df_table.predicted_soft_labels)'
     return (; df_table.predicted_hard_labels, predicted_soft_labels,
             df_table.elected_hard_labels, votes)
