@@ -166,6 +166,9 @@ end
         all_together_2 = evaluation_metrics_plot(plot_data)
         @testplot all_together_2
 
+        all_together_3 = evaluation_metrics_plot(Lighthouse._inputs_to_observation_table(plot_data))
+        @testplot all_together_3
+
         #savefig(all_together_2, "/tmp/multiclass.png")
     end
 end

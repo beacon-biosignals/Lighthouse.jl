@@ -274,3 +274,10 @@ data["optimal_threshold"] = nothing
 
 evaluation_metrics_plot(data)
 ```
+
+Plots can also be generated directly from an `EvaluationRow`:
+```@example 1
+
+data_row = EvaluationRow(data)
+evaluation_metrics_plot(data_row)
+```
