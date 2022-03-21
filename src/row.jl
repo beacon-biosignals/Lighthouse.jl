@@ -178,7 +178,7 @@ function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
                                      predicted_soft_labels::AbstractMatrix,
                                      elected_hard_labels::AbstractVector,
                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing)
-    votes = issomething(votes) ? collect(eachrow(votes)) : missing
+    votes = has_value(votes) ? collect(eachrow(votes)) : missing
     observations = DataFrame(; predicted_hard_labels, elected_hard_labels,
                              predicted_soft_labels=collect(eachrow(predicted_soft_labels)),
                              votes)

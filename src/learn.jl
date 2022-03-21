@@ -274,7 +274,7 @@ function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_
     return (per_class_kappas=per_class, multiclass_kappa=multiclass)
 end
 
-issomething(x) = !isnothing(x) && !ismissing(x)
+has_value(x) = !isnothing(x) && !ismissing(x)
 
 """
     _calculate_ira_kappas(votes, classes)
@@ -299,7 +299,7 @@ mean that the voter did not rate that sample.
 """
 function _calculate_ira_kappas(votes, classes)
     # no votes given or only one expert:
-    if !issomething(votes) || size(votes, 2) < 2
+    if !has_value(votes) || size(votes, 2) < 2
         return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)
     end
 
@@ -446,7 +446,7 @@ function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
 end
 
 function _validate_threshold_class(optimal_threshold_class, classes)
-    issomething(optimal_threshold_class) || return nothing
+    has_value(optimal_threshold_class) || return nothing
     length(classes) == 2 ||
         throw(ArgumentError("Only valid for binary classification problems"))
     optimal_threshold_class in Set([1, 2]) ||
@@ -538,10 +538,10 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
 
     # Optionally calculate optimal threshold
-    if issomething(optimal_threshold_class)
+    if has_value(optimal_threshold_class)
         # If votes exist, calculate the threshold based on comparing against
         # vote probabilities. Otherwise, use the ROC curve.
-        if issomething(votes)
+        if has_value(votes)
             c = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                              votes;
                                                                              thresholds=thresholds,
@@ -584,7 +584,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                             map(t -> t.precision, stats)) for stats in per_class_stats]
 
     # Stratified kappas
-    stratified_kappas = issomething(strata) ?
+    stratified_kappas = has_value(strata) ?
                         _calculate_stratified_ea_kappas(predicted_hard_labels,
                                                         elected_hard_labels, class_count,
                                                         strata) : missing
@@ -600,7 +600,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                                    per_class_reliability_calibration)
 
     # Log Spearman correlation, iff this is a binary classification problem
-    if length(classes) == 2 && issomething(votes)
+    if length(classes) == 2 && has_value(votes)
         spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels, votes,
                                                                classes)
     else
