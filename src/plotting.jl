@@ -306,7 +306,7 @@ Plot all evaluation metrics generated via [`evaluation_metrics_row`](@ref) and/o
 [`evaluation_metrics`](@ref) in a single image.
 """
 function evaluation_metrics_plot(row::EvaluationRow; kwargs...)
-    return evaluation_metrics_plot(_observation_table_to_inputs(row); kwargs...)
+    return evaluation_metrics_plot(_evaluation_row_dict(row); kwargs...)
 end
 
 function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
