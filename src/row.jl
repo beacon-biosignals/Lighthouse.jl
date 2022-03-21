@@ -161,7 +161,7 @@ const ObservationRow = Legolas.@row("lighthouse.observation@1",
 
 function _observation_table_to_inputs(observation_table)
     Legolas.validate(observation_table, OBSERVATION_ROW_SCHEMA)
-    df_table = DataFrame(observation_table; copycols=false)
+    df_table = Tables.columns(observation_table)
     votes = missing
     if any(ismissing, df_table.votes) && !all(ismissing, df_table.votes)
         throw(ArgumentError("`:votes` must either be all `missing` or contain no `missing`"))
@@ -169,7 +169,7 @@ function _observation_table_to_inputs(observation_table)
     votes = any(ismissing, df_table.votes) ? missing :
             transpose(reduce(hcat, df_table.votes))
 
-    predicted_soft_labels = transpose(reduce(hcat, df_table.predicted_soft_label))
+    predicted_soft_labels = transpose(reduce(hcat, df_table.predicted_soft_labels))
     return (; predicted_hard_labels=df_table.predicted_hard_label, predicted_soft_labels,
             elected_hard_labels=df_table.elected_hard_label, votes)
 end
@@ -178,12 +178,20 @@ function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
                                       predicted_soft_labels::AbstractMatrix,
                                       elected_hard_labels::AbstractVector,
                                       votes::Union{Nothing,Missing,AbstractMatrix}=nothing)
-    votes = has_value(votes) ? collect(eachrow(votes)) : missing
-    observations = DataFrame(; predicted_hard_label=predicted_hard_labels,
-                             elected_hard_label=elected_hard_labels,
-                             predicted_soft_labels=collect(eachrow(predicted_soft_labels)),
-                             votes)
-    observation_table = DataFrame([ObservationRow(r) for r in eachrow(observations)])
+    votes_itr = has_value(votes) ? eachrow(votes) :
+                (missing for _ in 1:length(predicted_hard_labels))
+    predicted_soft_labels_itr = eachrow(predicted_soft_labels)
+    if !(length(predicted_hard_labels) == length(predicted_soft_labels_itr) ==
+         length(elected_hard_labels) == length(votes_itr))
+        throw(DimensionMismatch("Inputs do not all have the same number of observations"))
+    end
+    observation_table = map(predicted_hard_labels, elected_hard_labels,
+                            predicted_soft_labels_itr,
+                            votes_itr) do predicted_hard_label, elected_hard_label,
+                                          predicted_soft_labels, votes
+        return ObservationRow(; predicted_hard_label, elected_hard_label,
+                              predicted_soft_labels, votes)
+    end
     Legolas.validate(observation_table, OBSERVATION_ROW_SCHEMA)
     return observation_table
 end

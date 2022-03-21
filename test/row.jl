@@ -72,17 +72,17 @@ end
     metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
     @test isequal(metrics_from_inputs, metrics_from_table)
 
-    df_table = Lighthouse._inputs_to_observation_table(; predicted_soft_labels,
-                                                       predicted_hard_labels,
-                                                       elected_hard_labels=elected_hard_multilabeller,
-                                                       votes)
-    @test isa(df_table, DataFrame)
-    r_table = [ObservationRow(r) for r in eachrow(df_table)]
+    r_table = Lighthouse._inputs_to_observation_table(; predicted_soft_labels,
+                                                      predicted_hard_labels,
+                                                      elected_hard_labels=elected_hard_multilabeller,
+                                                      votes)
+    @test isnothing(Legolas.validate(r_table, Lighthouse.OBSERVATION_ROW_SCHEMA))
 
     # ...can we handle both dataframe input and more generic row iterators?
+    df_table = DataFrame(r_table)
     output_r = Lighthouse._observation_table_to_inputs(r_table)
-    output_dft = Lighthouse._observation_table_to_inputs(df_table)
-    @test isequal(output_r, output_dft)
+    output_df = Lighthouse._observation_table_to_inputs(df_table)
+    @test isequal(output_r, output_df)
 
     # Safety last!
     transform!(df_table, :votes => ByRow(v -> isodd(sum(v)) ? missing : v);

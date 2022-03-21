@@ -7,7 +7,7 @@ using TensorBoardLogger
 using Makie
 using Printf
 using Legolas
-using DataFrames
+using Tables
 
 include("plotting.jl")
 
