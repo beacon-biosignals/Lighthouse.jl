@@ -355,7 +355,7 @@ function evaluation_metrics_plot(row::EvaluationRow; resolution=(1000, 1000),
                                          row.class_labels; legend=nothing)
 
     legend_pos = 2:3
-    if haskey(row, :discrimination_calibration_curve)
+    if has_value(row.discrimination_calibration_curve)
         legend_pos = 3
         plot_binary_discrimination_calibration_curves!(fig[3, 2],
                                                        row.discrimination_calibration_curve,
