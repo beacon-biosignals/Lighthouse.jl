@@ -306,7 +306,13 @@ Plot all evaluation metrics generated via [`evaluation_metrics_row`](@ref) and/o
 [`evaluation_metrics`](@ref) in a single image.
 """
 function evaluation_metrics_plot(row::EvaluationRow; kwargs...)
-    return evaluation_metrics_plot(_evaluation_row_dict(row); kwargs...)
+    data_dict = _evaluation_row_dict(row)
+    # In conversion from row to dict, all keys with missing values are excluded---
+    # but for the sake of plotting, we need them after all! So add them back.
+    for (k, v) in pairs(row)
+        ismissing(v) && (data_dict[string(k)] = missing)
+    end
+    return evaluation_metrics_plot(data_dict; kwargs...)
 end
 
 function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)

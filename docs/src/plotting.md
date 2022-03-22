@@ -266,10 +266,10 @@ data["discrimination_calibration_curve"] = (LinRange(0, 1, 10), LinRange(0,1, 10
 data["per_expert_discrimination_calibration_curves"] = curves
 
 # These are currently not used in plotting, but are still passed to `plot_binary_discrimination_calibration_curves`!
-data["discrimination_calibration_score"] = nothing
+data["discrimination_calibration_score"] = missing
 data["optimal_threshold_class"] = 1
-data["per_expert_discrimination_calibration_scores"] = nothing
-data["optimal_threshold"] = nothing
+data["per_expert_discrimination_calibration_scores"] = missing
+data["optimal_threshold"] = missing
 
 evaluation_metrics_plot(data)
 ```
