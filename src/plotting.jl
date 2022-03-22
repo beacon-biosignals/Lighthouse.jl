@@ -265,12 +265,13 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
     ax = Axis(subfig[1, 1]; axis_theme...)
     bg_color = to_color(ax.backgroundcolor[])
     xlims!(ax, 0, 1)
-    if isnothing(per_class_IRA_kappas)
+    if !has_value(per_class_IRA_kappas)
         ax.title = "Algorithm-expert agreement"
         annotations = map(enumerate(per_class_kappas)) do (i, k)
             return (string(round(k; digits=3)), Point2f(max(0, k), i))
         end
-        aligns, offsets, text_colors = text_attributes(per_class_kappas, 2, bar_colors, bg_color, text_color)
+        aligns, offsets, text_colors = text_attributes(per_class_kappas, 2, bar_colors,
+                                                       bg_color, text_color)
         barplot!(ax, per_class_kappas; direction=:x, color=bar_colors[2])
         text!(ax, annotations; align=aligns, offset=offsets, color=text_colors, text_theme...)
     else
@@ -279,19 +280,24 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         groups = vcat(fill(2, nclasses), fill(1, nclasses))
         xvals = vcat(1:nclasses, 1:nclasses)
         cmap = bar_colors
-        bars = barplot!(ax, xvals, max.(0, values); dodge=groups, color=groups, direction=:x, colormap=cmap)
+        bars = barplot!(ax, xvals, max.(0, values); dodge=groups, color=groups, direction=:x,
+                        colormap=cmap)
         # This is a bit hacky, but for now the easiest way to figure out the exact, dodged positions
         rectangles = bars.plots[][1][]
         dodged_y = last.(minimum.(rectangles)) .+ (last.(widths.(rectangles)) ./ 2)
         textpos = Point2f.(max.(0, values), dodged_y)
 
         labels = string.(round.(values; digits=3))
-        aligns, offsets, text_colors = text_attributes(values, groups, bar_colors, bg_color, text_color)
-        text!(ax, labels; position=textpos, align=aligns, offset=offsets, color=text_colors, text_theme...)
+        aligns, offsets, text_colors = text_attributes(values, groups, bar_colors, bg_color,
+                                                       text_color)
+        text!(ax, labels; position=textpos, align=aligns, offset=offsets, color=text_colors,
+              text_theme...)
         labels = ["Expert-vs-expert IRA", "Algorithm-vs-expert"]
         entries = map(c -> PolyElement(; color=c, strokewidth=0, strokecolor=:white), cmap)
-        legend = Legend(subfig[1, 1, Bottom()], entries, labels; tellwidth=false, tellheight=true,
-                        labelsize=12, padding=(0, 0, 0, 0), framevisible=false, patchsize=(10, 10),
+        legend = Legend(subfig[1, 1, Bottom()], entries, labels; tellwidth=false,
+                        tellheight=true,
+                        labelsize=12, padding=(0, 0, 0, 0), framevisible=false,
+                        patchsize=(10, 10),
                         patchlabelgap=6, labeljustification=:left)
         legend.margin = (0, 0, 0, 60)
     end
