@@ -241,7 +241,7 @@ Lighthouse.evaluation_metrics_plot
 ```@example 1
 using Lighthouse: evaluation_metrics_plot
 data = Dict{String, Any}()
-data["confusion_matrix"] = stable_rand(5, 5)
+data["confusion_matrix"] = stable_rand(0:100, 5, 5)
 data["class_labels"] = classes
 
 data["per_class_kappas"] = stable_rand(5)
