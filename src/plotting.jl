@@ -305,57 +305,59 @@ end
 Plot all evaluation metrics generated via [`evaluation_metrics_row`](@ref) and/or
 [`evaluation_metrics`](@ref) in a single image.
 """
-function evaluation_metrics_plot(row::EvaluationRow; kwargs...)
-    data_dict = _evaluation_row_dict(row)
-    # In conversion from row to dict, all keys with missing values are excluded---
-    # but for the sake of plotting, we need them after all! So add them back.
-    for (k, v) in pairs(row)
-        ismissing(v) && (data_dict[string(k)] = missing)
-    end
-    return evaluation_metrics_plot(data_dict; kwargs...)
+function evaluation_metrics_plot(data::Dict; kwargs...)
+    return evaluation_metrics_plot(EvaluationRow(data); kwargs...)
 end
 
-function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
+function evaluation_metrics_plot(row::EvaluationRow; resolution=(1000, 1000),
+                                 textsize=12)
     fig = Figure(; resolution=resolution, Axis=(titlesize=17,))
 
     # Confusion
-    plot_confusion_matrix!(fig[1, 1], data["confusion_matrix"], data["class_labels"], :Column;
+    plot_confusion_matrix!(fig[1, 1], row.confusion_matrix, row.class_labels,
+                           :Column;
                            annotation_text_size=textsize)
-    plot_confusion_matrix!(fig[1, 2], data["confusion_matrix"], data["class_labels"], :Row;
+    plot_confusion_matrix!(fig[1, 2], row.confusion_matrix, row.class_labels, :Row;
                            annotation_text_size=textsize)
     # Kappas
     IRA_kappa_data = nothing
-    multiclass = length(data["class_labels"]) > 2
-    labels = multiclass ? vcat("Multiclass", data["class_labels"]) : data["class_labels"]
-    kappa_data = multiclass ? vcat(data["multiclass_kappa"], data["per_class_kappas"]) :
-                 data["per_class_kappas"]
+    multiclass = length(row.class_labels) > 2
+    labels = multiclass ? vcat("Multiclass", row.class_labels) : row.class_labels
+    kappa_data = multiclass ? vcat(row.multiclass_kappa, row.per_class_kappas) :
+                 row.per_class_kappas
 
-    if issubset(["multiclass_IRA_kappas", "per_class_IRA_kappas"], keys(data))
-        IRA_kappa_data = multiclass ? vcat(data["multiclass_IRA_kappas"], data["per_class_IRA_kappas"]) :
-                         data["per_class_IRA_kappas"]
+    if issubset([:multiclass_IRA_kappas, :per_class_IRA_kappas], keys(row))
+        IRA_kappa_data = multiclass ?
+                         vcat(row.multiclass_IRA_kappas, row.per_class_IRA_kappas) :
+                         row.per_class_IRA_kappas
     end
 
-    plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data; annotation_text_size=textsize)
+    plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data;
+                 annotation_text_size=textsize)
 
     # Curves
-    ax = plot_roc_curves!(fig[2, 1], data["per_class_roc_curves"], data["per_class_roc_aucs"],
-                          data["class_labels"]; legend=nothing)
+    ax = plot_roc_curves!(fig[2, 1], row.per_class_roc_curves,
+                          row.per_class_roc_aucs,
+                          row.class_labels; legend=nothing)
 
-    plot_pr_curves!(fig[2, 2], data["per_class_pr_curves"], data["class_labels"]; legend=nothing)
+    plot_pr_curves!(fig[2, 2], row.per_class_pr_curves, row.class_labels;
+                    legend=nothing)
 
-    plot_reliability_calibration_curves!(fig[3, 1], data["per_class_reliability_calibration_curves"],
-                                         data["per_class_reliability_calibration_scores"],
-                                         data["class_labels"]; legend=nothing)
+    plot_reliability_calibration_curves!(fig[3, 1],
+                                         row.per_class_reliability_calibration_curves,
+                                         row.per_class_reliability_calibration_scores,
+                                         row.class_labels; legend=nothing)
 
     legend_pos = 2:3
-    if haskey(data, "discrimination_calibration_curve")
+    if haskey(row, :discrimination_calibration_curve)
         legend_pos = 3
-        plot_binary_discrimination_calibration_curves!(fig[3, 2], data["discrimination_calibration_curve"],
-                                                       data["discrimination_calibration_score"],
-                                                       data["per_expert_discrimination_calibration_curves"],
-                                                       data["per_expert_discrimination_calibration_scores"],
-                                                       data["optimal_threshold"],
-                                                       data["class_labels"][data["optimal_threshold_class"]])
+        plot_binary_discrimination_calibration_curves!(fig[3, 2],
+                                                       row.discrimination_calibration_curve,
+                                                       row.discrimination_calibration_score,
+                                                       row.per_expert_discrimination_calibration_curves,
+                                                       row.per_expert_discrimination_calibration_scores,
+                                                       row.optimal_threshold,
+                                                       row.class_labels[row.optimal_threshold_class])
     end
     legend_plots = filter(Makie.MakieLayout.get_plots(ax)) do plot
         return haskey(plot, :label)
@@ -365,17 +367,19 @@ function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=1
     end
 
     function label_str(i)
-        auc = round(data["per_class_roc_aucs"][i]; digits=2)
-        mse = round(data["per_class_reliability_calibration_scores"][i]; digits=2)
+        auc = round(row.per_class_roc_aucs[i]; digits=2)
+        mse = round(row.per_class_reliability_calibration_scores[i]; digits=2)
         return ["""ROC AUC  $auc
                    Cal. MSE    $mse
                    """]
     end
-    classes = data["class_labels"]
+    classes = row.class_labels
     nclasses = length(classes)
     class_labels = label_str.(1:nclasses)
-    Legend(fig[3, legend_pos], elements, class_labels, classes; nbanks=2, tellwidth=false, tellheight=false,
-           labelsize=11, titlesize=14, titlegap=5, groupgap=6, labelhalign=:left, labelvalign=:center)
+    Legend(fig[3, legend_pos], elements, class_labels, classes; nbanks=2, tellwidth=false,
+           tellheight=false,
+           labelsize=11, titlesize=14, titlegap=5, groupgap=6, labelhalign=:left,
+           labelvalign=:center)
     colgap!(fig.layout, 2)
     rowgap!(fig.layout, 4)
     return fig
