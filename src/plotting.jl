@@ -265,12 +265,13 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
     ax = Axis(subfig[1, 1]; axis_theme...)
     bg_color = to_color(ax.backgroundcolor[])
     xlims!(ax, 0, 1)
-    if isnothing(per_class_IRA_kappas)
+    if !has_value(per_class_IRA_kappas)
         ax.title = "Algorithm-expert agreement"
         annotations = map(enumerate(per_class_kappas)) do (i, k)
             return (string(round(k; digits=3)), Point2f(max(0, k), i))
         end
-        aligns, offsets, text_colors = text_attributes(per_class_kappas, 2, bar_colors, bg_color, text_color)
+        aligns, offsets, text_colors = text_attributes(per_class_kappas, 2, bar_colors,
+                                                       bg_color, text_color)
         barplot!(ax, per_class_kappas; direction=:x, color=bar_colors[2])
         text!(ax, annotations; align=aligns, offset=offsets, color=text_colors, text_theme...)
     else
@@ -279,19 +280,24 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         groups = vcat(fill(2, nclasses), fill(1, nclasses))
         xvals = vcat(1:nclasses, 1:nclasses)
         cmap = bar_colors
-        bars = barplot!(ax, xvals, max.(0, values); dodge=groups, color=groups, direction=:x, colormap=cmap)
+        bars = barplot!(ax, xvals, max.(0, values); dodge=groups, color=groups, direction=:x,
+                        colormap=cmap)
         # This is a bit hacky, but for now the easiest way to figure out the exact, dodged positions
         rectangles = bars.plots[][1][]
         dodged_y = last.(minimum.(rectangles)) .+ (last.(widths.(rectangles)) ./ 2)
         textpos = Point2f.(max.(0, values), dodged_y)
 
         labels = string.(round.(values; digits=3))
-        aligns, offsets, text_colors = text_attributes(values, groups, bar_colors, bg_color, text_color)
-        text!(ax, labels; position=textpos, align=aligns, offset=offsets, color=text_colors, text_theme...)
+        aligns, offsets, text_colors = text_attributes(values, groups, bar_colors, bg_color,
+                                                       text_color)
+        text!(ax, labels; position=textpos, align=aligns, offset=offsets, color=text_colors,
+              text_theme...)
         labels = ["Expert-vs-expert IRA", "Algorithm-vs-expert"]
         entries = map(c -> PolyElement(; color=c, strokewidth=0, strokecolor=:white), cmap)
-        legend = Legend(subfig[1, 1, Bottom()], entries, labels; tellwidth=false, tellheight=true,
-                        labelsize=12, padding=(0, 0, 0, 0), framevisible=false, patchsize=(10, 10),
+        legend = Legend(subfig[1, 1, Bottom()], entries, labels; tellwidth=false,
+                        tellheight=true,
+                        labelsize=12, padding=(0, 0, 0, 0), framevisible=false,
+                        patchsize=(10, 10),
                         patchlabelgap=6, labeljustification=:left)
         legend.margin = (0, 0, 0, 60)
     end
@@ -300,50 +306,64 @@ end
 
 """
     evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
+    evaluation_metrics_plot(row::EvaluationRow; kwargs...)
 
-Plots all evaluation metrics Lighthouse has to offer.
+Plot all evaluation metrics generated via [`evaluation_metrics_row`](@ref) and/or
+[`evaluation_metrics`](@ref) in a single image.
 """
-function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
+function evaluation_metrics_plot(data::Dict; kwargs...)
+    return evaluation_metrics_plot(EvaluationRow(data); kwargs...)
+end
+
+function evaluation_metrics_plot(row::EvaluationRow; resolution=(1000, 1000),
+                                 textsize=12)
     fig = Figure(; resolution=resolution, Axis=(titlesize=17,))
 
     # Confusion
-    plot_confusion_matrix!(fig[1, 1], data["confusion_matrix"], data["class_labels"], :Column;
+    plot_confusion_matrix!(fig[1, 1], row.confusion_matrix, row.class_labels,
+                           :Column;
                            annotation_text_size=textsize)
-    plot_confusion_matrix!(fig[1, 2], data["confusion_matrix"], data["class_labels"], :Row;
+    plot_confusion_matrix!(fig[1, 2], row.confusion_matrix, row.class_labels, :Row;
                            annotation_text_size=textsize)
     # Kappas
     IRA_kappa_data = nothing
-    multiclass = length(data["class_labels"]) > 2
-    labels = multiclass ? vcat("Multiclass", data["class_labels"]) : data["class_labels"]
-    kappa_data = multiclass ? vcat(data["multiclass_kappa"], data["per_class_kappas"]) :
-                 data["per_class_kappas"]
+    multiclass = length(row.class_labels) > 2
+    labels = multiclass ? vcat("Multiclass", row.class_labels) : row.class_labels
+    kappa_data = multiclass ? vcat(row.multiclass_kappa, row.per_class_kappas) :
+                 row.per_class_kappas
 
-    if issubset(["multiclass_IRA_kappas", "per_class_IRA_kappas"], keys(data))
-        IRA_kappa_data = multiclass ? vcat(data["multiclass_IRA_kappas"], data["per_class_IRA_kappas"]) :
-                         data["per_class_IRA_kappas"]
+    if issubset([:multiclass_IRA_kappas, :per_class_IRA_kappas], keys(row))
+        IRA_kappa_data = multiclass ?
+                         vcat(row.multiclass_IRA_kappas, row.per_class_IRA_kappas) :
+                         row.per_class_IRA_kappas
     end
 
-    plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data; annotation_text_size=textsize)
+    plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data;
+                 annotation_text_size=textsize)
 
     # Curves
-    ax = plot_roc_curves!(fig[2, 1], data["per_class_roc_curves"], data["per_class_roc_aucs"],
-                          data["class_labels"]; legend=nothing)
+    ax = plot_roc_curves!(fig[2, 1], row.per_class_roc_curves,
+                          row.per_class_roc_aucs,
+                          row.class_labels; legend=nothing)
 
-    plot_pr_curves!(fig[2, 2], data["per_class_pr_curves"], data["class_labels"]; legend=nothing)
+    plot_pr_curves!(fig[2, 2], row.per_class_pr_curves, row.class_labels;
+                    legend=nothing)
 
-    plot_reliability_calibration_curves!(fig[3, 1], data["per_class_reliability_calibration_curves"],
-                                         data["per_class_reliability_calibration_scores"],
-                                         data["class_labels"]; legend=nothing)
+    plot_reliability_calibration_curves!(fig[3, 1],
+                                         row.per_class_reliability_calibration_curves,
+                                         row.per_class_reliability_calibration_scores,
+                                         row.class_labels; legend=nothing)
 
     legend_pos = 2:3
-    if haskey(data, "discrimination_calibration_curve")
+    if has_value(row.discrimination_calibration_curve)
         legend_pos = 3
-        plot_binary_discrimination_calibration_curves!(fig[3, 2], data["discrimination_calibration_curve"],
-                                                       data["discrimination_calibration_score"],
-                                                       data["per_expert_discrimination_calibration_curves"],
-                                                       data["per_expert_discrimination_calibration_scores"],
-                                                       data["optimal_threshold"],
-                                                       data["class_labels"][data["optimal_threshold_class"]])
+        plot_binary_discrimination_calibration_curves!(fig[3, 2],
+                                                       row.discrimination_calibration_curve,
+                                                       row.discrimination_calibration_score,
+                                                       row.per_expert_discrimination_calibration_curves,
+                                                       row.per_expert_discrimination_calibration_scores,
+                                                       row.optimal_threshold,
+                                                       row.class_labels[row.optimal_threshold_class])
     end
     legend_plots = filter(Makie.MakieLayout.get_plots(ax)) do plot
         return haskey(plot, :label)
@@ -353,17 +373,19 @@ function evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=1
     end
 
     function label_str(i)
-        auc = round(data["per_class_roc_aucs"][i]; digits=2)
-        mse = round(data["per_class_reliability_calibration_scores"][i]; digits=2)
+        auc = round(row.per_class_roc_aucs[i]; digits=2)
+        mse = round(row.per_class_reliability_calibration_scores[i]; digits=2)
         return ["""ROC AUC  $auc
                    Cal. MSE    $mse
                    """]
     end
-    classes = data["class_labels"]
+    classes = row.class_labels
     nclasses = length(classes)
     class_labels = label_str.(1:nclasses)
-    Legend(fig[3, legend_pos], elements, class_labels, classes; nbanks=2, tellwidth=false, tellheight=false,
-           labelsize=11, titlesize=14, titlegap=5, groupgap=6, labelhalign=:left, labelvalign=:center)
+    Legend(fig[3, legend_pos], elements, class_labels, classes; nbanks=2, tellwidth=false,
+           tellheight=false,
+           labelsize=11, titlesize=14, titlegap=5, groupgap=6, labelhalign=:left,
+           labelvalign=:center)
     colgap!(fig.layout, 2)
     rowgap!(fig.layout, 4)
     return fig
