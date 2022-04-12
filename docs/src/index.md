@@ -25,6 +25,7 @@ upon
 evaluate!
 predict!
 Lighthouse.forward_logs
+Lighhouse.log_evaluation_row!
 Lighthouse._calculate_ea_kappas
 Lighthouse._calculate_ira_kappas
 Lighthouse._calculate_spearman_correlation
