@@ -45,6 +45,17 @@ function log_value!(logger::LearnLogger, field::AbstractString, value)
     return value
 end
 
+function log_evaluation_row!(logger::LearnLogger, field::AbstractString, metrics::EvaluationRow)
+    lighthouse_plot = evaluation_metrics_plot(metrics)
+    plot_data = evaluation_metrics(metrics) # Convert to dictionary
+    log_plot!(logger, field, lighthouse_plot, plot_data)
+    if haskey(plot_data, "spearman_correlation")
+        log_value!(logger, logger_prefix * "/spearman_correlation" * logger_suffix,
+                   plot_data["spearman_correlation"].ρ)
+    end
+    return metrics
+end
+
 function log_resource_info!(logger, section::AbstractString, info::ResourceInfo;
                             suffix::AbstractString="")
     log_value!(logger, section * "/time_in_seconds" * suffix, info.time_in_seconds)
@@ -211,25 +222,15 @@ function evaluate!(predicted_hard_labels::AbstractVector,
     _validate_threshold_class(optimal_threshold_class, classes)
 
     log_resource_info!(logger, logger_prefix; suffix=logger_suffix) do
-        plot_data = evaluation_metrics_row(predicted_hard_labels, predicted_soft_labels,
-                                       elected_hard_labels, classes, thresholds;
-                                       votes=votes,
-                                       optimal_threshold_class=optimal_threshold_class)
-        log_lighthouse_metrics!(logger, logger_prefix * "/metrics" * logger_suffix, plot_data)
+        metrics = evaluation_metrics_row(predicted_hard_labels, predicted_soft_labels,
+                                         elected_hard_labels, classes, thresholds;
+                                         votes=votes,
+                                         optimal_threshold_class=optimal_threshold_class)
+        log_evaluation_row!(logger, logger_prefix * "/metrics" * logger_suffix, metrics)
     end
     return nothing
 end
-    
-function log_lighthouse_metrics!(logger, prefix, metrics::EvaluationRow)
-    lighthouse_plot = evaluation_metrics_plot(metrics)
-    log_plot!(logger, logger_prefix * "/metrics" * logger_suffix, lighthouse_plot, evaluation_metrics(metrics))
-    if haskey(plot_data, "spearman_correlation")
-        log_value!(logger, logger_prefix * "/spearman_correlation" * logger_suffix,
-                   plot_data["spearman_correlation"].ρ)
-    end
-    return nothing
-end
- 
+
 function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_labels,
                                          class_count, strata)
     groups = reduce(∪, strata)
