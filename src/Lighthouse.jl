@@ -6,6 +6,11 @@ using StatsBase: StatsBase
 using TensorBoardLogger
 using Makie
 using Printf
+using Legolas
+using Tables
+
+include("row.jl")
+export EvaluationRow, ObservationRow
 
 include("plotting.jl")
 

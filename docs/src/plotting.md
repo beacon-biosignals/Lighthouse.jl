@@ -241,7 +241,7 @@ Lighthouse.evaluation_metrics_plot
 ```@example 1
 using Lighthouse: evaluation_metrics_plot
 data = Dict{String, Any}()
-data["confusion_matrix"] = stable_rand(5, 5)
+data["confusion_matrix"] = stable_rand(0:100, 5, 5)
 data["class_labels"] = classes
 
 data["per_class_kappas"] = stable_rand(5)
@@ -262,15 +262,20 @@ evaluation_metrics_plot(data)
 Optionally, one can also add a binary discrimination calibration curve plot:
 
 ```@example 1
-
 data["discrimination_calibration_curve"] = (LinRange(0, 1, 10), LinRange(0,1, 10) .+ 0.1randn(10))
 data["per_expert_discrimination_calibration_curves"] = curves
 
 # These are currently not used in plotting, but are still passed to `plot_binary_discrimination_calibration_curves`!
-data["discrimination_calibration_score"] = nothing
+data["discrimination_calibration_score"] = missing
 data["optimal_threshold_class"] = 1
-data["per_expert_discrimination_calibration_scores"] = nothing
-data["optimal_threshold"] = nothing
+data["per_expert_discrimination_calibration_scores"] = missing
+data["optimal_threshold"] = missing
 
 evaluation_metrics_plot(data)
+```
+
+Plots can also be generated directly from an `EvaluationRow`:
+```@example 1
+data_row = EvaluationRow(data)
+evaluation_metrics_plot(data_row)
 ```

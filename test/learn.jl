@@ -41,27 +41,28 @@ end
             callback = n -> begin
                 upon_loss_decrease() do _
                     counted += n
-                    @info counted n
+                    @debug counted n
                 end
             end
-            elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
-            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
-                              epoch_limit=limit, post_epoch_callback=callback)
+            elected = majority.((rng,), eachrow(votes),
+                                (1:length(Lighthouse.classes(model)),))
+            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes,
+                              elected; epoch_limit=limit, post_epoch_callback=callback)
             @test counted == sum(1:limit)
         end
         @test length(logger.logged["train/loss_per_batch"]) == length(train_batches) * limit
         for key in ["test_set_prediction/loss_per_batch",
-             "test_set_prediction/time_in_seconds_per_batch",
-             "test_set_prediction/gc_time_in_seconds_per_batch",
-             "test_set_prediction/allocations_per_batch",
-             "test_set_prediction/memory_in_mb_per_batch"]
+                    "test_set_prediction/time_in_seconds_per_batch",
+                    "test_set_prediction/gc_time_in_seconds_per_batch",
+                    "test_set_prediction/allocations_per_batch",
+                    "test_set_prediction/memory_in_mb_per_batch"]
             @test length(logger.logged[key]) == length(test_batches) * limit
         end
         for key in ["test_set_prediction/mean_loss_per_epoch",
-             "test_set_evaluation/time_in_seconds_per_epoch",
-             "test_set_evaluation/gc_time_in_seconds_per_epoch",
-             "test_set_evaluation/allocations_per_epoch",
-             "test_set_evaluation/memory_in_mb_per_epoch"]
+                    "test_set_evaluation/time_in_seconds_per_epoch",
+                    "test_set_evaluation/gc_time_in_seconds_per_epoch",
+                    "test_set_evaluation/allocations_per_epoch",
+                    "test_set_evaluation/memory_in_mb_per_epoch"]
             @test length(logger.logged[key]) == limit
         end
         @test length(logger.logged["test_set_evaluation/metrics_per_epoch"]) == limit
@@ -98,18 +99,36 @@ end
         @test length(logger.logged["wheeeeeee/time_in_seconds_for_all_time"]) == 1
         @test length(logger.logged["wheeeeeee/metrics_for_all_time"]) == 1
 
+        # Round-trip `onehot` for codecov
+        onehot_hard = map(h -> vec(Lighthouse.onehot(model, h)), predicted_hard)
+        @test map(h -> findfirst(h), onehot_hard) == predicted_hard
+
         # Test startified eval
         strata = [Set("group $(j % Int(ceil(sqrt(j))))" for j in 1:(i - 1))
                   for i in 1:size(votes, 1)]
-        plot, plot_data = evaluation_metrics_plot(predicted_hard, predicted_soft,
-                                                  elected_hard, model.classes, 0.0:0.01:1.0;
-                                                  votes=votes, strata=strata)
+        plot_data = evaluation_metrics(predicted_hard, predicted_soft, elected_hard,
+                                       model.classes, 0.0:0.01:1.0; votes, strata)
         @test haskey(plot_data, "stratified_kappas")
+        plot = evaluation_metrics_plot(plot_data)
+
+        test_evaluation_metrics_roundtrip(plot_data)
+
+        plot2, plot_data2 = @test_deprecated evaluation_metrics_plot(predicted_hard,
+                                                                     predicted_soft,
+                                                                     elected_hard,
+                                                                     model.classes,
+                                                                     0.0:0.01:1.0;
+                                                                     votes=votes,
+                                                                     strata=strata)
+        @test isequal(plot_data, plot_data2) # check these are the same
+        test_evaluation_metrics_roundtrip(plot_data2)
 
         # Test plotting
         plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
         @test isa(plot_data["thresholds"], AbstractVector)
 
+        @test isa(last(plot_data["per_class_pr_curves"]),
+                  Tuple{Vector{Float64},Vector{Float64}})
         pr = plot_pr_curves(plot_data["per_class_pr_curves"], plot_data["class_labels"])
         @testplot pr
 
@@ -118,15 +137,17 @@ end
         @testplot roc
 
         # Kappa no IRA
-        kappas_no_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
-                        vcat("Multiclass", plot_data["class_labels"]))
+        kappas_no_ira = plot_kappas(vcat(plot_data["multiclass_kappa"],
+                                         plot_data["per_class_kappas"]),
+                                    vcat("Multiclass", plot_data["class_labels"]))
         @testplot kappas_no_ira
 
         # Kappa with IRA
-        kappas_ira = plot_kappas(vcat(plot_data["multiclass_kappa"], plot_data["per_class_kappas"]),
-                        vcat("Multiclass", plot_data["class_labels"]),
-                        vcat(plot_data["multiclass_IRA_kappas"],
-                             plot_data["per_class_IRA_kappas"]))
+        kappas_ira = plot_kappas(vcat(plot_data["multiclass_kappa"],
+                                      plot_data["per_class_kappas"]),
+                                 vcat("Multiclass", plot_data["class_labels"]),
+                                 vcat(plot_data["multiclass_IRA_kappas"],
+                                      plot_data["per_class_IRA_kappas"]))
         @testplot kappas_ira
 
         reliability_calibration = plot_reliability_calibration_curves(plot_data["per_class_reliability_calibration_curves"],
@@ -144,6 +165,9 @@ end
 
         all_together_2 = evaluation_metrics_plot(plot_data)
         @testplot all_together_2
+
+        all_together_3 = evaluation_metrics_plot(EvaluationRow(plot_data))
+        @testplot all_together_3
 
         #savefig(all_together_2, "/tmp/multiclass.png")
     end
@@ -168,12 +192,13 @@ end
             callback = n -> begin
                 upon_loss_decrease() do _
                     counted += n
-                    @info counted n
+                    @debug counted n
                 end
             end
-            elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
-            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
-                              epoch_limit=limit, post_epoch_callback=callback)
+            elected = majority.((rng,), eachrow(votes),
+                                (1:length(Lighthouse.classes(model)),))
+            Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes,
+                              elected; epoch_limit=limit, post_epoch_callback=callback)
             @test counted == sum(1:limit)
         end
         # Binary classification logs some additional metrics
@@ -181,6 +206,7 @@ end
               limit
         plot_data = last(logger.logged["test_set_evaluation/metrics_per_epoch"])
         @test haskey(plot_data, "spearman_correlation")
+        test_evaluation_metrics_roundtrip(plot_data)
 
         # No `optimal_threshold_class` during learning...
         @test !haskey(plot_data, "optimal_threshold")
@@ -188,13 +214,14 @@ end
 
         # And now, `optimal_threshold_class` during learning
         elected = majority.((rng,), eachrow(votes), (1:length(Lighthouse.classes(model)),))
-        Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes, elected;
-                          epoch_limit=limit, optimal_threshold_class=2,
+        Lighthouse.learn!(model, logger, () -> train_batches, () -> test_batches, votes,
+                          elected; epoch_limit=limit, optimal_threshold_class=2,
                           test_set_logger_prefix="validation_set")
         plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
         @test haskey(plot_data, "optimal_threshold")
         @test haskey(plot_data, "optimal_threshold_class")
         @test plot_data["optimal_threshold_class"] == 2
+        test_evaluation_metrics_roundtrip(plot_data)
 
         # `optimal_threshold_class` param invalid
         @test_throws ArgumentError Lighthouse.learn!(model, logger, () -> train_batches,
@@ -220,12 +247,14 @@ end
         plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         @test !haskey(plot_data, "per_class_IRA_kappas")
         @test !haskey(plot_data, "multiclass_IRA_kappas")
+        test_evaluation_metrics_roundtrip(plot_data)
 
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes)
         plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         @test haskey(plot_data, "per_class_IRA_kappas")
         @test haskey(plot_data, "multiclass_IRA_kappas")
+        test_evaluation_metrics_roundtrip(plot_data)
 
         # Test `evaluate` for different optimal_threshold classes
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
@@ -236,6 +265,7 @@ end
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
                   optimal_threshold_class=2)
         plot_data_2 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
+        test_evaluation_metrics_roundtrip(plot_data_2)
 
         # The thresholds should not be identical (since they are *inclusive* when applied:
         # values greater than _or equal to_ the threshold are given the class value)
@@ -260,10 +290,12 @@ end
     end
 end
 
-@testset "`_calculate_ira_kappas`" begin
+@testset "Invalid `_calculate_ira_kappas`" begin
     classes = ["roy", "gee", "biv"]
-    @test isnothing(Lighthouse._calculate_ira_kappas([1; 1; 1; 1], classes))  # Only one voter...
-    @test isnothing(Lighthouse._calculate_ira_kappas([1 0; 1 0; 0 1], classes))  # No observations in common...
+    @test isequal(Lighthouse._calculate_ira_kappas([1; 1; 1; 1], classes),
+                  (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing))  # Only one voter...
+    @test isequal(Lighthouse._calculate_ira_kappas([1 0; 1 0; 0 1], classes),
+                  (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing))  # No observations in common...
 end
 
 @testset "Calculate `_spearman_corr`" begin
@@ -297,11 +329,9 @@ end
 
     # Test NaN spearman due to unranked input
     votes = [1; 2; 2]
-    predicted_soft = [
-        0.3 0.7
-        0.3 0.7
-        0.3 0.7
-    ]
+    predicted_soft = [0.3 0.7
+                      0.3 0.7
+                      0.3 0.7]
     sp = Lighthouse._calculate_spearman_correlation(predicted_soft, votes, ["oh" "em"])
     @test isnan(sp.ρ)
 
@@ -323,11 +353,9 @@ end
     @test length(single_voter_calibration.mse) == 1
 
     # Test multi-voter voter discrimination calibration
-    votes = [
-        0 1 1 1
-        1 2 0 0
-        2 1 2 2
-    ] # Note: voters 3 and 4 have voted identically
+    votes = [0 1 1 1
+             1 2 0 0
+             2 1 2 2] # Note: voters 3 and 4 have voted identically
     voter_calibration = Lighthouse._calculate_voter_discrimination_calibration(votes;
                                                                                class_of_interest_index=1)
     @test length(voter_calibration.mse) == size(votes, 2)
@@ -354,13 +382,11 @@ end
 end
 
 @testset "2-class per_class_confusion_statistics" begin
-    predicted_soft_labels = [
-        0.51 0.49
-        0.49 0.51
-        0.1 0.9
-        0.9 0.1
-        0.0 1.0
-    ]
+    predicted_soft_labels = [0.51 0.49
+                             0.49 0.51
+                             0.1 0.9
+                             0.9 0.1
+                             0.0 1.0]
     elected_hard_labels = [1, 2, 2, 2, 1]
     thresholds = [0.25, 0.5, 0.75]
     class_1, class_2 = Lighthouse.per_class_confusion_statistics(predicted_soft_labels,
@@ -435,15 +461,13 @@ end
 end
 
 @testset "3-class per_class_confusion_statistics" begin
-    predicted_soft_labels = [
-        1/3 1/3 1/3
-        0.1 0.7 0.2
-        0.25 0.25 0.5
-        0.4 0.5 0.1
-        0.0 0.0 1.0
-        0.2 0.5 0.3
-        0.5 0.4 0.1
-    ]
+    predicted_soft_labels = [1/3 1/3 1/3
+                             0.1 0.7 0.2
+                             0.25 0.25 0.5
+                             0.4 0.5 0.1
+                             0.0 0.0 1.0
+                             0.2 0.5 0.3
+                             0.5 0.4 0.1]
     elected_hard_labels = [1, 2, 2, 1, 3, 3, 1]
     # TODO would be more robust to have multiple thresholds, but our naive tests
     # here will have to be refactored to avoid becoming a nightmare if we do that

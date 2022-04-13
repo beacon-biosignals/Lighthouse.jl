@@ -38,6 +38,11 @@ accuracy
 binary_statistics
 cohens_kappa
 calibration_curve
+EvaluationRow
+ObservationRow
+Lighthouse.evaluation_metrics
+Lighthouse._evaluation_row_dict
+Lighthouse.evaluation_metrics_row
 ```
 
 ## Utilities

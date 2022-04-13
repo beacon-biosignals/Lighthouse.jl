@@ -24,14 +24,14 @@ end
     accuracy(confusion::AbstractMatrix)
 
 Returns the percentage of matching classifications out of total classifications,
-or `missing` if `all(iszero, confusion)`.
+or `NaN` if `all(iszero, confusion)`.
 
 Note that `accuracy(confusion)` is equivalent to overall percent agreement
 between `confusion`'s row classifier and column classifier.
 """
 function accuracy(confusion::AbstractMatrix)
     total = sum(confusion)
-    total == 0 && return missing
+    total == 0 && return NaN
     return tr(confusion) / total
 end
 
@@ -78,15 +78,12 @@ function binary_statistics(confusion::AbstractMatrix, class_index::Integer)
     false_negative_rate = (false_negatives == 0 && actual_positives == 0) ?
                           (zero(false_negatives) / one(actual_positives)) :
                           (false_negatives / actual_positives)
-    precision = (true_positives == 0 && predicted_positives == 0) ? missing :
+    precision = (true_positives == 0 && predicted_positives == 0) ? NaN :
                 (true_positives / predicted_positives)
-    return (predicted_positives=predicted_positives,
-            predicted_negatives=predicted_negatives, actual_positives=actual_positives,
-            actual_negatives=actual_negatives, true_positives=true_positives,
-            true_negatives=true_negatives, false_positives=false_positives,
-            false_negatives=false_negatives, true_positive_rate=true_positive_rate,
-            true_negative_rate=true_negative_rate, false_positive_rate=false_positive_rate,
-            false_negative_rate=false_negative_rate, precision=precision)
+    return (; predicted_positives, predicted_negatives, actual_positives, actual_negatives,
+            true_positives, true_negatives, false_positives, false_negatives,
+            true_positive_rate, true_negative_rate, false_positive_rate,
+            false_negative_rate, precision)
 end
 
 function binary_statistics(confusion::AbstractMatrix)
@@ -105,7 +102,8 @@ Return `(κ, p₀)` where `κ` is Cohen's kappa and `p₀` percent agreement giv
 their equivalents in [`confusion_matrix`](@ref)).
 """
 function cohens_kappa(class_count, hard_label_pairs)
-    @assert all(issubset(pair, 1:class_count) for pair in hard_label_pairs)
+    all(issubset(pair, 1:class_count) for pair in hard_label_pairs) ||
+        throw(ArgumentError("Unexpected class in `hard_label_pairs`."))
     p₀ = accuracy(confusion_matrix(class_count, hard_label_pairs))
     pₑ = _probability_of_chance_agreement(class_count, hard_label_pairs)
     return _cohens_kappa(p₀, pₑ), p₀
@@ -137,7 +135,7 @@ where:
 
 - `bins` a vector with `bin_count` `Pairs` specifying the calibration curve's probability bins
 - `fractions`: a vector where `fractions[i]` is the number of values in `probabilities`
-  that falls within `bin[i]` over the total number of values within `bin[i]`, or `missing`
+  that falls within `bin[i]` over the total number of values within `bin[i]`, or `NaN`
   if the total number of values in `bin[i]` is zero.
 - `totals`: a vector where `totals[i]` the total number of values within `bin[i]`.
 - `mean_squared_error`: The mean squared error of `fractions` vs. an ideal calibration curve.
@@ -150,12 +148,12 @@ function calibration_curve(probabilities, bitmask; bin_count=10)
     bins = probability_bins(bin_count)
     per_bin = [fraction_within(probabilities, bitmask, bin...) for bin in bins]
     fractions, totals = first.(per_bin), last.(per_bin)
-    nonempty_indices = findall(!ismissing, fractions)
+    nonempty_indices = findall(!isnan, fractions)
     if !isempty(nonempty_indices)
         ideal = range(mean(first(bins)), mean(last(bins)); length=length(bins))
         mean_squared_error = mse(fractions[nonempty_indices], ideal[nonempty_indices])
     else
-        mean_squared_error = missing
+        mean_squared_error = NaN
     end
     return (bins=bins, fractions=fractions, totals=totals,
             mean_squared_error=mean_squared_error)
@@ -179,6 +177,6 @@ function fraction_within(values, bitmask, start, stop)
             total += 1
         end
     end
-    fraction = iszero(total) ? missing : (count / total)
+    fraction = iszero(total) ? NaN : (count / total)
     return (fraction=fraction, total=total)
 end
