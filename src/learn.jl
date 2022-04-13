@@ -46,12 +46,12 @@ function log_value!(logger::LearnLogger, field::AbstractString, value)
 end
 
 """
-    log_evaluation_row!(logger::LearnLogger, field::AbstractString, metrics::EvaluationRow)
+    log_evaluation_row!(logger, field::AbstractString, metrics::EvaluationRow)
 
 From fields in [`EvaluationRow`](@ref), generate and plot the composite [`evaluation_metrics_plot`](@ref)
 as well as `spearman_correlation` (if present).
 """
-function log_evaluation_row!(logger::LearnLogger, field::AbstractString,
+function log_evaluation_row!(logger, field::AbstractString,
                              metrics::EvaluationRow)
     metrics_plot = evaluation_metrics_plot(metrics)
     metrics_dict = _evaluation_row_dict(metrics)
