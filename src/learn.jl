@@ -45,6 +45,23 @@ function log_value!(logger::LearnLogger, field::AbstractString, value)
     return value
 end
 
+"""
+    log_evaluation_row!(logger, field::AbstractString, metrics)
+
+From fields in [`EvaluationRow`](@ref), generate and plot the composite [`evaluation_metrics_plot`](@ref)
+as well as `spearman_correlation` (if present).
+"""
+function log_evaluation_row!(logger, field::AbstractString, metrics)
+    metrics_plot = evaluation_metrics_plot(metrics)
+    metrics_dict = _evaluation_row_dict(metrics)
+    log_plot!(logger, field, metrics_plot, metrics_dict)
+    if haskey(metrics_dict, "spearman_correlation")
+        sp_field = replace(field, "metrics" => "spearman_correlation")
+        log_value!(logger, sp_field, metrics_dict["spearman_correlation"].ρ)
+    end
+    return metrics_plot
+end
+
 function log_resource_info!(logger, section::AbstractString, info::ResourceInfo;
                             suffix::AbstractString="")
     log_value!(logger, section * "/time_in_seconds" * suffix, info.time_in_seconds)
@@ -206,21 +223,18 @@ function evaluate!(predicted_hard_labels::AbstractVector,
                    predicted_soft_labels::AbstractMatrix,
                    elected_hard_labels::AbstractVector, classes, logger;
                    logger_prefix::AbstractString, logger_suffix::AbstractString="",
-                   votes::Union{Nothing,AbstractMatrix}=nothing, thresholds=0.0:0.01:1.0,
-                   optimal_threshold_class::Union{Nothing,Integer}=nothing)
+                   votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                   thresholds=0.0:0.01:1.0,
+                   optimal_threshold_class::Union{Nothing,Integer,Missing}=nothing)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     log_resource_info!(logger, logger_prefix; suffix=logger_suffix) do
-        plot_data = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
-                                       elected_hard_labels, classes, thresholds;
-                                       votes=votes,
-                                       optimal_threshold_class=optimal_threshold_class)
-        plot = evaluation_metrics_plot(plot_data)
-        log_plot!(logger, logger_prefix * "/metrics" * logger_suffix, plot, plot_data)
-        if haskey(plot_data, "spearman_correlation")
-            log_value!(logger, logger_prefix * "/spearman_correlation" * logger_suffix,
-                       plot_data["spearman_correlation"].ρ)
-        end
+        metrics = evaluation_metrics_row(predicted_hard_labels, predicted_soft_labels,
+                                         elected_hard_labels, classes, thresholds;
+                                         votes, optimal_threshold_class)
+        log_evaluation_row!(logger, logger_prefix * "/metrics" * logger_suffix,
+                            metrics)
+        return nothing
     end
     return nothing
 end
@@ -619,7 +633,9 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                          discrimination_calibration_curve, discrimination_calibration_score,
                          per_expert_discrimination_calibration_curves,
                          per_expert_discrimination_calibration_scores, optimal_threshold,
-                         optimal_threshold_class, thresholds)
+                         optimal_threshold_class=has_value(optimal_threshold_class) ?
+                                                 optimal_threshold_class : missing,
+                         thresholds)
 end
 
 """
