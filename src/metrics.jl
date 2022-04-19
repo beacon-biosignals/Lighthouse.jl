@@ -55,6 +55,7 @@ with the following fields for the given `class_index`:
 - `false_positive_rate`
 - `false_negative_rate`
 - `precision`
+- `f1`
 """
 function binary_statistics(confusion::AbstractMatrix, class_index::Integer)
     total = sum(confusion)
@@ -80,10 +81,11 @@ function binary_statistics(confusion::AbstractMatrix, class_index::Integer)
                           (false_negatives / actual_positives)
     precision = (true_positives == 0 && predicted_positives == 0) ? NaN :
                 (true_positives / predicted_positives)
+    f1 = (2 * precision * true_positive_rate) / (precision + true_positive_rate)
     return (; predicted_positives, predicted_negatives, actual_positives, actual_negatives,
             true_positives, true_negatives, false_positives, false_negatives,
             true_positive_rate, true_negative_rate, false_positive_rate,
-            false_negative_rate, precision)
+            false_negative_rate, precision, f1)
 end
 
 function binary_statistics(confusion::AbstractMatrix)
