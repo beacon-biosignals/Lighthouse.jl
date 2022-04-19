@@ -530,7 +530,7 @@ function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:
                                   optimal_threshold_class)
 end
 
-function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+function evaluation_metrics_row(predicted_hard_labels::Union{Missing,AbstractVector},
                                 predicted_soft_labels::AbstractMatrix,
                                 elected_hard_labels::AbstractVector, classes,
                                 thresholds=0.0:0.01:1.0;
