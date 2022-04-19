@@ -23,6 +23,7 @@
     @test stats.false_positive_rate == 1 / 6
     @test stats.false_negative_rate == 0.5
     @test stats.precision == 0.5
+    @test stats.f1 == 0.5
 
     labels = rand(StableRNG(42), 1:3, 100)
     hard_label_pairs = zip(labels, labels)
@@ -39,6 +40,7 @@
         @test stats.true_positive_rate == stats.true_negative_rate == 1
         @test stats.false_positive_rate == stats.false_negative_rate == 0
         @test stats.precision == 1
+        @test stats.f1 == 1
     end
 
     n, k = 1_000_000, 2
@@ -63,6 +65,7 @@
     @test isapprox(stats.false_positive_rate, 0.5; atol=0.02)
     @test isapprox(stats.false_negative_rate, 0.5; atol=0.02)
     @test isapprox(stats.precision, 0.5; atol=0.02)
+    @test isapprox(stats.f1, 0.5; atol=0.02)
 
     @test confusion_matrix(10, ()) == zeros(10, 10)
     @test all(isnan, cohens_kappa(10, ()))
@@ -81,6 +84,7 @@
     @test stats.false_positive_rate == 0
     @test stats.false_negative_rate == 0
     @test isnan(stats.precision)
+    @test isnan(stats.f1)
 
     for p in 0:0.1:1
         @test Lighthouse._cohens_kappa(p, p) == 0
