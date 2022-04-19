@@ -536,14 +536,16 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 thresholds=0.0:0.01:1.0;
                                 votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing,
+                                harden_fn=(soft, threshold) -> s >= threshold)
     _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
     class_labels = string.(class_vector)
     per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
-                                                     elected_hard_labels, thresholds)
+                                                     elected_hard_labels, thresholds;
+                                                     harden_fn)
 
     # ROC curves
     per_class_roc_curves = [(map(t -> t.false_positive_rate, stats),
@@ -582,7 +584,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
         # Recalculate `predicted_hard_labels` with this new threshold
         other_class = optimal_threshold_class == 1 ? 2 : 1
         for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
+            predicted_hard_labels[i] = harden_fn.(row[optimal_threshold_class], optimal_threshold) ?
                                        optimal_threshold_class : other_class
         end
     else
@@ -699,8 +701,18 @@ function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
     return evaluation_metrics_plot(plot_dict), plot_dict
 end
 
+"""
+    per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
+                                        elected_hard_labels::AbstractVector, thresholds;
+                                        harden_fn=(soft, threshold) -> s >= threshold)
+
+Arguments:
+- `harden_fn`: Function with input `(soft label, threshold)` and output (`Bool`)
+whether the output is now the class of interest.
+"""
 function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
-                                        elected_hard_labels::AbstractVector, thresholds)
+                                        elected_hard_labels::AbstractVector, thresholds;
+                                        harden_fn=(soft, threshold) -> s >= threshold)
     class_count = size(predicted_soft_labels, 2)
     confusions = [[confusion_matrix(2) for _ in 1:length(thresholds)]
                   for _ in 1:class_count]
@@ -709,7 +721,7 @@ function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
             predicted_soft_label = predicted_soft_labels[label_index, class_index]
             elected = (elected_hard_labels[label_index] == class_index) + 1
             for (threshold_index, threshold) in enumerate(thresholds)
-                predicted = (predicted_soft_label >= threshold) + 1
+                predicted = harden_fn(predicted_soft_label, threshold) + 1
                 confusions[class_index][threshold_index][predicted, elected] += 1
             end
         end
