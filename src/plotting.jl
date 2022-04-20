@@ -349,10 +349,12 @@ function evaluation_metrics_plot(row::EvaluationRow; resolution=(1000, 1000),
     plot_pr_curves!(fig[2, 2], row.per_class_pr_curves, row.class_labels;
                     legend=nothing)
 
-    plot_reliability_calibration_curves!(fig[3, 1],
-                                         row.per_class_reliability_calibration_curves,
-                                         row.per_class_reliability_calibration_scores,
-                                         row.class_labels; legend=nothing)
+    if has_value(row.per_class_reliability_calibration_curves)
+        plot_reliability_calibration_curves!(fig[3, 1],
+                                            row.per_class_reliability_calibration_curves,
+                                            row.per_class_reliability_calibration_scores,
+                                            row.class_labels; legend=nothing)
+    end
 
     legend_pos = 2:3
     if has_value(row.discrimination_calibration_curve)
@@ -374,10 +376,15 @@ function evaluation_metrics_plot(row::EvaluationRow; resolution=(1000, 1000),
 
     function label_str(i)
         auc = round(row.per_class_roc_aucs[i]; digits=2)
-        mse = round(row.per_class_reliability_calibration_scores[i]; digits=2)
-        return ["""ROC AUC  $auc
-                   Cal. MSE    $mse
-                   """]
+        if has_value(row.per_class_reliability_calibration_scores)
+            mse = round(row.per_class_reliability_calibration_scores[i]; digits=2)
+            return ["""ROC AUC  $auc
+                    Cal. MSE    $mse
+                    """]
+        else
+            return ["""ROC AUC  $auc
+                    """]
+        end
     end
     classes = row.class_labels
     nclasses = length(classes)

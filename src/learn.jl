@@ -399,6 +399,7 @@ function _calculate_spearman_correlation(predicted_soft_labels, votes, classes)
     return _spearman_corr(predicted_soft_labels[:, class_index], elected_soft_labels)
 end
 
+#TODO SUPPORT HARDEN
 function _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                       votes; thresholds,
                                                                       class_of_interest_index)
@@ -522,12 +523,13 @@ See also [`evaluation_metrics_plot`](@ref).
 """
 function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing,
+                                harden_fn=(soft, threshold) -> s >= threshold)
     inputs = _observation_table_to_inputs(observation_table)
     return evaluation_metrics_row(inputs.predicted_hard_labels,
                                   inputs.predicted_soft_labels, inputs.elected_hard_labels,
                                   classes, thresholds; inputs.votes, strata,
-                                  optimal_threshold_class)
+                                  optimal_threshold_class, harden_fn)
 end
 
 function evaluation_metrics_row(predicted_hard_labels::Union{Missing,AbstractVector},
@@ -583,8 +585,11 @@ function evaluation_metrics_row(predicted_hard_labels::Union{Missing,AbstractVec
 
         # Recalculate `predicted_hard_labels` with this new threshold
         other_class = optimal_threshold_class == 1 ? 2 : 1
+        ismissing(predicted_hard_labels) &&
+            (predicted_hard_labels = Vector{Int}(undef, size(predicted_soft_labels, 1)))
         for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = harden_fn.(row[optimal_threshold_class], optimal_threshold) ?
+            predicted_hard_labels[i] = harden_fn(row[optimal_threshold_class],
+                                                 optimal_threshold) ?
                                        optimal_threshold_class : other_class
         end
     else
@@ -606,14 +611,18 @@ function evaluation_metrics_row(predicted_hard_labels::Union{Missing,AbstractVec
                                                         strata) : missing
 
     # Reliability calibration curves
-    per_class_reliability_calibration = map(1:class_count) do class_index
-        class_probabilities = view(predicted_soft_labels, :, class_index)
-        return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
+    per_class_reliability_calibration_curves = per_class_reliability_calibration_scores = missing
+    if eltype(predicted_soft_labels) <: Real
+        per_class_reliability_calibration = map(1:class_count) do class_index
+            class_probabilities = view(predicted_soft_labels, :, class_index)
+            return calibration_curve(class_probabilities,
+                                     elected_hard_labels .== class_index)
+        end
+        per_class_reliability_calibration_curves = map(x -> (mean.(x.bins), x.fractions),
+                                                       per_class_reliability_calibration)
+        per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
+                                                       per_class_reliability_calibration)
     end
-    per_class_reliability_calibration_curves = map(x -> (mean.(x.bins), x.fractions),
-                                                   per_class_reliability_calibration)
-    per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
-                                                   per_class_reliability_calibration)
 
     # Log Spearman correlation, iff this is a binary classification problem
     if length(classes) == 2 && has_value(votes)
@@ -703,8 +712,8 @@ end
 
 """
     per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
-                                        elected_hard_labels::AbstractVector, thresholds;
-                                        harden_fn=(soft, threshold) -> s >= threshold)
+                                   elected_hard_labels::AbstractVector, thresholds;
+                                   harden_fn=(soft, threshold) -> s >= threshold)
 
 Arguments:
 - `harden_fn`: Function with input `(soft label, threshold)` and output (`Bool`)
@@ -716,6 +725,7 @@ function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
     class_count = size(predicted_soft_labels, 2)
     confusions = [[confusion_matrix(2) for _ in 1:length(thresholds)]
                   for _ in 1:class_count]
+
     for class_index in 1:class_count
         for label_index in 1:length(elected_hard_labels)
             predicted_soft_label = predicted_soft_labels[label_index, class_index]
