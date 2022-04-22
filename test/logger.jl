@@ -25,3 +25,7 @@
         end
     end
 end
+
+@testset "`Generic datastructure logging`" begin
+    @test isnothing(Lighthosue.log_line_series!(logger, "foo", 3, 2), nothing)
+end
