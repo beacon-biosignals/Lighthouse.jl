@@ -45,6 +45,12 @@ function log_value!(logger::LearnLogger, field::AbstractString, value)
     return value
 end
 
+
+function log_line_series!(logger::LearnLogger, field::AbstractString, series, series_labels)
+    @warn "`log_line_series!` not implemented for `LearnLogger`"
+    return nothing
+end
+
 """
     log_evaluation_row!(logger, field::AbstractString, metrics)
 
