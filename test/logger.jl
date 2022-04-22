@@ -27,5 +27,8 @@
 end
 
 @testset "`Generic datastructure logging`" begin
-    @test isnothing(Lighthosue.log_line_series!(logger, "foo", 3, 2), nothing)
+    mktempdir() do logdir
+        logger = LearnLogger(logdir, "test_run")
+        @test isnothing(Lighthouse.log_line_series!(logger, "foo", 3, 2))
+    end
 end
