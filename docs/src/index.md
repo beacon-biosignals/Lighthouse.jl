@@ -33,6 +33,7 @@ The following "primitives" must be defined for a logger to be used with Lighthou
 
 ```@docs
 log_event!
+log_value!
 log_line_series!
 log_plot!
 step_logger!
