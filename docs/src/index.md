@@ -19,16 +19,39 @@ Lighthouse.is_early_stopping_exception
 ## The `learn!` Interface
 
 ```@docs
-LearnLogger
 learn!
-upon
 evaluate!
 predict!
-Lighthouse.forward_logs
-Lighthouse.log_evaluation_row!
 Lighthouse._calculate_ea_kappas
 Lighthouse._calculate_ira_kappas
 Lighthouse._calculate_spearman_correlation
+```
+
+## The logging interface
+
+The following "primitives" must be defined for a logger to be used with Lighthouse:
+
+```@docs
+log_event!
+log_line_series!
+log_plot!
+step_logger!
+```
+
+These primitives can be used in implementations of [`train!`](@ref), [`evaluate!`](@ref), and [`predict!`](@ref), as well as in:
+
+```@docs
+Lighthouse.log_evaluation_row!
+```
+
+### `LearnLogger`s
+
+`LearnLoggers` are a Tensorboard-backed logger which comply with the above logging interface. They also support additional callback functionality with `upon`:
+
+```@docs
+LearnLogger
+upon
+Lighthouse.forward_logs
 ```
 
 ## Performance Metrics

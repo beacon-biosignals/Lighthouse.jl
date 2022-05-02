@@ -43,7 +43,7 @@ This method must be implemented for each `AbstractClassifier` subtype.
 function classes end
 
 """
-    Lighthouse.train!(classifier::AbstractClassifier, batches, logger::LearnLogger)
+    Lighthouse.train!(classifier::AbstractClassifier, batches, logger)
 
 Train `classifier` on the iterable `batches` for a single epoch. This function
 is called once per epoch by [`learn!`](@ref).
