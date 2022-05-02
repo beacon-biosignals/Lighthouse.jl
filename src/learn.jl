@@ -59,7 +59,7 @@ end
 """
     log_plot!(logger, field::AbstractString, value)
 
-Log a scalar value `value` to `field`.
+Log a value `value` to `field`.
 """
 log_value!(logger, field::AbstractString, value)
 
