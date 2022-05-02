@@ -43,3 +43,13 @@ end
         @test logger.logged["b"] == [2]
     end
 end
+
+@testset "summarize_array" begin
+    mktempdir() do logdir
+        logger = LearnLogger(logdir, "test_run")
+        x = summarize_array(logger, [1.0, 2.0, 3.0])
+        @test x == 2
+        log_value!(logger, "summary", x)
+        @test logger.logged["summary"] == [x]
+    end
+end

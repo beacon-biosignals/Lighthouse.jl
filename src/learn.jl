@@ -63,6 +63,16 @@ Log a value `value` to `field`.
 """
 log_value!(logger, field::AbstractString, value)
 
+
+"""
+    summarize_array(logger::Any, v)
+
+Summarize an array `v`, returning a value `x` supported by `Lighthouse.log_value!(logger, x)`.
+
+Defaults to taking the `mean`.
+"""
+summarize_array(logger::Any, v) = mean(v)
+
 """
     log_values!(logger, values)
 

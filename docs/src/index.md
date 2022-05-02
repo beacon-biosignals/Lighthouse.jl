@@ -37,6 +37,7 @@ log_value!
 log_line_series!
 log_plot!
 step_logger!
+summarize_array
 ```
 
 These primitives can be used in implementations of [`train!`](@ref), [`evaluate!`](@ref), and [`predict!`](@ref), as well as in:
