@@ -63,6 +63,20 @@ Log a value `value` to `field`.
 """
 log_value!(logger, field::AbstractString, value)
 
+"""
+    log_values!(logger, values)
+
+Logs an iterable of `(field, value)` pairs to `logger`. Falls back to calling `log_value!` in a loop.
+
+Loggers may specialize this method for improved performance.
+"""
+function log_values!(logger, values)
+    for (k, v) in values
+        log_value!(logger, k, v)
+    end
+    return nothing
+end
+
 function log_value!(logger::LearnLogger, field::AbstractString, value)
     values = get!(() -> Any[], logger.logged, field)
     push!(values, value)
