@@ -37,14 +37,15 @@ log_value!
 log_line_series!
 log_plot!
 step_logger!
-summarize_array
 ```
 
-These primitives can be used in implementations of [`train!`](@ref), [`evaluate!`](@ref), and [`predict!`](@ref), as well as in:
+These primitives can be used in implementations of [`train!`](@ref), [`evaluate!`](@ref), and [`predict!`](@ref), as well as in the following composite logging functions, which by default call the above primitives. Loggers may provide custom implementations of these.
 
 ```@docs
 Lighthouse.log_evaluation_row!
 log_values!
+log_array!
+log_arrays!
 ```
 
 ### `LearnLogger`s

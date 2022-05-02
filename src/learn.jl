@@ -65,13 +65,13 @@ log_value!(logger, field::AbstractString, value)
 
 
 """
-    summarize_array(logger::Any, v)
+    log_array!(logger::Any, field::AbstractString, value)
 
-Summarize an array `v`, returning a value `x` supported by `Lighthouse.log_value!(logger, x)`.
+Log an array `value` to `field`.
 
-Defaults to taking the `mean`.
+Defaults to `log_value!(logger, mean(value))`.
 """
-summarize_array(logger::Any, v) = mean(v)
+log_array!(logger::Any, field::AbstractString, value) = log_value!(logger, field, mean(value))
 
 """
     log_values!(logger, values)
@@ -83,6 +83,20 @@ Loggers may specialize this method for improved performance.
 function log_values!(logger, values)
     for (k, v) in values
         log_value!(logger, k, v)
+    end
+    return nothing
+end
+
+"""
+    log_arrays!(logger, values)
+
+Logs an iterable of `(field, value)` pairs to `logger`. Falls back to calling `log_array!` in a loop.
+
+Loggers may specialize this method for improved performance.
+"""
+function log_arrays!(logger, values)
+    for (k, v) in values
+        log_array!(logger, k, v)
     end
     return nothing
 end

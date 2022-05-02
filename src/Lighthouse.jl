@@ -26,6 +26,6 @@ export AbstractClassifier
 include("learn.jl")
 export LearnLogger, learn!, upon, evaluate!, predict!
 export log_event!, log_line_series!, log_plot!, step_logger!, log_value!, log_values!
-export summarize_array
+export log_array!, log_arrays!
 
 end # module
