@@ -23,7 +23,6 @@ Log a value `value` to `field`.
 """
 log_value!(logger, field::AbstractString, value)
 
-
 """
     log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
 
@@ -32,7 +31,7 @@ Logs a series plot to `logger` under `field`, where...
 - `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationRow` field `per_class_roc_curves`
 - `labels` is the class label for each curve, which defaults to the numeric index of each curve.
 """
-log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
+log_line_series!(logger, field::AbstractString, curves; labels=1:length(curves))
 
 # The following have default implementations.
 
@@ -42,7 +41,6 @@ log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
 Increments the `logger`'s `step`, if any. Defaults to doing nothing.
 """
 step_logger!(::Any) = nothing
-
 
 """
     log_event!(logger, value::AbstractString)
@@ -73,7 +71,9 @@ Log an array `value` to `field`.
 
 Defaults to `log_value!(logger, mean(value))`.
 """
-log_array!(logger::Any, field::AbstractString, array) = log_value!(logger, field, mean(array))
+function log_array!(logger::Any, field::AbstractString, array)
+    return log_value!(logger, field, mean(array))
+end
 
 """
     log_arrays!(logger, values)
@@ -108,10 +108,11 @@ end
 
 function log_resource_info!(logger, section::AbstractString, info::ResourceInfo;
                             suffix::AbstractString="")
-    log_value!(logger, section * "/time_in_seconds" * suffix, info.time_in_seconds)
-    log_value!(logger, section * "/gc_time_in_seconds" * suffix, info.gc_time_in_seconds)
-    log_value!(logger, section * "/allocations" * suffix, info.allocations)
-    log_value!(logger, section * "/memory_in_mb" * suffix, info.memory_in_mb)
+    log_values!(logger,
+                (section * "/time_in_seconds" * suffix => info.time_in_seconds,
+                 section * "/gc_time_in_seconds" * suffix => info.gc_time_in_seconds,
+                 section * "/allocations" * suffix => info.allocations,
+                 section * "/memory_in_mb" * suffix => info.memory_in_mb))
     return info
 end
 
@@ -120,7 +121,6 @@ function log_resource_info!(f, logger, section::AbstractString; suffix::Abstract
     log_resource_info!(logger, section, resource_info; suffix=suffix)
     return result
 end
-
 
 #####
 ##### `predict!!`
