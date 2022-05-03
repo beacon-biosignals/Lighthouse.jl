@@ -32,7 +32,7 @@ function log_value!(logger::LearnLogger, field::AbstractString, value)
     return value
 end
 
-function log_event!(logger::LearnLogger, value)
+function log_event!(logger::LearnLogger, value::AbstractString)
     logged = string(now(), " | ", value)
     TensorBoardLogger.log_text(logger.tensorboard_logger, "events", logged)
     return logged

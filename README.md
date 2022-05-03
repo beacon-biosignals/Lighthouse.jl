@@ -37,4 +37,6 @@ This will install Lighthouse to the default package development directory, `~/.j
 
 ### TensorBoard
 
-Note that Lighthouse logs metrics to a user-specified path in [TensorBoard's](https://github.com/tensorflow/tensorboard) `logdir` format. TensorBoard can be installed via `python3 -m pip install tensorboard` (note: if you have `tensorflow>=1.14`, you should already have `tensorboard`). Once TensorBoard is installed, you can view Lighthouse-generated metrics via `tensorboard --logdir path` where `path` is the path specified by `Lighthouse.LearnLogger`. From there, TensorBoard itself can be used/configured however you like; see https://github.com/tensorflow/tensorboard for more information.
+Note that Lighthouse's `LearnLogger` logs metrics to a user-specified path in [TensorBoard's](https://github.com/tensorflow/tensorboard) `logdir` format. TensorBoard can be installed via `python3 -m pip install tensorboard` (note: if you have `tensorflow>=1.14`, you should already have `tensorboard`). Once TensorBoard is installed, you can view Lighthouse-generated metrics via `tensorboard --logdir path` where `path` is the path specified by `Lighthouse.LearnLogger`. From there, TensorBoard itself can be used/configured however you like; see https://github.com/tensorflow/tensorboard for more information.
+
+You can use alternative loggers, as long as they comply with the [logging interface](https://beacon-biosignals.github.io/Lighthouse.jl/dev#The-logging-interface).
