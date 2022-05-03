@@ -34,3 +34,12 @@ end
         @test isnothing(step_logger!(logger))
     end
 end
+
+@testset "log_values!" begin
+    mktempdir() do logdir
+        logger = LearnLogger(logdir, "test_run")
+        log_values!(logger, Dict("a" => 1, "b" => 2))
+        @test logger.logged["a"] == [1]
+        @test logger.logged["b"] == [2]
+    end
+end

@@ -16,7 +16,6 @@ See also [`log_line_series!`](@ref).
 """
 log_plot!(logger, field::AbstractString, plot, plot_data)
 
-
 """
     log_value!(logger, field::AbstractString, value)
 
@@ -54,6 +53,18 @@ function log_event!(logger, value::AbstractString)
     return log_value!(logger, "event", string(now(), " | ", value))
 end
 
+"""
+    log_values!(logger, values)
+
+Logs an iterable of `(field, value)` pairs to `logger`. Falls back to calling `log_value!` in a loop.
+Loggers may specialize this method for improved performance.
+"""
+function log_values!(logger, values)
+    for (k, v) in values
+        log_value!(logger, k, v)
+    end
+    return nothing
+end
 
 """
     log_evaluation_row!(logger, field::AbstractString, metrics)
