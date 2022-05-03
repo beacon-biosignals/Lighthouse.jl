@@ -32,7 +32,6 @@ Lighthouse._calculate_spearman_correlation
 The following "primitives" must be defined for a logger to be used with Lighthouse:
 
 ```@docs
-log_event!
 log_value!
 log_line_series!
 log_plot!
@@ -44,6 +43,7 @@ These primitives can be used in implementations of [`train!`](@ref), [`evaluate!
 ```@docs
 Lighthouse.log_evaluation_row!
 log_values!
+log_event!
 ```
 
 ### `LearnLogger`s

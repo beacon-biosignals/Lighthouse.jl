@@ -30,7 +30,7 @@ end
     mktempdir() do logdir
         logger = LearnLogger(logdir, "test_run")
         @test isnothing(Lighthouse.log_line_series!(logger, "foo", 3, 2))
-
+        
         @test isnothing(step_logger!(logger))
     end
 end
