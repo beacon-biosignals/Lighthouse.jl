@@ -71,7 +71,7 @@ Log an array `value` to `field`.
 
 Defaults to `log_value!(logger, mean(value))`.
 """
-log_array!(logger::Any, field::AbstractString, value) = log_value!(logger, field, mean(value))
+log_array!(logger::Any, field::AbstractString, array) = log_value!(logger, field, mean(array))
 
 """
     log_values!(logger, values)
@@ -90,7 +90,7 @@ end
 """
     log_arrays!(logger, values)
 
-Logs an iterable of `(field, value)` pairs to `logger`. Falls back to calling `log_array!` in a loop.
+Logs an iterable of `(field, array)` pairs to `logger`. Falls back to calling `log_array!` in a loop.
 
 Loggers may specialize this method for improved performance.
 """
