@@ -31,7 +31,7 @@ Logs a series plot to `logger` under `field`, where...
 - `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationRow` field `per_class_roc_curves`
 - `labels` is the class label for each curve, which defaults to the numeric index of each curve.
 """
-log_line_series!(logger, field::AbstractString, curves; labels=1:length(curves))
+log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
 
 # The following have default implementations.
 
