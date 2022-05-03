@@ -66,7 +66,6 @@ function log_values!(logger, values)
     return nothing
 end
 
-
 """
     log_array!(logger::Any, field::AbstractString, value)
 
@@ -75,7 +74,6 @@ Log an array `value` to `field`.
 Defaults to `log_value!(logger, mean(value))`.
 """
 log_array!(logger::Any, field::AbstractString, array) = log_value!(logger, field, mean(array))
-
 
 """
     log_arrays!(logger, values)
