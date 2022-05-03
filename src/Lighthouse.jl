@@ -23,8 +23,11 @@ export confusion_matrix, accuracy, binary_statistics, cohens_kappa, calibration_
 include("classifier.jl")
 export AbstractClassifier
 
+include("LearnLogger.jl")
+export LearnLogger
+
 include("learn.jl")
-export LearnLogger, learn!, upon, evaluate!, predict!
+export learn!, upon, evaluate!, predict!
 export log_event!, log_line_series!, log_plot!, step_logger!, log_value!
 
 end # module
