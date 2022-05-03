@@ -67,6 +67,29 @@ function log_values!(logger, values)
 end
 
 """
+    log_array!(logger::Any, field::AbstractString, value)
+
+Log an array `value` to `field`.
+
+Defaults to `log_value!(logger, mean(value))`.
+"""
+log_array!(logger::Any, field::AbstractString, array) = log_value!(logger, field, mean(array))
+
+"""
+    log_arrays!(logger, values)
+
+Logs an iterable of `(field, array)` pairs to `logger`. Falls back to calling `log_array!` in a loop.
+
+Loggers may specialize this method for improved performance.
+"""
+function log_arrays!(logger, values)
+    for (k, v) in values
+        log_array!(logger, k, v)
+    end
+    return nothing
+end
+
+"""
     log_evaluation_row!(logger, field::AbstractString, metrics)
 
 From fields in [`EvaluationRow`](@ref), generate and plot the composite [`evaluation_metrics_plot`](@ref)

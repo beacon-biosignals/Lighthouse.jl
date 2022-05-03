@@ -43,3 +43,14 @@ end
         @test logger.logged["b"] == [2]
     end
 end
+
+@testset "`log_array` and `log_arrays!`" begin
+    mktempdir() do logdir
+        logger = LearnLogger(logdir, "test_run")
+        log_array!(logger, "arr", [1.0, 2.0, 3.0])
+        @test logger.logged["arr"] == [2.0] # defaults to the mean
+        log_arrays!(logger, Dict("arr2" => [1.0, 2.0, 3.0], "arr3" => [1.0]))
+        @test logger.logged["arr2"] == [2.0]
+        @test logger.logged["arr3"] == [1.0]
+    end
+end
