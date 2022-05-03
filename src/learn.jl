@@ -29,7 +29,7 @@ end
 
 Logs a string event given by `value` to `logger`.
 """
-log_event!(logger, value)
+log_event!(logger, value::AbstractString)
 
 function log_event!(logger::LearnLogger, value)
     logged = string(now(), " | ", value)
@@ -57,7 +57,7 @@ function log_plot!(logger::LearnLogger, field::AbstractString, plot, plot_data)
 end
 
 """
-    log_plot!(logger, field::AbstractString, value)
+    log_value!(logger, field::AbstractString, value)
 
 Log a value `value` to `field`.
 """
