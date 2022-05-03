@@ -41,9 +41,9 @@ step_logger!
 These primitives can be used in implementations of [`train!`](@ref), [`evaluate!`](@ref), and [`predict!`](@ref), as well as in:
 
 ```@docs
+log_event!
 Lighthouse.log_evaluation_row!
 log_values!
-log_event!
 ```
 
 ### `LearnLogger`s
