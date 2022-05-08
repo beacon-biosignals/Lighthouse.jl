@@ -38,6 +38,8 @@ log_plot!
 step_logger!
 ```
 
+in addition to `Base.flush(logger)` (which can be a no-op by defining `Base.flush(::MyLoggingType) = nothing`).
+
 These primitives can be used in implementations of [`train!`](@ref), [`evaluate!`](@ref), and [`predict!`](@ref), as well as in the following composite logging functions, which by default call the above primitives. Loggers may provide custom implementations of these.
 
 ```@docs
