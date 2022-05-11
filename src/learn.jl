@@ -896,7 +896,12 @@ end
 ##### Refactored evaluation metrics #TODO: move out from this section
 #####
 
-#TODO: revise
+"""
+
+Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), taking same
+inputs and outputs as that function. Can be used as an example of how to use constituent
+metrics calculation pieces.
+"""
 function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                            predicted_soft_labels::AbstractMatrix,
                                            elected_hard_labels::AbstractVector, classes;
@@ -910,23 +915,39 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
     class_labels = string.(class_vector)
 
-    tradeoff_row_table = nothing
-    hardened_row_table = nothing
-    votes_row_table = nothing
-    optimal_threshold = nothing
+    tradeoff_metrics_rows = map(c -> get_tradeoff_metrics(predicted_soft_labels, c;
+                                                          thresholds),
+                                classes)
 
-    return EvaluationRow(tradeoff_row_table, hardened_row_table, votes_row_table;
+
+    #TODO: harden
+    optimal_threshold = nothing #TODO
+    predicted_hard_labels = nothing #TODO
+
+    hardened_metrics_table = map(c -> get_hardened_metrics(predicted_hard_labels, c),
+                             classes)
+    push!(hardened_metrics_table, get_multiclass_hardened_metrics(predicted_hard_labels))
+
+    votes_row_table = nothing
+
+    return EvaluationRow(tradeoff_metrics_rows, hardened_metrics_table, votes_row_table;
                          optimal_threshold_class, class_labels, thresholds,
                          optimal_threshold)
 end
 
 #TODO
-function get_tradeoff_metrics() # single class
-    return LabelMetricsRow()
+function get_tradeoff_metrics(predicted_soft_labels, class; thresholds)
+    @warn "NOT YET IMPLEMENTED"
+    return LabelMetricsRow(; class)
 end
 
-function get_tradeoff_metrics() # over all classes + multiclass
-    return LabelMetricsRow()
+#TODO
+function get_hardened_metrics(predicted_hard_labels, class) # single class
+    return HardenedMetricsRow(; class)
+end
+
+function get_multiclass_hardened_metrics(predicted_hard_labels) # single class
+    return HardenedMetricsRow(; class=:multiclass)
 end
 
 #TODO
@@ -934,15 +955,3 @@ function get_label_metrics() # single class
     return LabelMetricsRow()
 end
 
-function get_label_metrics() # over all classes + multiclass
-    return LabelMetricsRow()
-end
-
-#TODO
-function get_hardened_metrics() # single class
-    return LabelMetricsRow()
-end
-
-function get_hardened_metrics() # over all classes + multiclass
-    return LabelMetricsRow()
-end

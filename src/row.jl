@@ -218,7 +218,7 @@ const ClassRow = Legolas.@row("lighthouse.class@1", class::Union{Int,Symbol})
                                                                                          Vector{Float64}})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("label-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing metrics calculated over multiclass labels provided by multiple labelers.
+representing metrics calculated over labels provided by multiple labelers.
 See also [`get_label_metrics`](@ref).
 """
 const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
@@ -305,55 +305,68 @@ const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                         reliability_calibration_score::Union{Missing,
                                                                              Float64})
 
-# Deprecation path:
-# tradeoff_row_table is table of `TradeoffMetricsRow`
-# hardened_row_table is table of `HardenedMetricsRow`
-# label_row_table is table of `LabelMetricsRow`
-# kwargs should contain: ,
-function Legolas.Row{S}(tradeoff_row_table, hardened_row_table, votes_row_table;
+function _split_classes_from_multiclass(table)
+    table = DataFrame(table; copycols=false)
+
+    # Pull out sorted individual classes
+    class_rows = filter(:classes => c -> isa(c, Int), table)
+    sort!(class_rows, :classes)
+    nrow(class_rows) == length(unique(class_rows.classes)) ||
+        throw(ArgumentError("Multiple rows for same class!"))
+
+    # Pull out multiclass
+    multi_rows = filter(:classes => ==(:multiclass), table)
+    nrow(multi_rows) > 1 &&
+        throw(ArgumentError("More than one `:multiclass` row in table!"))
+    multi = nrow(multi_rows) == 1 ? only(multi_rows) : missing
+    return class_rows, multi
+end
+
+_values_or_missing(values) = all(ismissing, values) ? missing : values
+
+# Helper constructor method to help sanity-check refactor
+function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
                         optimal_threshold_class=missing, class_labels, thresholds,
                         optimal_threshold) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
                                                                     1}}
-    # tradeoff_row_table TODO: sort by classes, filter to expected classes; keep out multiclass as its own
-    # hardened_row_table TODO: sort by classes, filter to expected classes; keep out multiclass as its own
+    tradeoff_rows, _ = _split_classes_from_multiclass(tradeoff_metrics_table)
+    hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
+    label_rows, labels_multi = _split_classes_from_multiclass(label_metrics_table)
 
-    class_of_interest_tradeoff_row = isnothing(optimal_threshold_class) ? nothing :
-                                     TradeoffMetricsRow() #TODO: get optimal_threshold_class row from tradeoff_row_table
-    class_of_interest_label_row = isnothing(optimal_threshold_class) ? nothing :
-                                  LabelMetricsRow() #TODO: get optimal_threshold_class row from label_row_table
+    spearman_correlation = isnothing(optimal_threshold_class) ? nothing :
+                           only(filter(:classes => ==(:optimal_threshold_class),
+                                       tradeoff_rows)).spearman_correlation
+    per_expert_discrimination_calibration_curves = isnothing(optimal_threshold_class) ?
+                                                   nothing :
+                                                   only(filter(:classes => ==(:optimal_threshold_class),
+                                                               label_rows)).per_expert_discrimination_calibration_curves
 
-    spearman_correlation = isnothing(class_of_interest_tradeoff_row) ? missing :
-                           class_of_interest_tradeoff_row.spearman_correlation
-
-    per_expert_discrimination_calibration_curves = isnothing(class_of_interest_label_row) ?
-                                                   missing :
-                                                   class_of_interest_label_row.per_expert_discrimination_calibration_curves
-
-    multiclass_hardened_row = nothing #get appropriate hardened_row_table row
     #TODO: handle if any ovalues in the tradeoff_row_table are `missing`
     return EvaluationRow(;
-                         # from hardened_row_table
-                         confusion_matrix=multiclass_hardened_row.confusion_matrix,
-                         multiclass_kappa=multiclass_hardened_row.kappa,
-                         per_class_kappas=hardened_row_table.kappa,
-                         discrimination_calibration_curve=hardened_row_table.discrimination_calibration_curve,
-                         discrimination_calibration_score=hardened_row_table.discrimination_calibration_score,
+                         # ...from hardened_metrics_table
+                         confusion_matrix=_values_or_missing(hardened_multi.confusion_matrix),
+                         multiclass_kappa=_values_or_missing(hardened_multi.kappa),
+                         per_class_kappas=_values_or_missing(hardened_rows.kappa),
+                         discrimination_calibration_curve=_values_or_missing(hardened_rows.discrimination_calibration_curve),
+                         discrimination_calibration_score=_values_or_missing(hardened_rows.discrimination_calibration_score),
 
-                         # from tradeoff_table
-                         per_class_roc_curves=tradeoff_row_table.roc_curve,
-                         per_class_roc_aucs=tradeoff_row_table.roc_auc,
-                         per_class_pr_curves=tradeoff_row_table.pr_curve,
+                         # ...from tradeoff_metrics_table
+                         per_class_roc_curves=_values_or_missing(tradeoff_rows.roc_curve),
+                         per_class_roc_aucs=_values_or_missing(tradeoff_rows.roc_auc),
+                         per_class_pr_curves=_values_or_missing(tradeoff_rows.pr_curve),
                          spearman_correlation,
-                         per_class_reliability_calibration_curves=tradeoff_row_table.reliability_calibration_curve,
-                         per_class_reliability_calibration_scores=tradeoff_row_table.reliability_calibration_score,
+                         per_class_reliability_calibration_curves=_values_or_missing(tradeoff_rows.reliability_calibration_curve),
+                         per_class_reliability_calibration_scores=_values_or_missing(tradeoff_rows.reliability_calibration_score),
 
-                         # from label_table
+                         # from label_metrics_table
                          per_expert_discrimination_calibration_curves,
-                         multiclass_IRA_kappas=label_row_table.multiclass_IRA_kappas,
-                         per_class_IRA_kappas=label_row_table.per_class_IRA_kappas,
-                         per_expert_discrimination_calibration_scores=label_row_table.per_expert_discrimination_calibration_scores,
+                         multiclass_IRA_kappas=labels_multi.IRA_kappa,
+                         per_class_IRA_kappas=label_rows.IRA_kappa,
+                         per_expert_discrimination_calibration_scores=label_rows.per_expert_discrimination_calibration_scores, #TODO: fishy
 
                          # from kwargs:
                          optimal_threshold_class, class_labels, thresholds,
                          optimal_threshold)
 end
+
+

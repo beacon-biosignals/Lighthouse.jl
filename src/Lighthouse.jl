@@ -8,6 +8,7 @@ using Makie
 using Printf
 using Legolas
 using Tables
+using DataFrames
 
 include("row.jl")
 export EvaluationRow, ObservationRow
