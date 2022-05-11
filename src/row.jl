@@ -284,13 +284,9 @@ See also [`get_tradeoff_metrics`](@ref).
 """
 const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                         "lighthouse.class@1",
-                                        pr_curve::Union{Missing,
-                                                        Tuple{Vector{Float64},
-                                                              Vector{Float64}}},
-                                        roc_auc::Union{Missing,Float64},
-                                        roc_curve::Union{Missing,
-                                                         Tuple{Vector{Float64},
-                                                               Vector{Float64}}},
+                                        roc_curve::Tuple{Vector{Float64}, Vector{Float64}},
+                                        roc_auc::Float64,
+                                        pr_curve::Tuple{Vector{Float64}, Vector{Float64}},
                                         spearman_correlation::Union{Missing,
                                                                     NamedTuple{(:ρ, :n,
                                                                                 :ci_lower,
@@ -327,7 +323,7 @@ _values_or_missing(values) = all(ismissing, values) ? missing : values
 # Helper constructor method to help sanity-check refactor
 function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
                         optimal_threshold_class=missing, class_labels, thresholds,
-                        optimal_threshold) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
+                        optimal_threshold, kwargs...) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
                                                                     1}}
     tradeoff_rows, _ = _split_classes_from_multiclass(tradeoff_metrics_table)
     hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
@@ -359,14 +355,14 @@ function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_me
                          per_class_reliability_calibration_scores=_values_or_missing(tradeoff_rows.reliability_calibration_score),
 
                          # from label_metrics_table
-                         per_expert_discrimination_calibration_curves,
-                         multiclass_IRA_kappas=labels_multi.IRA_kappa,
-                         per_class_IRA_kappas=label_rows.IRA_kappa,
-                         per_expert_discrimination_calibration_scores=label_rows.per_expert_discrimination_calibration_scores, #TODO: fishy
+                         per_expert_discrimination_calibration_curves=_values_or_missing(per_expert_discrimination_calibration_curves),
+                         multiclass_IRA_kappas=_values_or_missing(labels_multi.IRA_kappa),
+                         per_class_IRA_kappas=_values_or_missing(label_rows.IRA_kappa),
+                         per_expert_discrimination_calibration_scores=_values_or_missing(label_rows.per_expert_discrimination_calibration_scores), #TODO: fishy
 
                          # from kwargs:
                          optimal_threshold_class, class_labels, thresholds,
-                         optimal_threshold)
+                         optimal_threshold, kwargs...)
 end
 
 

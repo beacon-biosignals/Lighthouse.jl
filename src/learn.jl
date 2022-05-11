@@ -277,16 +277,20 @@ Where...
 
 """
 function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
-    multiclass = first(cohens_kappa(class_count,
-                                    zip(predicted_hard_labels, elected_hard_labels)))
+    multiclass_kappa = first(cohens_kappa(class_count,
+                                          zip(predicted_hard_labels, elected_hard_labels)))
 
-    CLASS_VS_ALL_CLASS_COUNT = 2
-    per_class = map(1:class_count) do class_index
-        predicted = ((label == class_index) + 1 for label in predicted_hard_labels)
-        elected = ((label == class_index) + 1 for label in elected_hard_labels)
-        return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, zip(predicted, elected)))
+    per_class_kappas = map(1:class_count) do class_index
+        return _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
     end
-    return (per_class_kappas=per_class, multiclass_kappa=multiclass)
+    return (per_class_kappas, multiclass_kappa)
+end
+
+function _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
+    CLASS_VS_ALL_CLASS_COUNT = 2
+    predicted = ((label == class_index) + 1 for label in predicted_hard_labels)
+    elected = ((label == class_index) + 1 for label in elected_hard_labels)
+    return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, zip(predicted, elected)))
 end
 
 has_value(x) = !isnothing(x) && !ismissing(x)
@@ -385,8 +389,10 @@ Where...
 
 - `classes` are the two classes voted on.
 """
-function _calculate_spearman_correlation(predicted_soft_labels, votes, classes)
-    length(classes) > 2 && throw(ArgumentError("Only valid for 2-class problems"))
+function _calculate_spearman_correlation(predicted_soft_labels, votes, classes=missing)
+    if !ismissing(classes)
+        length(classes) > 2 && throw(ArgumentError("Only valid for 2-class problems"))
+    end
     if !all(x -> x ≈ 1, sum(predicted_soft_labels; dims=2))
         throw(ArgumentError("Input probabiliities fail softmax assumption"))
     end
@@ -416,6 +422,15 @@ function _calculate_optimal_threshold_from_discrimination_calibration(predicted_
             plot_curve_data=(mean.(curve.bins), curve.fractions))
 end
 
+function _calculate_discrimination_calibration(predicted_hard_labels, votes;
+                                               class_of_interest_index)
+    elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
+    bin_count = min(size(votes, 2) + 1, 10)
+    curve = calibration_curve(elected_probabilities, predicted_hard_labels; bin_count)
+    return (mse=curve.mean_squared_error,
+            plot_curve_data=(mean.(curve.bins), curve.fractions))
+end
+
 function _elected_probabilities(votes, class_of_interest_index)
     elected_probabilities = Vector{Float64}()
     for sample_votes in eachrow(votes)
@@ -440,15 +455,13 @@ function _calculate_voter_discrimination_calibration(votes; class_of_interest_in
                                 per_voter_calibration_curves))
 end
 
-function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
-                                         class_of_interest_index)
+function _get_optimal_threshold_from_ROC(roc_curve; thresholds)
     dist = (p1, p2) -> sqrt((p1[1] - p2[1])^2 + (p1[2] - p2[2])^2)
     min = Inf
     curr_counter = 1
     opt_point = nothing
     threshold_idx = 1
-    for point in zip(per_class_roc_curves[class_of_interest_index][1],
-                     per_class_roc_curves[class_of_interest_index][2])
+    for point in zip(roc_curve[1], roc_curve[2])
         d = dist((0, 1), point)
         if d < min
             min = d
@@ -543,25 +556,25 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     class_count = length(classes)
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
     class_labels = string.(class_vector)
-    per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
-                                                     elected_hard_labels, thresholds)
+    # per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
+    #                                                  elected_hard_labels, thresholds)
 
     # ROC curves
-    per_class_roc_curves = [(map(t -> t.false_positive_rate, stats),
-                             map(t -> t.true_positive_rate, stats))
-                            for stats in per_class_stats]
-    per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
+    # per_class_roc_curves = [(map(t -> t.false_positive_rate, stats),
+    #                          map(t -> t.true_positive_rate, stats))
+    #                         for stats in per_class_stats]
+    # per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
 
     # Optionally calculate optimal threshold
     if has_value(optimal_threshold_class)
         # If votes exist, calculate the threshold based on comparing against
         # vote probabilities. Otherwise, use the ROC curve.
         if has_value(votes)
-            c = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
-                                                                             votes;
-                                                                             thresholds=thresholds,
-                                                                             class_of_interest_index=optimal_threshold_class)
-            optimal_threshold = c.threshold
+            # c = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+            #                                                                  votes;
+            #                                                                  thresholds=thresholds,
+            #                                                                  class_of_interest_index=optimal_threshold_class)
+            # optimal_threshold = c.threshold
             discrimination_calibration_curve = c.plot_curve_data
             discrimination_calibration_score = c.mse
 
@@ -575,17 +588,16 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
             per_expert_discrimination_calibration_curves = missing
             per_expert_discrimination_calibration_scores = missing
             # ...based on ROC curve otherwise
-            optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves;
-                                                                thresholds=thresholds,
-                                                                class_of_interest_index=optimal_threshold_class)
+            # optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves[optimal_threshold_class];
+            #                                                     thresholds)
         end
 
-        # Recalculate `predicted_hard_labels` with this new threshold
-        other_class = optimal_threshold_class == 1 ? 2 : 1
-        for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
-                                       optimal_threshold_class : other_class
-        end
+        # # Recalculate `predicted_hard_labels` with this new threshold
+        # other_class = optimal_threshold_class == 1 ? 2 : 1
+        # for (i, row) in enumerate(eachrow(predicted_soft_labels))
+        #     predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
+        #                                optimal_threshold_class : other_class
+        # end
     else
         discrimination_calibration_curve = missing
         discrimination_calibration_score = missing
@@ -595,32 +607,32 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     end
 
     # PR curves
-    per_class_pr_curves = [(map(t -> t.true_positive_rate, stats),
-                            map(t -> t.precision, stats)) for stats in per_class_stats]
+    # per_class_pr_curves = [(map(t -> t.true_positive_rate, stats),
+    #                         map(t -> t.precision, stats)) for stats in per_class_stats]
 
     # Stratified kappas
-    stratified_kappas = has_value(strata) ?
-                        _calculate_stratified_ea_kappas(predicted_hard_labels,
-                                                        elected_hard_labels, class_count,
-                                                        strata) : missing
+    # stratified_kappas = has_value(strata) ?
+    #                     _calculate_stratified_ea_kappas(predicted_hard_labels,
+    #                                                     elected_hard_labels, class_count,
+    #                                                     strata) : missing
 
     # Reliability calibration curves
-    per_class_reliability_calibration = map(1:class_count) do class_index
-        class_probabilities = view(predicted_soft_labels, :, class_index)
-        return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
-    end
-    per_class_reliability_calibration_curves = map(x -> (mean.(x.bins), x.fractions),
-                                                   per_class_reliability_calibration)
-    per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
-                                                   per_class_reliability_calibration)
+    # per_class_reliability_calibration = map(1:class_count) do class_index
+    #     class_probabilities = view(predicted_soft_labels, :, class_index)
+    #     return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
+    # end
+    # per_class_reliability_calibration_curves = map(x -> (mean.(x.bins), x.fractions),
+    #                                                per_class_reliability_calibration)
+    # per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
+    #                                                per_class_reliability_calibration)
 
     # Log Spearman correlation, iff this is a binary classification problem
-    if length(classes) == 2 && has_value(votes)
-        spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels, votes,
-                                                               classes)
-    else
-        spearman_correlation = missing
-    end
+    # if length(classes) == 2 && has_value(votes)
+    #     spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels, votes,
+    #                                                            classes)
+    # else
+    #     spearman_correlation = missing
+    # end
     return EvaluationRow(; class_labels,
                          confusion_matrix=confusion_matrix(class_count,
                                                            zip(predicted_hard_labels,
@@ -703,19 +715,41 @@ end
 function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
                                         elected_hard_labels::AbstractVector, thresholds)
     class_count = size(predicted_soft_labels, 2)
-    confusions = [[confusion_matrix(2) for _ in 1:length(thresholds)]
-                  for _ in 1:class_count]
-    for class_index in 1:class_count
-        for label_index in 1:length(elected_hard_labels)
-            predicted_soft_label = predicted_soft_labels[label_index, class_index]
-            elected = (elected_hard_labels[label_index] == class_index) + 1
-            for (threshold_index, threshold) in enumerate(thresholds)
-                predicted = (predicted_soft_label >= threshold) + 1
-                confusions[class_index][threshold_index][predicted, elected] += 1
-            end
+    return map(1:class_count) do i
+        return per_threshold_confusion_statistics(predicted_soft_labels,
+                                                  elected_hard_labels,
+                                                  thresholds, i)
+    end
+end
+
+function per_threshold_confusion_statistics(predicted_soft_labels::AbstractMatrix,
+                                            elected_hard_labels::AbstractVector, thresholds,
+                                            class_index)
+    confusions = [confusion_matrix(2) for _ in 1:length(thresholds)]
+    for label_index in 1:length(elected_hard_labels)
+        predicted_soft_label = predicted_soft_labels[label_index, class_index]
+        elected = (elected_hard_labels[label_index] == class_index) + 1
+        for (threshold_index, threshold) in enumerate(thresholds)
+            predicted = (predicted_soft_label >= threshold) + 1
+            confusions[threshold_index][predicted, elected] += 1
         end
     end
-    return [binary_statistics.(confusions[i], 2) for i in 1:class_count]
+    return binary_statistics.(confusions, 2)
+end
+
+function per_threshold_confusion_statistics(predicted_soft_labels::AbstractVector,
+                                            elected_hard_labels::AbstractVector, thresholds,
+                                            class_index)
+    confusions = [confusion_matrix(2) for _ in 1:length(thresholds)]
+    for label_index in 1:length(elected_hard_labels)
+        predicted_soft_label = predicted_soft_labels[label_index]
+        elected = (elected_hard_labels[label_index] == class_index) + 1
+        for (threshold_index, threshold) in enumerate(thresholds)
+            predicted = (predicted_soft_label >= threshold) + 1
+            confusions[threshold_index][predicted, elected] += 1
+        end
+    end
+    return binary_statistics.(confusions, 2)
 end
 
 #####
@@ -891,67 +925,3 @@ end
 function upon(logger::LearnLogger, field::AbstractString; condition, initial)
     return upon(logger.logged, field; condition=condition, initial=initial)
 end
-
-#####
-##### Refactored evaluation metrics #TODO: move out from this section
-#####
-
-"""
-
-Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), taking same
-inputs and outputs as that function. Can be used as an example of how to use constituent
-metrics calculation pieces.
-"""
-function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                           predicted_soft_labels::AbstractMatrix,
-                                           elected_hard_labels::AbstractVector, classes;
-                                           thresholds=0.0:0.01:1.0,
-                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                           strata::Union{Nothing,
-                                                         AbstractVector{Set{T}} where T}=nothing,
-                                           optimal_threshold_class::Union{Missing,Nothing,
-                                                                          Integer}=missing)
-    isnothing(strata) || @warn "Not handling `strata` arg!"
-    class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
-    class_labels = string.(class_vector)
-
-    tradeoff_metrics_rows = map(c -> get_tradeoff_metrics(predicted_soft_labels, c;
-                                                          thresholds),
-                                classes)
-
-
-    #TODO: harden
-    optimal_threshold = nothing #TODO
-    predicted_hard_labels = nothing #TODO
-
-    hardened_metrics_table = map(c -> get_hardened_metrics(predicted_hard_labels, c),
-                             classes)
-    push!(hardened_metrics_table, get_multiclass_hardened_metrics(predicted_hard_labels))
-
-    votes_row_table = nothing
-
-    return EvaluationRow(tradeoff_metrics_rows, hardened_metrics_table, votes_row_table;
-                         optimal_threshold_class, class_labels, thresholds,
-                         optimal_threshold)
-end
-
-#TODO
-function get_tradeoff_metrics(predicted_soft_labels, class; thresholds)
-    @warn "NOT YET IMPLEMENTED"
-    return LabelMetricsRow(; class)
-end
-
-#TODO
-function get_hardened_metrics(predicted_hard_labels, class) # single class
-    return HardenedMetricsRow(; class)
-end
-
-function get_multiclass_hardened_metrics(predicted_hard_labels) # single class
-    return HardenedMetricsRow(; class=:multiclass)
-end
-
-#TODO
-function get_label_metrics() # single class
-    return LabelMetricsRow()
-end
-
