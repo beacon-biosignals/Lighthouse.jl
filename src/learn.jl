@@ -31,7 +31,7 @@ Logs a series plot to `logger` under `field`, where...
 - `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationRow` field `per_class_roc_curves`
 - `labels` is the class label for each curve, which defaults to the numeric index of each curve.
 """
-log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
+log_line_series!(logger, field::AbstractString, curves; labels=1:length(curves))
 
 # The following have default implementations.
 
@@ -890,4 +890,59 @@ end
 
 function upon(logger::LearnLogger, field::AbstractString; condition, initial)
     return upon(logger.logged, field; condition=condition, initial=initial)
+end
+
+#####
+##### Refactored evaluation metrics #TODO: move out from this section
+#####
+
+#TODO: revise
+function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                                           predicted_soft_labels::AbstractMatrix,
+                                           elected_hard_labels::AbstractVector, classes;
+                                           thresholds=0.0:0.01:1.0,
+                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                           strata::Union{Nothing,
+                                                         AbstractVector{Set{T}} where T}=nothing,
+                                           optimal_threshold_class::Union{Missing,Nothing,
+                                                                          Integer}=missing)
+    isnothing(strata) || @warn "Not handling `strata` arg!"
+    class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
+    class_labels = string.(class_vector)
+
+    tradeoff_row_table = nothing
+    hardened_row_table = nothing
+    votes_row_table = nothing
+    optimal_threshold = nothing
+
+    return EvaluationRow(tradeoff_row_table, hardened_row_table, votes_row_table;
+                         optimal_threshold_class, class_labels, thresholds,
+                         optimal_threshold)
+end
+
+#TODO
+function get_tradeoff_metrics() # single class
+    return LabelMetricsRow()
+end
+
+function get_tradeoff_metrics() # over all classes + multiclass
+    return LabelMetricsRow()
+end
+
+#TODO
+function get_label_metrics() # single class
+    return LabelMetricsRow()
+end
+
+function get_label_metrics() # over all classes + multiclass
+    return LabelMetricsRow()
+end
+
+#TODO
+function get_hardened_metrics() # single class
+    return LabelMetricsRow()
+end
+
+function get_hardened_metrics() # over all classes + multiclass
+    return LabelMetricsRow()
 end
