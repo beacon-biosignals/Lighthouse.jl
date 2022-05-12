@@ -185,106 +185,8 @@ function fraction_within(values, bitmask, start, stop)
 end
 
 #####
-##### Refactored out of `evaluation_metrics_row`
+##### Aggregate metrics to calculate `metrics` schemas defined in `src/row.jl`
 #####
-
-"""
-    refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                      predicted_soft_labels::AbstractMatrix,
-                                      elected_hard_labels::AbstractVector, classes;
-                                      thresholds=0.0:0.01:1.0,
-                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                      strata::Union{Nothing,
-                                                    AbstractVector{Set{T}} where T}=nothing,
-                                      optimal_threshold_class::Union{Missing,Nothing,
-                                                                     Integer}=missing)
-
-Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), with identical
-inputs and outputs.
-"""
-function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                           predicted_soft_labels::AbstractMatrix,
-                                           elected_hard_labels::AbstractVector, classes;
-                                           thresholds=0.0:0.01:1.0,
-                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                           strata::Union{Nothing,
-                                                         AbstractVector{Set{T}} where T}=nothing,
-                                           optimal_threshold_class::Union{Missing,Nothing,
-                                                                          Integer}=missing)
-    class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
-    class_indices = 1:length(classes)
-
-    # Step 1: Calculate all metrics that do not require hardened predictions
-    tradeoff_metrics_rows = if length(classes) == 2 && has_value(votes)
-        return map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
-                                              ic;
-                                              thresholds),
-                   class_indices)
-    else
-        return map(ic -> get_binary_multirater_tradeoff_metrics(predicted_soft_labels,
-                                                                elected_hard_labels, votes,
-                                                                ic;
-                                                                thresholds),
-                   class_indices)
-    end
-
-    # Step 2a: Choose optimal threshold and use it to harden predictions
-    optimal_threshold = missing
-    if has_value(optimal_threshold_class) && has_value(votes)
-        cal = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
-                                                                           votes;
-                                                                           thresholds,
-                                                                           class_of_interest_index=optimal_threshold_class)
-        optimal_threshold = cal.threshold
-    elseif has_value(optimal_threshold_class)
-        roc_curve = tradeoff_metrics_rows[findfirst(==(optimal_threshold_class),
-                                                    tradeoff_metrics_rows.classes),
-                                          :]
-        optimal_threshold = _get_optimal_threshold_from_ROC(roc_curve; thresholds)
-    else
-        @warn "Not selecting and/or using optimal threshold; using `predicted_hard_labels` provided by default"
-    end
-
-    # Step 2b: Harden predictions with new threshold
-    # Note: in new refactored world, should never have hard_predictions before this
-    # point, IFF using a threshold to choose a hard label
-    if !ismissing(optimal_threshold)
-        other_class = optimal_threshold_class == 1 ? 2 : 1
-        for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
-                                       optimal_threshold_class : other_class
-        end
-    end
-
-    # Step 3: Calculate all metrics derived from hardened predictions
-    votes_iff_present = has_value(votes) ? votes : nothing
-    hardened_metrics_table = map(class_index -> get_hardened_metrics(predicted_hard_labels,
-                                                                     elected_hard_labels,
-                                                                     class_index;
-                                                                     votes=votes_iff_present),
-                                 class_indices)
-    push!(hardened_metrics_table,
-          get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_labels,
-                                          length(classes)))
-
-    # Step 4: Calculate all metrics derived directly from labels (does not depend on
-    # predictions)
-    labels_metrics_table = map(c -> get_label_metrics(votes, c), class_indices)
-    push!(labels_metrics_table,
-          get_multiclass_label_metrics(predicted_hard_labels, length(classes)))
-
-    # Adendum: Not including `stratified_kappas` by default in any of our metrics
-    # calculations; including here so as not to fail the deprecation sanity-check
-    stratified_kappas = has_value(strata) ?
-                        _calculate_stratified_ea_kappas(predicted_hard_labels,
-                                                        elected_hard_labels, class_count,
-                                                        strata) : missing
-
-    return EvaluationRow(tradeoff_metrics_rows, hardened_metrics_table,
-                         labels_metrics_table;
-                         optimal_threshold_class, class_labels, thresholds,
-                         optimal_threshold, stratified_kappas)
-end
 
 function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
                               thresholds)
@@ -310,7 +212,7 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
                               reliability_calibration_score)
 end
 
-function get_binary_multirater_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
+function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels,
                                                 votes, class_index; thresholds)
     basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
                                      class_index;
@@ -342,7 +244,7 @@ function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_
                               discrimination_calibration_score)
 end
 
-function get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_labels,
+function get_hardened_metrics_multiclass(predicted_hard_labels, elected_hard_labels,
                                          class_count)
     kappa = first(cohens_kappa(class_count,
                                zip(predicted_hard_labels, elected_hard_labels)))
@@ -364,10 +266,114 @@ function get_label_metrics(votes, class)
                            kappa=_calculate_ira_kappa(votes, class))
 end
 
-function get_multiclass_label_metrics(votes, class_count)
+function get_label_metrics_multiclass(votes, class_count)
     (has_value(votes) && size(votes, 2) > 1) ||
         (return LabelMetricsRow(; class=:multiclass))
 
     return LabelMetricsRow(; class=:multiclass,
                            kappa=_calculate_ira_kappa_multiclass(votes, class_count))
+end
+
+#####
+##### Metrics pipelines
+#####
+
+"""
+    refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                                      predicted_soft_labels::AbstractMatrix,
+                                      elected_hard_labels::AbstractVector, classes;
+                                      thresholds=0.0:0.01:1.0,
+                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                      strata::Union{Nothing,
+                                                    AbstractVector{Set{T}} where T}=nothing,
+                                      optimal_threshold_class::Union{Missing,Nothing,
+                                                                     Integer}=missing)
+
+Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), with identical
+inputs and outputs.
+
+In service of https://github.com/beacon-biosignals/Lighthouse.jl/pull/69.
+"""
+function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                                           predicted_soft_labels::AbstractMatrix,
+                                           elected_hard_labels::AbstractVector, classes;
+                                           thresholds=0.0:0.01:1.0,
+                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                           strata::Union{Nothing,
+                                                         AbstractVector{Set{T}} where T}=nothing,
+                                           optimal_threshold_class::Union{Missing,Nothing,
+                                                                          Integer}=missing)
+    class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
+    class_indices = 1:length(classes)
+
+    # Step 1: Calculate all metrics that do not require hardened predictions
+    tradeoff_metrics_rows = if length(classes) == 2 && has_value(votes)
+        return map(ic -> get_tradeoff_metrics_binary_multirater(predicted_soft_labels,
+                                                                elected_hard_labels, votes,
+                                                                ic;
+                                                                thresholds),
+                   class_indices)
+    else
+        return map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
+                                              ic;
+                                              thresholds),
+                   class_indices)
+    end
+
+    # Step 2a: Choose optimal threshold and use it to harden predictions
+    optimal_threshold = missing
+    if has_value(optimal_threshold_class) && has_value(votes)
+        cal = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+                                                                           votes;
+                                                                           thresholds,
+                                                                           class_of_interest_index=optimal_threshold_class)
+        optimal_threshold = cal.threshold
+    elseif has_value(optimal_threshold_class)
+        roc_curve = tradeoff_metrics_rows[findfirst(==(optimal_threshold_class),
+                                                    tradeoff_metrics_rows.classes),
+                                          :]
+        optimal_threshold = _get_optimal_threshold_from_ROC(roc_curve, thresholds)
+    else
+        @warn "Not selecting and/or using optimal threshold; using `predicted_hard_labels` provided by default"
+    end
+
+    # Step 2b: Harden predictions with new threshold
+    # Note: in new refactored world, should never have hard_predictions before this
+    # point, IFF using a threshold to choose a hard label
+    if !ismissing(optimal_threshold)
+        other_class = optimal_threshold_class == 1 ? 2 : 1
+        for (i, row) in enumerate(eachrow(predicted_soft_labels))
+            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
+                                       optimal_threshold_class : other_class
+        end
+    end
+
+    # Step 3: Calculate all metrics derived from hardened predictions
+    votes_iff_present = has_value(votes) ? votes : nothing
+    hardened_metrics_table = map(class_index -> get_hardened_metrics(predicted_hard_labels,
+                                                                     elected_hard_labels,
+                                                                     class_index;
+                                                                     votes=votes_iff_present),
+                                 class_indices)
+    push!(hardened_metrics_table,
+          get_hardened_metrics_multiclass(predicted_hard_labels, elected_hard_labels,
+                                          length(classes)))
+
+    # Step 4: Calculate all metrics derived directly from labels (does not depend on
+    # predictions)
+    labels_metrics_table = map(c -> get_label_metrics(votes, c), class_indices)
+    push!(labels_metrics_table,
+          get_label_metrics_multiclass(predicted_hard_labels, length(classes)))
+
+    # Adendum: Not including `stratified_kappas` by default in any of our metrics
+    # calculations; including here so as not to fail the deprecation sanity-check
+    stratified_kappas = has_value(strata) ?
+                        _calculate_stratified_ea_kappas(predicted_hard_labels,
+                                                        elected_hard_labels, class_count,
+                                                        strata) : missing
+
+    return EvaluationRow(tradeoff_metrics_rows, hardened_metrics_table,
+                         labels_metrics_table;
+                         optimal_threshold_class, class_labels, thresholds,
+                         optimal_threshold, stratified_kappas)
 end

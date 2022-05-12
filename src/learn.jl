@@ -474,7 +474,13 @@ function _calculate_voter_discrimination_calibration(votes; class_of_interest_in
                                 per_voter_calibration_curves))
 end
 
-function _get_optimal_threshold_from_ROC(roc_curve; thresholds)
+function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
+                                         class_of_interest_index)
+    return _get_optimal_threshold_from_ROC(per_class_roc_curves[class_of_interest_index],
+                                           thresholds)
+end
+
+function _get_optimal_threshold_from_ROC(roc_curve, thresholds)
     dist = (p1, p2) -> sqrt((p1[1] - p2[1])^2 + (p1[2] - p2[2])^2)
     min = Inf
     curr_counter = 1
@@ -607,8 +613,9 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
             per_expert_discrimination_calibration_curves = missing
             per_expert_discrimination_calibration_scores = missing
             # ...based on ROC curve otherwise
-            optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves[optimal_threshold_class];
-                                                                thresholds)
+            optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves;
+                                                                thresholds=thresholds,
+                                                                class_of_interest_index=optimal_threshold_class)
         end
 
         # Recalculate `predicted_hard_labels` with this new threshold
