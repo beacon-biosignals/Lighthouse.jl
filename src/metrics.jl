@@ -198,8 +198,6 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
     pr_curve = (map(t -> t.true_positive_rate, stats),
                 map(t -> t.precision, stats))
 
-    # Note: we might not want to keep this type of calibration around by default/at all?!
-    # afaik no one depends on it....
     class_probabilities = view(predicted_soft_labels, :, class_index)
     reliability_calibration = calibration_curve(class_probabilities,
                                                 elected_hard_labels .== class_index)
@@ -227,8 +225,6 @@ function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_h
     return TradeoffMetricsRow(; row...)
 end
 
-# Note: intentionally not making per-class confusion matrix, could add in future
-# as needed
 function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
                               votes=nothing) # single class
     discrimination_calibration_score = missing
@@ -266,7 +262,7 @@ function get_label_metrics(votes, class_index)
     per_expert_discrimination_calibration_scores = expert_cal.mse
     return LabelMetricsRow(; class_index, per_expert_discrimination_calibration_curves,
                            per_expert_discrimination_calibration_scores,
-                           ira_kappa = _calculate_ira_kappa(votes, class_index))
+                           ira_kappa=_calculate_ira_kappa(votes, class_index))
 end
 
 function get_label_metrics_multiclass(votes, class_count)
@@ -381,6 +377,96 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
 
     return EvaluationRow(tradeoff_metrics_rows, hardened_metrics_table,
                          labels_metrics_table;
+                         optimal_threshold_class, class_labels, thresholds,
+                         optimal_threshold, stratified_kappas)
+end
+
+function _split_classes_from_multiclass(table)
+    table = DataFrame(table; copycols=false)
+
+    # Pull out individual classes
+    class_rows = filter(:class_index => c -> isa(c, Int), table)
+    sort!(class_rows, :class_index)
+    nrow(class_rows) == length(unique(class_rows.class_index)) ||
+        throw(ArgumentError("Multiple rows for same class!"))
+
+    # Pull out multiclass
+    multi_rows = filter(:class_index => ==(:multiclass), table)
+    nrow(multi_rows) > 1 &&
+        throw(ArgumentError("More than one `:multiclass` row in table!"))
+    multi = nrow(multi_rows) == 1 ? only(multi_rows) : missing
+    return class_rows, multi
+end
+
+function _values_or_missing(values)
+    has_value(values) || return missing
+    return all(ismissing, values) ? missing : values
+end
+
+_unpack_curves(curve::Union{Missing,Curve}) = ismissing(curve) ? missing : Tuple(curve)
+_unpack_curves(curves::AbstractVector{Curve}) = Tuple.(curves)
+
+# `EvaluationRow` constructor to facilitate sanity-check refactor
+function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
+                        optimal_threshold_class=missing, class_labels, thresholds,
+                        optimal_threshold,
+                        stratified_kappas=missing) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
+                                                                            1}}
+    tradeoff_rows, _ = _split_classes_from_multiclass(tradeoff_metrics_table)
+    hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
+    label_rows, labels_multi = _split_classes_from_multiclass(label_metrics_table)
+
+    # Due to special casing, the following metrics should only be present
+    # in the resultant `EvaluationRow` if `optimal_threshold_class` is present
+    discrimination_calibration_curve = missing
+    discrimination_calibration_score = missing
+    per_expert_discrimination_calibration_curves = missing
+    per_expert_discrimination_calibration_scores = missing
+    if has_value(optimal_threshold_class)
+        hardened_row_optimal = only(filter(:class_index => ==(optimal_threshold_class),
+                                           hardened_rows))
+        discrimination_calibration_curve = hardened_row_optimal.discrimination_calibration_curve
+        discrimination_calibration_score = hardened_row_optimal.discrimination_calibration_score
+
+        label_row_optimal = only(filter(:class_index => ==(optimal_threshold_class),
+                                        label_rows))
+        per_expert_discrimination_calibration_curves = label_row_optimal.per_expert_discrimination_calibration_curves
+        per_expert_discrimination_calibration_scores = label_row_optimal.per_expert_discrimination_calibration_scores
+    end
+
+    # Similarly, due to separate special casing, only get the spearman correlation coefficient
+    # from a binary classification problem. It is calculated for both classes, but is
+    # identical, so grab it from the first
+    spearman_correlation = missing
+    if length(class_labels) == 2
+        row = first(tradeoff_rows)
+        spearman_correlation = (; ρ=row.spearman_correlation, n=row.n_samples,
+                                ci_lower=row.spearman_correlation_ci_lower,
+                                ci_upper=row.spearman_correlation_ci_upper)
+    end
+    return EvaluationRow(;
+                         # ...from hardened_metrics_table
+                         confusion_matrix=_values_or_missing(hardened_multi.confusion_matrix),
+                         multiclass_kappa=_values_or_missing(hardened_multi.ea_kappa),
+                         per_class_kappas=_values_or_missing(hardened_rows.ea_kappa),
+                         discrimination_calibration_curve=_unpack_curves(discrimination_calibration_curve),
+                         discrimination_calibration_score,
+
+                         # ...from tradeoff_metrics_table
+                         per_class_roc_curves=_unpack_curves(_values_or_missing(tradeoff_rows.roc_curve)),
+                         per_class_roc_aucs=_values_or_missing(tradeoff_rows.roc_auc),
+                         per_class_pr_curves=_unpack_curves(_values_or_missing(tradeoff_rows.pr_curve)),
+                         spearman_correlation,
+                         per_class_reliability_calibration_curves=_unpack_curves(_values_or_missing(tradeoff_rows.reliability_calibration_curve)),
+                         per_class_reliability_calibration_scores=_values_or_missing(tradeoff_rows.reliability_calibration_score),
+
+                         # from label_metrics_table
+                         per_expert_discrimination_calibration_curves=_unpack_curves(_values_or_missing(per_expert_discrimination_calibration_curves)),
+                         multiclass_IRA_kappas=_values_or_missing(labels_multi.ira_kappa),
+                         per_class_IRA_kappas=_values_or_missing(label_rows.ira_kappa),
+                         per_expert_discrimination_calibration_scores,
+
+                         # from kwargs:
                          optimal_threshold_class, class_labels, thresholds,
                          optimal_threshold, stratified_kappas)
 end
