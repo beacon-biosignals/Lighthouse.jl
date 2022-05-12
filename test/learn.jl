@@ -65,7 +65,7 @@ end
                                                  condition=<, initial=Inf)
             callback = n -> begin
                 upon_loss_decrease() do _
-                    global counted += n
+                    counted += n
                     @debug counted n
                 end
             end
