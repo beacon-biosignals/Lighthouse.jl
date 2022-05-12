@@ -443,10 +443,10 @@ end
 
 function _calculate_discrimination_calibration(predicted_hard_labels, votes;
                                                class_of_interest_index)
-                                               elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
+    elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
     bin_count = min(size(votes, 2) + 1, 10)
-
-    curve = calibration_curve(elected_probabilities, predicted_hard_labels; bin_count)
+    curve = calibration_curve(elected_probabilities,
+                              predicted_hard_labels .== class_of_interest_index; bin_count)
     return (mse=curve.mean_squared_error,
             plot_curve_data=(mean.(curve.bins), curve.fractions))
 end

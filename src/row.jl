@@ -333,16 +333,13 @@ function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_me
     hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
     label_rows, labels_multi = _split_classes_from_multiclass(label_metrics_table)
 
-    # `EvaluationRow` only contains the following metrics if an `optimal_threshold_class` is present
-    spearman_correlation = missing
+    # Due to special casing, the following metrics should only be present
+    # in the resultant `EvaluationRow` if `optimal_threshold_class` is present
     discrimination_calibration_curve = missing
     discrimination_calibration_score = missing
     per_expert_discrimination_calibration_curves = missing
     per_expert_discrimination_calibration_scores = missing
     if has_value(optimal_threshold_class)
-        spearman_correlation = only(filter(:class_index => ==(optimal_threshold_class),
-                                           tradeoff_rows)).spearman_correlation
-
         hardened_row_optimal = only(filter(:class_index => ==(optimal_threshold_class),
                                            hardened_rows))
         discrimination_calibration_curve = hardened_row_optimal.discrimination_calibration_curve
@@ -352,6 +349,14 @@ function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_me
                                         label_rows))
         per_expert_discrimination_calibration_curves = label_row_optimal.per_expert_discrimination_calibration_curves
         per_expert_discrimination_calibration_scores = label_row_optimal.per_expert_discrimination_calibration_scores
+    end
+
+    # Similarly, due to separate special casing, only get the spearman correlation coefficient
+    # from a binary classification problem. It is calculated for both classes, but is
+    # identical, so grab it from the first
+    spearman_correlation = missing
+    if length(class_labels) == 2
+        spearman_correlation = first(tradeoff_rows).spearman_correlation
     end
     return EvaluationRow(;
                          # ...from hardened_metrics_table
