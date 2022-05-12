@@ -212,18 +212,14 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
                               pr_curve, reliability_calibration_curve,
                               reliability_calibration_score)
 end
-#TODO: row should be class_index everywhere
 
 function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels,
                                                 votes, class_index; thresholds)
     basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
-                                     class_index;
-                                     thresholds)
-    row = Tables.rowmerge(basic_row,
-                          (;
-                           spearman_correlation=_calculate_spearman_correlation(predicted_soft_labels,
-                                                                                votes,
-                                                                                classes)))
+                                     class_index; thresholds)
+    spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels,
+                                                           votes)
+    row = Tables.rowmerge(basic_row, (; spearman_correlation))
     return TradeoffMetricsRow(; row...)
 end
 
@@ -231,8 +227,8 @@ end
 # as needed
 function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
                               votes=nothing) # single class
-    discrimination_calibration_score = nothing
-    discrimination_calibration_curve = nothing
+    discrimination_calibration_score = missing
+    discrimination_calibration_curve = missing
     if !isnothing(votes)
         cal = _calculate_discrimination_calibration(predicted_hard_labels, votes;
                                                     class_of_interest_index=class_index)
@@ -241,7 +237,8 @@ function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_
     end
     return HardenedMetricsRow(; class_index,
                               ea_kappa=_calculate_ea_kappa(predicted_hard_labels,
-                                                        elected_hard_labels, class_index),
+                                                           elected_hard_labels,
+                                                           class_index),
                               discrimination_calibration_curve,
                               discrimination_calibration_score)
 end
@@ -297,27 +294,31 @@ inputs and outputs.
 In service of https://github.com/beacon-biosignals/Lighthouse.jl/pull/69.
 """
 function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                predicted_soft_labels::AbstractMatrix,
-                                elected_hard_labels::AbstractVector, classes,
-                                thresholds=0.0:0.01:1.0;
-                                votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+                                           predicted_soft_labels::AbstractMatrix,
+                                           elected_hard_labels::AbstractVector, classes,
+                                           thresholds=0.0:0.01:1.0;
+                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                           strata::Union{Nothing,
+                                                         AbstractVector{Set{T}} where T}=nothing,
+                                           optimal_threshold_class::Union{Missing,Nothing,
+                                                                          Integer}=missing)
     class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
 
     # Step 1: Calculate all metrics that do not require hardened predictions
+    # In our `evaluation_metrics_row` we special-case multirater binary classification,
+    # so do that here as well.
     tradeoff_metrics_rows = if length(classes) == 2 && has_value(votes)
         map(ic -> get_tradeoff_metrics_binary_multirater(predicted_soft_labels,
-                                                                elected_hard_labels, votes,
-                                                                ic;
-                                                                thresholds),
-                   class_indices)
+                                                         elected_hard_labels, votes,
+                                                         ic;
+                                                         thresholds),
+            class_indices)
     else
         map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
-                                              ic;
-                                              thresholds),
-                   class_indices)
+                                       ic;
+                                       thresholds),
+            class_indices)
     end
 
     # Step 2a: Choose optimal threshold and use it to harden predictions
@@ -356,9 +357,9 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                                                      votes=votes_iff_present),
                                  class_indices)
     hardened_metrics_table = vcat(hardened_metrics_table,
-                                get_hardened_metrics_multiclass(predicted_hard_labels,
-                                                                elected_hard_labels,
-                                                                length(classes)))
+                                  get_hardened_metrics_multiclass(predicted_hard_labels,
+                                                                  elected_hard_labels,
+                                                                  length(classes)))
 
     # Step 4: Calculate all metrics derived directly from labels (does not depend on
     # predictions)
@@ -370,8 +371,9 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
     # calculations; including here so as not to fail the deprecation sanity-check
     stratified_kappas = has_value(strata) ?
                         _calculate_stratified_ea_kappas(predicted_hard_labels,
-                                                        elected_hard_labels, length(classes),
-                                                                                    strata) : missing
+                                                        elected_hard_labels,
+                                                        length(classes),
+                                                        strata) : missing
 
     return EvaluationRow(tradeoff_metrics_rows, hardened_metrics_table,
                          labels_metrics_table;
