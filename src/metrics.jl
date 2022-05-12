@@ -189,10 +189,18 @@ end
 #####
 
 """
+    refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                                      predicted_soft_labels::AbstractMatrix,
+                                      elected_hard_labels::AbstractVector, classes;
+                                      thresholds=0.0:0.01:1.0,
+                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                      strata::Union{Nothing,
+                                                    AbstractVector{Set{T}} where T}=nothing,
+                                      optimal_threshold_class::Union{Missing,Nothing,
+                                                                     Integer}=missing)
 
-Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), taking same
-inputs and outputs as that function. Can be used as an example of how to use constituent
-metrics calculation pieces.
+Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), with identical
+inputs and outputs.
 """
 function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                            predicted_soft_labels::AbstractMatrix,
@@ -256,7 +264,7 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                                                      votes=votes_iff_present),
                                  class_indices)
     push!(hardened_metrics_table,
-          get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_labels;
+          get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_labels,
                                           length(classes)))
 
     # Step 4: Calculate all metrics derived directly from labels (does not depend on
@@ -304,8 +312,9 @@ end
 
 function get_binary_multirater_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
                                                 votes, class_index; thresholds)
-    basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                               thresholds)
+    basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
+                                     class_index;
+                                     thresholds)
     row = Tables.rowmerge(basic_row,
                           (;
                            spearman_correlation=_calculate_spearman_correlation(predicted_soft_labels,
@@ -333,7 +342,7 @@ function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_
                               discrimination_calibration_score)
 end
 
-function get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_labels;
+function get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_labels,
                                          class_count)
     kappa = first(cohens_kappa(class_count,
                                zip(predicted_hard_labels, elected_hard_labels)))
@@ -341,21 +350,24 @@ function get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_lab
                               confusion_matrix=confusion_matrix(class_count,
                                                                 zip(predicted_hard_labels,
                                                                     elected_hard_labels)),
-                                                                    kappa)
+                              kappa)
 end
 
 function get_label_metrics(votes, class)
     (has_value(votes) && size(votes, 2) > 1) || (return LabelMetricsRow(; class))
-    expert_cal = _calculate_voter_discrimination_calibration(votes; class_of_interest_index=class)
+    expert_cal = _calculate_voter_discrimination_calibration(votes;
+                                                             class_of_interest_index=class)
     per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
     per_expert_discrimination_calibration_scores = expert_cal.mse
     return LabelMetricsRow(; class, per_expert_discrimination_calibration_curves,
                            per_expert_discrimination_calibration_scores,
-                           kappa = _calculate_ira_kappa(votes, class))
+                           kappa=_calculate_ira_kappa(votes, class))
 end
 
 function get_multiclass_label_metrics(votes, class_count)
-    (has_value(votes) && size(votes, 2) > 1) || (return LabelMetricsRow(; class=:multiclass))
+    (has_value(votes) && size(votes, 2) > 1) ||
+        (return LabelMetricsRow(; class=:multiclass))
 
-    return LabelMetricsRow(; class=:multiclass, kappa=_calculate_ira_kappa_multiclass(votes, class_count))
+    return LabelMetricsRow(; class=:multiclass,
+                           kappa=_calculate_ira_kappa_multiclass(votes, class_count))
 end

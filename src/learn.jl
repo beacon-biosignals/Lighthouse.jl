@@ -756,23 +756,6 @@ function per_threshold_confusion_statistics(predicted_soft_labels::AbstractMatri
     return binary_statistics.(confusions, 2)
 end
 
-function per_threshold_confusion_statistics(predicted_soft_labels::AbstractVector,
-                                            elected_hard_labels::AbstractVector, thresholds,
-                                            class_index)
-    confusions = [confusion_matrix(2) for _ in 1:length(thresholds)]
-    for label_index in 1:length(elected_hard_labels)
-        predicted_soft_label = predicted_soft_labels[label_index]
-        elected = (elected_hard_labels[label_index] == class_index) + 1
-        for (threshold_index, threshold) in enumerate(thresholds)
-            predicted = (predicted_soft_label >= threshold) + 1
-            confusions[threshold_index][predicted, elected] += 1
-        end
-    end
-    return binary_statistics.(confusions, 2)
-end
-
-function binarized_confusion_statistics
-
 #####
 ##### `learn!`
 #####
