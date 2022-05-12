@@ -217,9 +217,13 @@ function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_h
                                                 votes, class_index; thresholds)
     basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
                                      class_index; thresholds)
-    spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels,
-                                                           votes)
-    row = Tables.rowmerge(basic_row, (; spearman_correlation))
+    corr = _calculate_spearman_correlation(predicted_soft_labels, votes)
+    row = Tables.rowmerge(basic_row,
+                          (;
+                           spearman_correlation=corr.ρ,
+                           spearman_correlation_ci_upper=corr.ci_upper,
+                           spearman_correlation_ci_lower=corr.ci_lower,
+                           n_samples=corr.n))
     return TradeoffMetricsRow(; row...)
 end
 

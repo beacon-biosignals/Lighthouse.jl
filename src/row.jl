@@ -201,12 +201,22 @@ end
 #####
 
 """
-    ClassRow = Legolas.@row("lighthouse.class@1", class::Union{Int,Symbol})
+    const ClassRow = Legolas.@row("lighthouse.class@1",
+                                  class_index::Union{Int64,Symbol}
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.class@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing a single column that either repsresnts a single class or `:multiclass`.
+representing a single column `class_index` that holds either an integer or the value
+`:multiclass`.
 """
-const ClassRow = Legolas.@row("lighthouse.class@1", class_index::Union{Int64,Symbol})
+const ClassRow = Legolas.@row("lighthouse.class@1",
+                              class_index::Union{Int64,Symbol} = check_valid_class(class_index))
+
+check_valid_class(class_index::Integer) = Int64(class_index)
+
+function check_valid_class(class_index::Any)
+    return class_index === :multiclass ? class_index :
+           throw(ArgumentError("Classes must be integers or the symbol `:multiclass`"))
+end
 
 """
     LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
@@ -256,27 +266,22 @@ const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
 
 """
     TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
-                                        "lighthouse.class@1",
-                                        pr_curve::Union{Missing,
-                                                        Tuple{Vector{Float64},
-                                                              Vector{Float64}}},
-                                        roc_auc::Union{Missing,Float64},
-                                        roc_curve::Union{Missing,
-                                                         Tuple{Vector{Float64},
-                                                               Vector{Float64}}},
-                                        spearman_correlation::Union{Missing,
-                                                                    NamedTuple{(:ρ, :n,
-                                                                                :ci_lower,
-                                                                                :ci_upper),
-                                                                               Tuple{Float64,
-                                                                                     Int64,
-                                                                                     Float64,
-                                                                                     Float64}}},
-                                        reliability_calibration_curve::Union{Missing,
-                                                                             Tuple{Vector{Float64},
-                                                                                   Vector{Float64}}},
-                                        reliability_calibration_score::Union{Missing,
-                                                                             Float64})
+                                      "lighthouse.class@1",
+                                      roc_curve::Tuple{Vector{Float64},Vector{Float64}},
+                                      roc_auc::Float64,
+                                      pr_curve::Tuple{Vector{Float64},Vector{Float64}},
+                                      spearman_correlation::Union{Missing, Float64}
+                                      spearman_correlation_ci_upper::Union{Missing,
+                                                                            Float64}
+                                      spearman_correlation_ci_lower::Union{Missing,
+                                                                            Float64}
+                                      spearman_correlation_n_samples::Union{Missing,
+                                                                            Int}
+                                      reliability_calibration_curve::Union{Missing,
+                                                                            Tuple{Vector{Float64},
+                                                                                Vector{Float64}}},
+                                      reliability_calibration_score::Union{Missing,
+                                                                            Float64})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("tradeoff-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing metrics calculated over predicted soft labels.
@@ -288,13 +293,12 @@ const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                         roc_auc::Float64,
                                         pr_curve::Tuple{Vector{Float64},Vector{Float64}},
                                         spearman_correlation::Union{Missing,
-                                                                    NamedTuple{(:ρ, :n,
-                                                                                :ci_lower,
-                                                                                :ci_upper),
-                                                                               Tuple{Float64,
-                                                                                     Int64,
-                                                                                     Float64,
-                                                                                     Float64}}},
+                                                                    Float64},
+                                        spearman_correlation_ci_upper::Union{Missing,
+                                                                             Float64},
+                                        spearman_correlation_ci_lower::Union{Missing,
+                                                                             Float64},
+                                        n_samples::Union{Missing, Int},
                                         reliability_calibration_curve::Union{Missing,
                                                                              Tuple{Vector{Float64},
                                                                                    Vector{Float64}}},
@@ -356,7 +360,10 @@ function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_me
     # identical, so grab it from the first
     spearman_correlation = missing
     if length(class_labels) == 2
-        spearman_correlation = first(tradeoff_rows).spearman_correlation
+        row = first(tradeoff_rows)
+        spearman_correlation = (; ρ=row.spearman_correlation, n=row.n_samples,
+                                ci_lower=row.spearman_correlation_ci_lower,
+                                ci_upper=row.spearman_correlation_ci_upper)
     end
     return EvaluationRow(;
                          # ...from hardened_metrics_table
