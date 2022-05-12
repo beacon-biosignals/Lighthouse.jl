@@ -213,7 +213,8 @@ end
 floatify(x) = convert(Vector{Float64}, replace(x, missing => NaN))
 Curve(x, y) = Curve(floatify(x), floatify(y))
 function Curve(t)
-    length(t) == 2 || throw(ArgumentError("Arguments to `Curve` must consist of x- and y- iterators"))
+    length(t) == 2 ||
+        throw(ArgumentError("Arguments to `Curve` must consist of x- and y- iterators"))
     return Curve(floatify(first(t)), floatify(last(t)))
 end
 Curve(c::Curve) = c
@@ -252,10 +253,9 @@ end
 
 """
     LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
-                                     IRA_kappa::Union{Missing,Float64},
+                                     ira_kappa::Union{Missing,Float64},
                                      per_expert_discrimination_calibration_curves::Union{Missing,
-                                                                                         Vector{Tuple{Vector{Float64},
-                                                                                                      Vector{Float64}}}},
+                                                                                         Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ? missing : Curve(per_expert_discrimination_calibration_curves),
                                      per_expert_discrimination_calibration_scores::Union{Missing,
                                                                                          Vector{Float64}})
 
@@ -266,8 +266,9 @@ See also [`get_label_metrics`](@ref).
 const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
                                      ira_kappa::Union{Missing,Float64},
                                      per_expert_discrimination_calibration_curves::Union{Missing,
-                                                                                         Vector{Tuple{Vector{Float64},
-                                                                                                      Vector{Float64}}}},
+                                     Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
+                                                      missing :
+                                                      Curve(per_expert_discrimination_calibration_curves),
                                      per_expert_discrimination_calibration_scores::Union{Missing,
                                                                                          Vector{Float64}})
 
@@ -275,12 +276,12 @@ const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.
     HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
                                         "lighthouse.class@1",
                                         confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
-                                        discrimination_calibration_curve::Union{Missing,
-                                                                                Tuple{Vector{Float64},
-                                                                                      Vector{Float64}}},
+                                        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
+                                                                                                 missing :
+                                                                                                 Curve(discrimination_calibration_curve),
                                         discrimination_calibration_score::Union{Missing,
                                                                                 Float64},
-                                        kappa::Union{Missing,Float64})
+                                        ea_kappa::Union{Missing,Float64})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("hardened-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing metrics calculated over predicted hard labels.
@@ -289,41 +290,23 @@ See also [`get_hardened_metrics`](@ref).
 const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
                                         "lighthouse.class@1",
                                         confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
-                                        discrimination_calibration_curve::Union{Missing,
-                                                                                Tuple{Vector{Float64},
-                                                                                      Vector{Float64}}},
+                                        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
+                                                                                                 missing :
+                                                                                                 Curve(discrimination_calibration_curve),
                                         discrimination_calibration_score::Union{Missing,
                                                                                 Float64},
                                         ea_kappa::Union{Missing,Float64})
 
 """
     TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
-                                      "lighthouse.class@1",
-                                      roc_curve::Tuple{Vector{Float64},Vector{Float64}},
-                                      roc_auc::Float64,
-                                      pr_curve::Tuple{Vector{Float64},Vector{Float64}},
-                                      spearman_correlation::Union{Missing, Float64}
-                                      spearman_correlation_ci_upper::Union{Missing,
-                                                                            Float64}
-                                      spearman_correlation_ci_lower::Union{Missing,
-                                                                            Float64}
-                                      spearman_correlation_n_samples::Union{Missing,
-                                                                            Int}
-                                      reliability_calibration_curve::Union{Missing,
-                                                                            Tuple{Vector{Float64},
-                                                                                Vector{Float64}}},
-                                      reliability_calibration_score::Union{Missing,
-                                                                            Float64})
-
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("tradeoff-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing metrics calculated over predicted soft labels.
-See also [`get_tradeoff_metrics`](@ref).
-"""
-const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                         "lighthouse.class@1",
-                                        roc_curve::Tuple{Vector{Float64},Vector{Float64}},
+                                        roc_curve::Curve = ismissing(roc_curve) ?
+                                                           missing :
+                                                           Curve(roc_curve),
                                         roc_auc::Float64,
-                                        pr_curve::Tuple{Vector{Float64},Vector{Float64}},
+                                        pr_curve::Curve = ismissing(pr_curve) ?
+                                                          missing :
+                                                          Curve(pr_curve),
                                         spearman_correlation::Union{Missing,
                                                                     Float64},
                                         spearman_correlation_ci_upper::Union{Missing,
@@ -332,8 +315,36 @@ const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                                                              Float64},
                                         n_samples::Union{Missing,Int},
                                         reliability_calibration_curve::Union{Missing,
-                                                                             Tuple{Vector{Float64},
-                                                                                   Vector{Float64}}},
+                                        Curve} = ismissing(reliability_calibration_curve) ?
+                                                 missing :
+                                                 Curve(reliability_calibration_curve),
+                                        reliability_calibration_score::Union{Missing,
+                                                                             Float64})
+
+A type alias for [`Legolas.Row{typeof(Legolas.Schema("tradeoff-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
+representing metrics calculated over predicted soft labels.
+See also [`get_tradeoff_metrics`](@ref).
+"""
+const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
+                                        "lighthouse.class@1",
+                                        roc_curve::Curve = ismissing(roc_curve) ?
+                                                           missing :
+                                                           Curve(roc_curve),
+                                        roc_auc::Float64,
+                                        pr_curve::Curve = ismissing(pr_curve) ?
+                                                          missing :
+                                                          Curve(pr_curve),
+                                        spearman_correlation::Union{Missing,
+                                                                    Float64},
+                                        spearman_correlation_ci_upper::Union{Missing,
+                                                                             Float64},
+                                        spearman_correlation_ci_lower::Union{Missing,
+                                                                             Float64},
+                                        n_samples::Union{Missing,Int},
+                                        reliability_calibration_curve::Union{Missing,
+                                        Curve} = ismissing(reliability_calibration_curve) ?
+                                                 missing :
+                                                 Curve(reliability_calibration_curve),
                                         reliability_calibration_score::Union{Missing,
                                                                              Float64})
 
@@ -358,6 +369,9 @@ function _values_or_missing(values)
     has_value(values) || return missing
     return all(ismissing, values) ? missing : values
 end
+
+_unpack_curves(curve::Union{Missing,Curve}) = ismissing(curve) ? missing : Tuple(curve)
+_unpack_curves(curves::AbstractVector{Curve}) = Tuple.(curves)
 
 # Helper constructor method to help sanity-check refactor
 function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
@@ -402,19 +416,19 @@ function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_me
                          confusion_matrix=_values_or_missing(hardened_multi.confusion_matrix),
                          multiclass_kappa=_values_or_missing(hardened_multi.ea_kappa),
                          per_class_kappas=_values_or_missing(hardened_rows.ea_kappa),
-                         discrimination_calibration_curve,
+                         discrimination_calibration_curve=_unpack_curves(discrimination_calibration_curve),
                          discrimination_calibration_score,
 
                          # ...from tradeoff_metrics_table
-                         per_class_roc_curves=_values_or_missing(tradeoff_rows.roc_curve),
+                         per_class_roc_curves=_unpack_curves(_values_or_missing(tradeoff_rows.roc_curve)),
                          per_class_roc_aucs=_values_or_missing(tradeoff_rows.roc_auc),
-                         per_class_pr_curves=_values_or_missing(tradeoff_rows.pr_curve),
+                         per_class_pr_curves=_unpack_curves(_values_or_missing(tradeoff_rows.pr_curve)),
                          spearman_correlation,
-                         per_class_reliability_calibration_curves=_values_or_missing(tradeoff_rows.reliability_calibration_curve),
+                         per_class_reliability_calibration_curves=_unpack_curves(_values_or_missing(tradeoff_rows.reliability_calibration_curve)),
                          per_class_reliability_calibration_scores=_values_or_missing(tradeoff_rows.reliability_calibration_score),
 
                          # from label_metrics_table
-                         per_expert_discrimination_calibration_curves=_values_or_missing(per_expert_discrimination_calibration_curves),
+                         per_expert_discrimination_calibration_curves=_unpack_curves(_values_or_missing(per_expert_discrimination_calibration_curves)),
                          multiclass_IRA_kappas=_values_or_missing(labels_multi.ira_kappa),
                          per_class_IRA_kappas=_values_or_missing(label_rows.ira_kappa),
                          per_expert_discrimination_calibration_scores,
