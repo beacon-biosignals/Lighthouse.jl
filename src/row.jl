@@ -200,6 +200,29 @@ end
 ##### Metrics rows
 #####
 
+struct Curve
+    x::Vector{Float64}
+    y::Vector{Float64}
+    function Curve(x::Vector{Float64}, y::Vector{Float64})
+        length(x) == length(y) ||
+            throw(DimensionMismatch("Arguments to `Curve` must have same length. Got `length(x)=$(length(x))` and `length(y)=$(length(y))`"))
+        return new(x, y)
+    end
+end
+
+floatify(x) = convert(Vector{Float64}, replace(x, missing => NaN))
+Curve(x, y) = Curve(floatify(x), floatify(y))
+Curve(c::Curve) = c
+Base.iterate(c::Curve, st=1) = st <= fieldcount(Curve) ? (getfield(c, st), st + 1) : nothing
+Base.length(::Curve) = fieldcount(Curve)
+Base.getindex(c::Curve, i::Int) = getfield(c, i)
+for op in (:(==), :isequal)
+    @eval function Base.$(op)(c1::Curve, c2::Curve)
+        return $op(c1.x, c2.x) && $op(c1.y, c2.y)
+    end
+end
+Base.hash(c::Curve, h::UInt) = hash(:Curve, hash(c.x, hash(c.y, h)))
+
 """
     const ClassRow = Legolas.@row("lighthouse.class@1",
                                   class_index::Union{Int64,Symbol}
@@ -298,7 +321,7 @@ const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                                                              Float64},
                                         spearman_correlation_ci_lower::Union{Missing,
                                                                              Float64},
-                                        n_samples::Union{Missing, Int},
+                                        n_samples::Union{Missing,Int},
                                         reliability_calibration_curve::Union{Missing,
                                                                              Tuple{Vector{Float64},
                                                                                    Vector{Float64}}},
