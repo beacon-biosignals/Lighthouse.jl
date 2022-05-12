@@ -39,10 +39,7 @@ function evaluation_refactor_test(predicted_hard_labels, predicted_soft_labels,
     orig_nt = NamedTuple(orig_row)
     new_nt = NamedTuple(new_row)
     for k in keys(orig_nt)
-        if !isequal(orig_nt[k], new_nt[k])
-            @warn k
-            @test !isequal(orig_nt[k], new_nt[k])
-        end
+        @test isequal(orig_nt[k], new_nt[k])
     end
     return nothing
 end

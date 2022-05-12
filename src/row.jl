@@ -212,7 +212,7 @@ end
 
 floatify(x) = convert(Vector{Float64}, replace(x, missing => NaN))
 Curve(x, y) = Curve(floatify(x), floatify(y))
-function Curve(t)
+function Curve(t::Tuple)
     length(t) == 2 ||
         throw(ArgumentError("Arguments to `Curve` must consist of x- and y- iterators"))
     return Curve(floatify(first(t)), floatify(last(t)))
@@ -268,7 +268,7 @@ const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.
                                      per_expert_discrimination_calibration_curves::Union{Missing,
                                      Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
                                                       missing :
-                                                      Curve(per_expert_discrimination_calibration_curves),
+                                                      Curve.(per_expert_discrimination_calibration_curves),
                                      per_expert_discrimination_calibration_scores::Union{Missing,
                                                                                          Vector{Float64}})
 

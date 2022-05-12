@@ -440,7 +440,8 @@ function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_me
     spearman_correlation = missing
     if length(class_labels) == 2
         row = first(tradeoff_rows)
-        spearman_correlation = (; ρ=row.spearman_correlation, n=row.n_samples,
+        spearman_correlation = ismissing(row.spearman_correlation) ? missing :
+                               (; ρ=row.spearman_correlation, n=row.n_samples,
                                 ci_lower=row.spearman_correlation_ci_lower,
                                 ci_upper=row.spearman_correlation_ci_upper)
     end
