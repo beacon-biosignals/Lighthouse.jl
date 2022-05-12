@@ -120,10 +120,22 @@ end
 
 @testset "`Curve" begin
     c = ([1, 2, 3], [4, 5, 6])
+    @test Curve(c...) isa Curve
+    @test Curve(c) isa Curve
+    @test Curve(1:8, 2:9) isa Curve
+    @test Curve([], []) isa Curve
+    @test Curve(Float64[], Float64[]) isa Curve
 
-    @test Curve(c) isa Curve{Int64}
+    @test_throws DimensionMismatch Curve([2], [])
+    @test_throws ArgumentError Curve((3, 2, 1))
 
-    @test Arrow.Table(Arrow.tobuffer(tbl)).weights[1] == w
+    @test isequal(Lighthouse.floatify([3, missing, 2.4]), Float64[3, NaN, 2.4])
+
+    curve = Curve(c...)
+    @test length(curve) == 2
+    @test size(curve) == (2, 3)
+    @test isequal(curve, Curve(c...))
+
+    @test first(Arrow.Table(Arrow.tobuffer([curve])).x) == curve.x
+    @test first(Arrow.Table(Arrow.tobuffer([curve])).y) == curve.y
 end
-
-# weights::Union{Missing,Weights} = ismissing(weights) ? missing : Weights(weights),

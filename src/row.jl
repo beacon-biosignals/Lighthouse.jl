@@ -212,9 +212,14 @@ end
 
 floatify(x) = convert(Vector{Float64}, replace(x, missing => NaN))
 Curve(x, y) = Curve(floatify(x), floatify(y))
+function Curve(t)
+    length(t) == 2 || throw(ArgumentError("Arguments to `Curve` must consist of x- and y- iterators"))
+    return Curve(floatify(first(t)), floatify(last(t)))
+end
 Curve(c::Curve) = c
 Base.iterate(c::Curve, st=1) = st <= fieldcount(Curve) ? (getfield(c, st), st + 1) : nothing
 Base.length(::Curve) = fieldcount(Curve)
+Base.size(c::Curve) = (fieldcount(Curve), length(c.x))
 Base.getindex(c::Curve, i::Int) = getfield(c, i)
 for op in (:(==), :isequal)
     @eval function Base.$(op)(c1::Curve, c2::Curve)
