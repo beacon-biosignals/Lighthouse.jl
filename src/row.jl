@@ -323,8 +323,10 @@ _values_or_missing(values) = all(ismissing, values) ? missing : values
 # Helper constructor method to help sanity-check refactor
 function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
                         optimal_threshold_class=missing, class_labels, thresholds,
-                        optimal_threshold, kwargs...) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
+                        optimal_threshold, strata=missing) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
                                                                     1}}
+
+                                                                    @info "HEREEEE"
     tradeoff_rows, _ = _split_classes_from_multiclass(tradeoff_metrics_table)
     hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
     label_rows, labels_multi = _split_classes_from_multiclass(label_metrics_table)
@@ -362,7 +364,7 @@ function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_me
 
                          # from kwargs:
                          optimal_threshold_class, class_labels, thresholds,
-                         optimal_threshold, kwargs...)
+                         optimal_threshold, strata)
 end
 
 

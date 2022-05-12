@@ -207,10 +207,12 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
                                      reliability_calibration.fractions)
     reliability_calibration_score = reliability_calibration.mean_squared_error
 
-    return TradeoffMetricsRow(; class, roc_curve, roc_auc=area_under_curve(roc_curve...),
+    return TradeoffMetricsRow(; class=class_index, roc_curve,
+                              roc_auc=area_under_curve(roc_curve...),
                               pr_curve, reliability_calibration_curve,
                               reliability_calibration_score)
 end
+#TODO: row should be class_index everywhere
 
 function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels,
                                                 votes, class_index; thresholds)
@@ -295,26 +297,24 @@ inputs and outputs.
 In service of https://github.com/beacon-biosignals/Lighthouse.jl/pull/69.
 """
 function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                           predicted_soft_labels::AbstractMatrix,
-                                           elected_hard_labels::AbstractVector, classes;
-                                           thresholds=0.0:0.01:1.0,
-                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                           strata::Union{Nothing,
-                                                         AbstractVector{Set{T}} where T}=nothing,
-                                           optimal_threshold_class::Union{Missing,Nothing,
-                                                                          Integer}=missing)
+                                predicted_soft_labels::AbstractMatrix,
+                                elected_hard_labels::AbstractVector, classes,
+                                thresholds=0.0:0.01:1.0;
+                                votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
     class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
 
     # Step 1: Calculate all metrics that do not require hardened predictions
     tradeoff_metrics_rows = if length(classes) == 2 && has_value(votes)
-        return map(ic -> get_tradeoff_metrics_binary_multirater(predicted_soft_labels,
+        map(ic -> get_tradeoff_metrics_binary_multirater(predicted_soft_labels,
                                                                 elected_hard_labels, votes,
                                                                 ic;
                                                                 thresholds),
                    class_indices)
     else
-        return map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
+        map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
                                               ic;
                                               thresholds),
                    class_indices)
@@ -347,7 +347,7 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                        optimal_threshold_class : other_class
         end
     end
-
+#TODO: FAILING SOMEWHERE IN HERE
     # Step 3: Calculate all metrics derived from hardened predictions
     votes_iff_present = has_value(votes) ? votes : nothing
     hardened_metrics_table = map(class_index -> get_hardened_metrics(predicted_hard_labels,

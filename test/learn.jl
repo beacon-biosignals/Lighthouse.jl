@@ -22,6 +22,32 @@ function Lighthouse.loss_and_prediction(c::TestClassifier, dummy_input_batch)
     return c.dummy_loss, dummy_soft_label_batch
 end
 
+function evaluation_refactor_test(predicted_hard_labels, predicted_soft_labels,
+                                  elected_hard_labels, classes,
+                                  thresholds=0.0:0.01:1.0; votes=nothing,
+                                  strata=nothing, optimal_threshold_class=missing)
+    orig_row = Lighthouse.evaluation_metrics_row(predicted_hard_labels, predicted_soft_labels,
+                                                 elected_hard_labels, classes, thresholds;
+                                                 votes, strata, optimal_threshold_class)
+    new_row = Lighthouse.refactored_evaluation_metrics_row(predicted_hard_labels,
+                                                           predicted_soft_labels,
+                                                           elected_hard_labels, classes,
+                                                           thresholds;
+                                                           votes, strata,
+                                                           optimal_threshold_class)
+
+    orig_nt = NamedTuple(orig_row)
+    new_nt = NamedTuple(new_row)
+    for k in keys(orig_nt)
+        @info k
+        @test isequal(orig_nt[k], new_nt[k])
+    end
+
+
+                                                           @test isequal(orig_row, new_row)
+    return nothing
+end
+
 @testset "Multi-class learn!(::TestModel, ...)" begin
     mktempdir() do tmpdir
         model = TestClassifier(1000000.0, ["class_$i" for i in 1:5])
@@ -40,7 +66,7 @@ end
                                                  condition=<, initial=Inf)
             callback = n -> begin
                 upon_loss_decrease() do _
-                    counted += n
+                    global counted += n
                     @debug counted n
                 end
             end
@@ -95,9 +121,11 @@ end
         elected_hard = map(row -> majority(rng, row, 1:length(model.classes)),
                            eachrow(votes))
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
-                  logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes)
+                  logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes)
         @test length(logger.logged["wheeeeeee/time_in_seconds_for_all_time"]) == 1
         @test length(logger.logged["wheeeeeee/metrics_for_all_time"]) == 1
+
+        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard, model.classes; votes)
 
         # Round-trip `onehot` for codecov
         onehot_hard = map(h -> vec(Lighthouse.onehot(model, h)), predicted_hard)
