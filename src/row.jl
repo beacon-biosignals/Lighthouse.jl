@@ -223,6 +223,10 @@ for op in (:(==), :isequal)
 end
 Base.hash(c::Curve, h::UInt) = hash(:Curve, hash(c.x, hash(c.y, h)))
 
+const CURVE_ARROW_NAME = Symbol("JuliaLang.Lighthouse.Curve")
+ArrowTypes.arrowname(::Type{<:Curve}) = CURVE_ARROW_NAME
+ArrowTypes.JuliaType(::Val{CURVE_ARROW_NAME}) = Curve
+
 """
     const ClassRow = Legolas.@row("lighthouse.class@1",
                                   class_index::Union{Int64,Symbol}

@@ -108,3 +108,22 @@ end
     @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0)
     @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS)
 end
+
+@testset "`ClassRow" begin
+    @test isa(Lighthouse.ClassRow(; class_index=3).class_index, Int64)
+    @test isa(Lighthouse.ClassRow(; class_index=Int8(3)).class_index, Int64)
+    @test Lighthouse.ClassRow(; class_index=:multiclass).class_index == :multiclass
+
+    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0)
+    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS)
+end
+
+@testset "`Curve" begin
+    c = ([1, 2, 3], [4, 5, 6])
+
+    @test Curve(c) isa Curve{Int64}
+
+    @test Arrow.Table(Arrow.tobuffer(tbl)).weights[1] == w
+end
+
+# weights::Union{Missing,Weights} = ismissing(weights) ? missing : Weights(weights),

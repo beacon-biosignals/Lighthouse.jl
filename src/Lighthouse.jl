@@ -9,9 +9,11 @@ using Printf
 using Legolas
 using Tables
 using DataFrames
+using Arrow.ArrowTypes
 
 include("row.jl")
-export EvaluationRow, ObservationRow
+export EvaluationRow, ObservationRow, Curve, TradeoffMetricsRow, HardenedMetricsRow,
+       LabelMetricsRow
 
 include("plotting.jl")
 
