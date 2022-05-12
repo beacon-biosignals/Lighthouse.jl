@@ -203,8 +203,7 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                                          AbstractVector{Set{T}} where T}=nothing,
                                            optimal_threshold_class::Union{Missing,Nothing,
                                                                           Integer}=missing)
-    class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
-    class_labels = string.(class_vector)
+    class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
 
     # Step 1: Calculate all metrics that do not require hardened predictions
@@ -258,12 +257,13 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                  class_indices)
     push!(hardened_metrics_table,
           get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_labels;
-                                          class_count))
+                                          length(classes)))
 
     # Step 4: Calculate all metrics derived directly from labels (does not depend on
     # predictions)
     labels_metrics_table = map(c -> get_label_metrics(votes, c), class_indices)
-    push!(labels_metrics_table, get_multiclass_label_metrics(predicted_hard_labels, length(classes)))
+    push!(labels_metrics_table,
+          get_multiclass_label_metrics(predicted_hard_labels, length(classes)))
 
     # Adendum: Not including `stratified_kappas` by default in any of our metrics
     # calculations; including here so as not to fail the deprecation sanity-check
@@ -344,7 +344,6 @@ function get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_lab
                                                                     kappa)
 end
 
-#TODO
 function get_label_metrics(votes, class)
     (has_value(votes) && size(votes, 2) > 1) || (return LabelMetricsRow(; class))
     expert_cal = _calculate_voter_discrimination_calibration(votes; class_of_interest_index=class)

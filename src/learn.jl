@@ -570,32 +570,32 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
                                 optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
-    # _validate_threshold_class(optimal_threshold_class, classes)
+    _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
     class_labels = string.(class_vector)
-    # per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
-    #                                                  elected_hard_labels, thresholds)
+    per_class_stats = per_class_confusion_statistics(predicted_soft_labels,
+                                                     elected_hard_labels, thresholds)
 
     # ROC curves
-    # per_class_roc_curves = [(map(t -> t.false_positive_rate, stats),
-    #                          map(t -> t.true_positive_rate, stats))
-    #                         for stats in per_class_stats]
-    # per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
+    per_class_roc_curves = [(map(t -> t.false_positive_rate, stats),
+                             map(t -> t.true_positive_rate, stats))
+                            for stats in per_class_stats]
+    per_class_roc_aucs = [area_under_curve(x, y) for (x, y) in per_class_roc_curves]
 
     # Optionally calculate optimal threshold
     if has_value(optimal_threshold_class)
         # If votes exist, calculate the threshold based on comparing against
         # vote probabilities. Otherwise, use the ROC curve.
         if has_value(votes)
-            # c = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
-            #                                                                  votes;
-            #                                                                  thresholds=thresholds,
-            #                                                                  class_of_interest_index=optimal_threshold_class)
-            # optimal_threshold = c.threshold
-            # discrimination_calibration_curve = c.plot_curve_data
-            # discrimination_calibration_score = c.mse
+            c = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+                                                                             votes;
+                                                                             thresholds=thresholds,
+                                                                             class_of_interest_index=optimal_threshold_class)
+            optimal_threshold = c.threshold
+            discrimination_calibration_curve = c.plot_curve_data
+            discrimination_calibration_score = c.mse
 
             expert_cal = _calculate_voter_discrimination_calibration(votes;
                                                                      class_of_interest_index=optimal_threshold_class)
@@ -607,16 +607,16 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
             per_expert_discrimination_calibration_curves = missing
             per_expert_discrimination_calibration_scores = missing
             # ...based on ROC curve otherwise
-            # optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves[optimal_threshold_class];
-            #                                                     thresholds)
+            optimal_threshold = _get_optimal_threshold_from_ROC(per_class_roc_curves[optimal_threshold_class];
+                                                                thresholds)
         end
 
-        # # Recalculate `predicted_hard_labels` with this new threshold
-        # other_class = optimal_threshold_class == 1 ? 2 : 1
-        # for (i, row) in enumerate(eachrow(predicted_soft_labels))
-        #     predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
-        #                                optimal_threshold_class : other_class
-        # end
+        # Recalculate `predicted_hard_labels` with this new threshold
+        other_class = optimal_threshold_class == 1 ? 2 : 1
+        for (i, row) in enumerate(eachrow(predicted_soft_labels))
+            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
+                                       optimal_threshold_class : other_class
+        end
     else
         discrimination_calibration_curve = missing
         discrimination_calibration_score = missing
@@ -626,32 +626,32 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     end
 
     # PR curves
-    # per_class_pr_curves = [(map(t -> t.true_positive_rate, stats),
-    #                         map(t -> t.precision, stats)) for stats in per_class_stats]
+    per_class_pr_curves = [(map(t -> t.true_positive_rate, stats),
+                            map(t -> t.precision, stats)) for stats in per_class_stats]
 
     # Stratified kappas
-    # stratified_kappas = has_value(strata) ?
-    #                     _calculate_stratified_ea_kappas(predicted_hard_labels,
-    #                                                     elected_hard_labels, class_count,
-    #                                                     strata) : missing
+    stratified_kappas = has_value(strata) ?
+                        _calculate_stratified_ea_kappas(predicted_hard_labels,
+                                                        elected_hard_labels, class_count,
+                                                        strata) : missing
 
     # Reliability calibration curves
-    # per_class_reliability_calibration = map(1:class_count) do class_index
-    #     class_probabilities = view(predicted_soft_labels, :, class_index)
-    #     return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
-    # end
-    # per_class_reliability_calibration_curves = map(x -> (mean.(x.bins), x.fractions),
-    #                                                per_class_reliability_calibration)
-    # per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
-    #                                                per_class_reliability_calibration)
+    per_class_reliability_calibration = map(1:class_count) do class_index
+        class_probabilities = view(predicted_soft_labels, :, class_index)
+        return calibration_curve(class_probabilities, elected_hard_labels .== class_index)
+    end
+    per_class_reliability_calibration_curves = map(x -> (mean.(x.bins), x.fractions),
+                                                   per_class_reliability_calibration)
+    per_class_reliability_calibration_scores = map(x -> x.mean_squared_error,
+                                                   per_class_reliability_calibration)
 
     # Log Spearman correlation, iff this is a binary classification problem
-    # if length(classes) == 2 && has_value(votes)
-    #     spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels, votes,
-    #                                                            classes)
-    # else
-    #     spearman_correlation = missing
-    # end
+    if length(classes) == 2 && has_value(votes)
+        spearman_correlation = _calculate_spearman_correlation(predicted_soft_labels, votes,
+                                                               classes)
+    else
+        spearman_correlation = missing
+    end
     return EvaluationRow(; class_labels,
                          confusion_matrix=confusion_matrix(class_count,
                                                            zip(predicted_hard_labels,
