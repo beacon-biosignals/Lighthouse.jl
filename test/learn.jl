@@ -35,16 +35,14 @@ function evaluation_refactor_test(predicted_hard_labels, predicted_soft_labels,
                                                            thresholds;
                                                            votes, strata,
                                                            optimal_threshold_class)
-
     orig_nt = NamedTuple(orig_row)
     new_nt = NamedTuple(new_row)
     for k in keys(orig_nt)
-        @info k
-        @test isequal(orig_nt[k], new_nt[k])
+        if !isequal(orig_nt[k], new_nt[k])
+            @warn "" k orig_nt[k], new_nt[k]
+            @test false
+        end
     end
-
-
-                                                           @test isequal(orig_row, new_row)
     return nothing
 end
 
@@ -122,10 +120,9 @@ end
                            eachrow(votes))
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes)
+        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard, model.classes; votes)
         @test length(logger.logged["wheeeeeee/time_in_seconds_for_all_time"]) == 1
         @test length(logger.logged["wheeeeeee/metrics_for_all_time"]) == 1
-
-        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard, model.classes; votes)
 
         # Round-trip `onehot` for codecov
         onehot_hard = map(h -> vec(Lighthouse.onehot(model, h)), predicted_hard)
@@ -136,6 +133,9 @@ end
                   for i in 1:size(votes, 1)]
         plot_data = evaluation_metrics(predicted_hard, predicted_soft, elected_hard,
                                        model.classes, 0.0:0.01:1.0; votes, strata)
+        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard, model.classes,
+                                0.0:0.01:1.0; votes,
+                                strata)
         @test haskey(plot_data, "stratified_kappas")
         plot = evaluation_metrics_plot(plot_data)
 

@@ -207,7 +207,7 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
                                      reliability_calibration.fractions)
     reliability_calibration_score = reliability_calibration.mean_squared_error
 
-    return TradeoffMetricsRow(; class=class_index, roc_curve,
+    return TradeoffMetricsRow(; class_index, roc_curve,
                               roc_auc=area_under_curve(roc_curve...),
                               pr_curve, reliability_calibration_curve,
                               reliability_calibration_score)
@@ -236,11 +236,11 @@ function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_
     if !isnothing(votes)
         cal = _calculate_discrimination_calibration(predicted_hard_labels, votes;
                                                     class_of_interest_index=class_index)
-        discrimination_calibration_curve = cal.plot_curve_data,
+        discrimination_calibration_curve = cal.plot_curve_data
         discrimination_calibration_score = cal.mse
     end
-    return HardenedMetricsRow(; class,
-                              kappa=_calculate_ea_kappa(predicted_hard_labels,
+    return HardenedMetricsRow(; class_index,
+                              ea_kappa=_calculate_ea_kappa(predicted_hard_labels,
                                                         elected_hard_labels, class_index),
                               discrimination_calibration_curve,
                               discrimination_calibration_score)
@@ -248,32 +248,32 @@ end
 
 function get_hardened_metrics_multiclass(predicted_hard_labels, elected_hard_labels,
                                          class_count)
-    kappa = first(cohens_kappa(class_count,
-                               zip(predicted_hard_labels, elected_hard_labels)))
-    return HardenedMetricsRow(; class=:multiclass,
+    ea_kappa = first(cohens_kappa(class_count,
+                                  zip(predicted_hard_labels, elected_hard_labels)))
+    return HardenedMetricsRow(; class_index=:multiclass,
                               confusion_matrix=confusion_matrix(class_count,
                                                                 zip(predicted_hard_labels,
                                                                     elected_hard_labels)),
-                              kappa)
+                              ea_kappa)
 end
 
-function get_label_metrics(votes, class)
-    (has_value(votes) && size(votes, 2) > 1) || (return LabelMetricsRow(; class))
+function get_label_metrics(votes, class_index)
+    (has_value(votes) && size(votes, 2) > 1) || (return LabelMetricsRow(; class_index))
     expert_cal = _calculate_voter_discrimination_calibration(votes;
-                                                             class_of_interest_index=class)
+                                                             class_of_interest_index=class_index)
     per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
     per_expert_discrimination_calibration_scores = expert_cal.mse
-    return LabelMetricsRow(; class, per_expert_discrimination_calibration_curves,
+    return LabelMetricsRow(; class_index, per_expert_discrimination_calibration_curves,
                            per_expert_discrimination_calibration_scores,
-                           kappa=_calculate_ira_kappa(votes, class))
+                           ira_kappa = _calculate_ira_kappa(votes, class_index))
 end
 
 function get_label_metrics_multiclass(votes, class_count)
     (has_value(votes) && size(votes, 2) > 1) ||
-        (return LabelMetricsRow(; class=:multiclass))
+        (return LabelMetricsRow(; class_index=:multiclass))
 
-    return LabelMetricsRow(; class=:multiclass,
-                           kappa=_calculate_ira_kappa_multiclass(votes, class_count))
+    return LabelMetricsRow(; class_index=:multiclass,
+                           ira_kappa=_calculate_ira_kappa_multiclass(votes, class_count))
 end
 
 #####
@@ -347,7 +347,7 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                        optimal_threshold_class : other_class
         end
     end
-#TODO: FAILING SOMEWHERE IN HERE
+
     # Step 3: Calculate all metrics derived from hardened predictions
     votes_iff_present = has_value(votes) ? votes : nothing
     hardened_metrics_table = map(class_index -> get_hardened_metrics(predicted_hard_labels,
@@ -355,22 +355,23 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                                                      class_index;
                                                                      votes=votes_iff_present),
                                  class_indices)
-    push!(hardened_metrics_table,
-          get_hardened_metrics_multiclass(predicted_hard_labels, elected_hard_labels,
-                                          length(classes)))
+    hardened_metrics_table = vcat(hardened_metrics_table,
+                                get_hardened_metrics_multiclass(predicted_hard_labels,
+                                                                elected_hard_labels,
+                                                                length(classes)))
 
     # Step 4: Calculate all metrics derived directly from labels (does not depend on
     # predictions)
     labels_metrics_table = map(c -> get_label_metrics(votes, c), class_indices)
-    push!(labels_metrics_table,
-          get_label_metrics_multiclass(predicted_hard_labels, length(classes)))
+    labels_metrics_table = vcat(labels_metrics_table,
+                                get_label_metrics_multiclass(votes, length(classes)))
 
     # Adendum: Not including `stratified_kappas` by default in any of our metrics
     # calculations; including here so as not to fail the deprecation sanity-check
     stratified_kappas = has_value(strata) ?
                         _calculate_stratified_ea_kappas(predicted_hard_labels,
-                                                        elected_hard_labels, class_count,
-                                                        strata) : missing
+                                                        elected_hard_labels, length(classes),
+                                                                                    strata) : missing
 
     return EvaluationRow(tradeoff_metrics_rows, hardened_metrics_table,
                          labels_metrics_table;
