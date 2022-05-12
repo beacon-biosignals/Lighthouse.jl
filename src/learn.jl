@@ -31,7 +31,7 @@ Logs a series plot to `logger` under `field`, where...
 - `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationRow` field `per_class_roc_curves`
 - `labels` is the class label for each curve, which defaults to the numeric index of each curve.
 """
-log_line_series!(logger, field::AbstractString, curves; labels=1:length(curves))
+log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
 
 # The following have default implementations.
 
@@ -283,7 +283,7 @@ function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_
     per_class_kappas = map(1:class_count) do class_index
         return _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
     end
-    return (per_class_kappas, multiclass_kappa)
+    return (; per_class_kappas, multiclass_kappa)
 end
 
 function _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
@@ -316,12 +316,11 @@ Returns `(per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)` if `vote
 no two voters rated the same sample. Note that vote entries of `0` are taken to
 mean that the voter did not rate that sample.
 """
-function _calculate_ira_kappas(votes, classes)
-    # no votes given or only one expert:
+function _prep_hard_label_pairs(votes)
     if !has_value(votes) || size(votes, 2) < 2
-        return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)
+        # no votes given or only one expert
+        return Tuple{Int64,Int64}[]
     end
-
     all_hard_label_pairs = Array{Int}(undef, 0, 2)
     num_voters = size(votes, 2)
     for i_voter in 1:(num_voters - 1)
@@ -330,10 +329,15 @@ function _calculate_ira_kappas(votes, classes)
         end
     end
     hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
+    return hard_label_pairs
+end
+
+function _calculate_ira_kappas(votes, classes)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
     length(hard_label_pairs) > 0 ||
         return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)  # No common observations voted on
     length(hard_label_pairs) < 10 &&
-        @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
+           @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
 
     multiclass_ira = first(cohens_kappa(length(classes), hard_label_pairs))
 
@@ -344,6 +348,21 @@ function _calculate_ira_kappas(votes, classes)
         return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
     end
     return (; per_class_IRA_kappas=per_class_ira, multiclass_IRA_kappas=multiclass_ira)
+end
+
+function _calculate_ira_kappa_multiclass(votes, class_count)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
+    length(hard_label_pairs) == 0 && return missing
+    return first(cohens_kappa(class_count, hard_label_pairs))
+end
+
+function _calculate_ira_kappa(votes, class_index)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
+    length(hard_label_pairs) == 0 && return missing
+    CLASS_VS_ALL_CLASS_COUNT = 2
+    class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index),
+                                        hard_label_pairs)
+    return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
 end
 
 function _spearman_corr(predicted_soft_labels, elected_soft_labels)
@@ -551,7 +570,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
                                 optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
-    _validate_threshold_class(optimal_threshold_class, classes)
+    # _validate_threshold_class(optimal_threshold_class, classes)
 
     class_count = length(classes)
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
@@ -575,8 +594,8 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
             #                                                                  thresholds=thresholds,
             #                                                                  class_of_interest_index=optimal_threshold_class)
             # optimal_threshold = c.threshold
-            discrimination_calibration_curve = c.plot_curve_data
-            discrimination_calibration_score = c.mse
+            # discrimination_calibration_curve = c.plot_curve_data
+            # discrimination_calibration_score = c.mse
 
             expert_cal = _calculate_voter_discrimination_calibration(votes;
                                                                      class_of_interest_index=optimal_threshold_class)
@@ -751,6 +770,8 @@ function per_threshold_confusion_statistics(predicted_soft_labels::AbstractVecto
     end
     return binary_statistics.(confusions, 2)
 end
+
+function binarized_confusion_statistics
 
 #####
 ##### `learn!`

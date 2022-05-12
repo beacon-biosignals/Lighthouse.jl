@@ -203,8 +203,6 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
                                                          AbstractVector{Set{T}} where T}=nothing,
                                            optimal_threshold_class::Union{Missing,Nothing,
                                                                           Integer}=missing)
-    _validate_threshold_class(optimal_threshold_class, classes) #TODO still needed??
-
     class_vector = collect(classes) # Plots.jl expects this to be an `AbstractVector`
     class_labels = string.(class_vector)
     class_indices = 1:length(classes)
@@ -226,14 +224,14 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
     # Step 2a: Choose optimal threshold and use it to harden predictions
     optimal_threshold = missing
     if has_value(optimal_threshold_class) && has_value(votes)
-        c = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
-                                                                         votes;
-                                                                         thresholds,
-                                                                         class_of_interest_index=optimal_threshold_class)
-        optimal_threshold = c.threshold
+        cal = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+                                                                           votes;
+                                                                           thresholds,
+                                                                           class_of_interest_index=optimal_threshold_class)
+        optimal_threshold = cal.threshold
     elseif has_value(optimal_threshold_class)
-        roc_curve = tradeoff_metrics_rows[optimal_threshold_class(==(optimal_threshold_class),
-                                                                  tradeoff_metrics_rows.classes),
+        roc_curve = tradeoff_metrics_rows[findfirst(==(optimal_threshold_class),
+                                                    tradeoff_metrics_rows.classes),
                                           :]
         optimal_threshold = _get_optimal_threshold_from_ROC(roc_curve; thresholds)
     else
@@ -264,8 +262,8 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
 
     # Step 4: Calculate all metrics derived directly from labels (does not depend on
     # predictions)
-    labels_metrics_table = map(c -> get_label_metrics(votes, c), classes)
-    push!(labels_metrics_table, get_multiclass_label_metrics(predicted_hard_labels))
+    labels_metrics_table = map(c -> get_label_metrics(votes, c), class_indices)
+    push!(labels_metrics_table, get_multiclass_label_metrics(predicted_hard_labels, length(classes)))
 
     # Adendum: Not including `stratified_kappas` by default in any of our metrics
     # calculations; including here so as not to fail the deprecation sanity-check
@@ -316,6 +314,8 @@ function get_binary_multirater_tradeoff_metrics(predicted_soft_labels, elected_h
     return TradeoffMetricsRow(; row...)
 end
 
+# Note: intentionally not making per-class confusion matrix, could add in future
+# as needed
 function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
                               votes=nothing) # single class
     discrimination_calibration_score = nothing
@@ -327,7 +327,6 @@ function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_
         discrimination_calibration_score = cal.mse
     end
     return HardenedMetricsRow(; class,
-                              confusion_matrix=missing, #TODO: correctly make the binary confusion matrix for a single class; not a regression not to have it yet, but still!!
                               kappa=_calculate_ea_kappa(predicted_hard_labels,
                                                         elected_hard_labels, class_index),
                               discrimination_calibration_curve,
@@ -346,11 +345,18 @@ function get_multiclass_hardened_metrics(predicted_hard_labels, elected_hard_lab
 end
 
 #TODO
-function get_label_metrics(votes, c)
-    # _calculate_ira_kappas(votes, classes)...,
-    return LabelMetricsRow(; class)
+function get_label_metrics(votes, class)
+    (has_value(votes) && size(votes, 2) > 1) || (return LabelMetricsRow(; class))
+    expert_cal = _calculate_voter_discrimination_calibration(votes; class_of_interest_index=class)
+    per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
+    per_expert_discrimination_calibration_scores = expert_cal.mse
+    return LabelMetricsRow(; class, per_expert_discrimination_calibration_curves,
+                           per_expert_discrimination_calibration_scores,
+                           kappa = _calculate_ira_kappa(votes, class))
 end
 
-function get_multiclass_label_metrics(votes)
-    return LabelMetricsRow(; class=:multiclass)
+function get_multiclass_label_metrics(votes, class_count)
+    (has_value(votes) && size(votes, 2) > 1) || (return LabelMetricsRow(; class=:multiclass))
+
+    return LabelMetricsRow(; class=:multiclass, kappa=_calculate_ira_kappa_multiclass(votes, class_count))
 end
