@@ -200,6 +200,14 @@ end
 ##### Metrics rows
 #####
 
+"""
+    Curve(x, y)
+    
+Represents a (plot) curve of `x` and `y` points.
+
+When constructing a `Curve`, `missing`'s are replaced with `NaN`, and values are converted to `Float64`.
+Curve objects `c` support iteration, `x, y = c`, and indexing, `x = c[1]`, `y = c[2]`.
+"""
 struct Curve
     x::Vector{Float64}
     y::Vector{Float64}
@@ -293,8 +301,7 @@ const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
                                         discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
                                                                                                  missing :
                                                                                                  Curve(discrimination_calibration_curve),
-                                        discrimination_calibration_score::Union{Missing,
-                                                                                Float64},
+                                        discrimination_calibration_score::Union{Missing,Float64},
                                         ea_kappa::Union{Missing,Float64})
 
 """
