@@ -419,7 +419,7 @@ function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector
 
     # Step 4: Calculate all metrics derived directly from labels (does not depend on
     # predictions)
-    hardened_metrics_table = LabelMetricsRow[]
+    labels_metrics_table = LabelMetricsRow[]
     if has_value(votes)
         labels_metrics_table = map(c -> get_label_metrics_multirater(votes, c),
                                    class_indices)
