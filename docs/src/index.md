@@ -58,6 +58,7 @@ log_arrays!
 LearnLogger
 upon
 Lighthouse.forward_logs
+flush(::LearnLogger)
 ```
 
 ## Performance Metrics
@@ -73,6 +74,19 @@ ObservationRow
 Lighthouse.evaluation_metrics
 Lighthouse._evaluation_row_dict
 Lighthouse.evaluation_metrics_row
+Lighthouse.ClassRow
+TradeoffMetricsRow
+get_tradeoff_metrics
+get_tradeoff_metrics_binary_multirater
+HardenedMetricsRow
+get_hardened_metrics
+get_hardened_metrics_multirater
+get_hardened_metrics_multiclass
+LabelMetricsRow
+get_label_metrics_multirater
+get_label_metrics_multirater_multiclass
+Lighthouse.refactored_evaluation_metrics_row
+Lighthouse._evaluation_row
 ```
 
 ## Utilities
@@ -81,5 +95,5 @@ Lighthouse.evaluation_metrics_row
 majority
 Lighthouse.area_under_curve
 Lighthouse.area_under_curve_unit_square
-flush(::LearnLogger)
+Curve
 ```

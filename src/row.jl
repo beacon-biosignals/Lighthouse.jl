@@ -202,7 +202,7 @@ end
 
 """
     Curve(x, y)
-    
+
 Represents a (plot) curve of `x` and `y` points.
 
 When constructing a `Curve`, `missing`'s are replaced with `NaN`, and values are converted to `Float64`.

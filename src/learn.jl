@@ -316,22 +316,6 @@ Returns `(per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)` if `vote
 no two voters rated the same sample. Note that vote entries of `0` are taken to
 mean that the voter did not rate that sample.
 """
-function _prep_hard_label_pairs(votes)
-    if !has_value(votes) || size(votes, 2) < 2
-        # no votes given or only one expert
-        return Tuple{Int64,Int64}[]
-    end
-    all_hard_label_pairs = Array{Int}(undef, 0, 2)
-    num_voters = size(votes, 2)
-    for i_voter in 1:(num_voters - 1)
-        for j_voter in (i_voter + 1):num_voters
-            all_hard_label_pairs = vcat(all_hard_label_pairs, votes[:, [i_voter, j_voter]])
-        end
-    end
-    hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
-    return hard_label_pairs
-end
-
 function _calculate_ira_kappas(votes, classes)
     hard_label_pairs = _prep_hard_label_pairs(votes)
     length(hard_label_pairs) > 0 ||
@@ -348,6 +332,22 @@ function _calculate_ira_kappas(votes, classes)
         return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
     end
     return (; per_class_IRA_kappas=per_class_ira, multiclass_IRA_kappas=multiclass_ira)
+end
+
+function _prep_hard_label_pairs(votes)
+    if !has_value(votes) || size(votes, 2) < 2
+        # no votes given or only one expert
+        return Tuple{Int64,Int64}[]
+    end
+    all_hard_label_pairs = Array{Int}(undef, 0, 2)
+    num_voters = size(votes, 2)
+    for i_voter in 1:(num_voters - 1)
+        for j_voter in (i_voter + 1):num_voters
+            all_hard_label_pairs = vcat(all_hard_label_pairs, votes[:, [i_voter, j_voter]])
+        end
+    end
+    hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
+    return hard_label_pairs
 end
 
 function _calculate_ira_kappa_multiclass(votes, class_count)
