@@ -607,8 +607,8 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
                          per_expert_discrimination_calibration_scores,
 
                          # from kwargs:
-                         optimal_threshold_class, class_labels, thresholds,
-                         optimal_threshold, stratified_kappas)
+                         optimal_threshold_class = _values_or_missing(optimal_threshold_class),
+                         class_labels, thresholds, optimal_threshold, stratified_kappas)
 end
 
 #####
