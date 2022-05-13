@@ -9,7 +9,7 @@ using Printf
 using Legolas
 using Tables
 using DataFrames
-using Arrow.ArrowTypes
+using ArrowTypes
 
 include("row.jl")
 export EvaluationRow, ObservationRow, Curve, TradeoffMetricsRow, HardenedMetricsRow,
