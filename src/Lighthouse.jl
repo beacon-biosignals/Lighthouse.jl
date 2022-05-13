@@ -13,7 +13,7 @@ using ArrowTypes
 
 include("row.jl")
 export EvaluationRow, ObservationRow, Curve, TradeoffMetricsRow, HardenedMetricsRow,
-       LabelMetricsRow
+       LabelMetricsRow, Curve
 
 include("plotting.jl")
 

@@ -407,11 +407,10 @@ _unpack_curves(curve::Union{Missing,Curve}) = ismissing(curve) ? missing : Tuple
 _unpack_curves(curves::AbstractVector{Curve}) = Tuple.(curves)
 
 # `EvaluationRow` constructor to facilitate sanity-check refactor
-function Legolas.Row{S}(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
+function evaluation_row(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
                         optimal_threshold_class=missing, class_labels, thresholds,
                         optimal_threshold,
-                        stratified_kappas=missing) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
-                                                                            1}}
+                        stratified_kappas=missing)
     tradeoff_rows, _ = _split_classes_from_multiclass(tradeoff_metrics_table)
     hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
     label_rows, labels_multi = _split_classes_from_multiclass(label_metrics_table)
