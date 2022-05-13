@@ -443,6 +443,7 @@ end
 
 function _split_classes_from_multiclass(table)
     table = DataFrame(table; copycols=false)
+    nrow(table) == 0 && return (missing, missing)
 
     # Pull out individual classes
     class_rows = filter(:class_index => c -> isa(c, Int), table)
