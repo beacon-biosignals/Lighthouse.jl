@@ -1,5 +1,3 @@
-const DEFAULT_HARDEN_FN = harden_by_threshold
-
 harden_by_threshold(soft, threshold) = soft >= threshold
 
 #####
@@ -194,14 +192,14 @@ end
 
 """
     get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                         thresholds, harden_fn=DEFAULT_HARDEN_FN)
+                         thresholds, harden_fn=harden_by_threshold)
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`, with the following
 fields guaranteed to be non-missing: `roc_curve`, `roc_auc`, pr_curve`,
 `reliability_calibration_curve`, `reliability_calibration_score`.`
 """
 function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                              thresholds, harden_fn=DEFAULT_HARDEN_FN)
+                              thresholds, harden_fn=harden_by_threshold)
     stats = per_threshold_confusion_statistics(predicted_soft_labels,
                                                elected_hard_labels, thresholds,
                                                class_index; harden_fn)
@@ -225,14 +223,15 @@ end
 
 """
     get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels, class_index;
-                                           thresholds, harden_fn=DEFAULT_HARDEN_FN)
+                                           thresholds, harden_fn=harden_by_threshold)
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`. In addition
 to metrics calculated by [`get_tradeoff_metrics`](@ref), additionally calculates
 `spearman_correlation`-based metrics.
 """
 function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels,
-                                                votes, class_index; thresholds, harden_fn=DEFAULT_HARDEN_FN)
+                                                votes, class_index; thresholds,
+                                                harden_fn=harden_by_threshold)
     basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
                                      class_index; thresholds, harden_fn)
     corr = _calculate_spearman_correlation(predicted_soft_labels, votes)
@@ -419,7 +418,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                               AbstractVector{Set{T}} where T}=nothing,
                                 optimal_threshold_class::Union{Missing,Nothing,
                                                                Integer}=missing,
-                                harden_fn=DEFAULT_HARDEN_FN)
+                                harden_fn=harden_by_threshold)
     class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
 
@@ -808,7 +807,7 @@ end
 function _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                       votes; thresholds,
                                                                       class_of_interest_index,
-                                                                      harden_fn=DEFAULT_HARDEN_FN)
+                                                                      harden_fn=harden_by_threshold)
     elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
     bin_count = min(size(votes, 2) + 1, 10)
     per_threshold_curves = map(thresholds) do thresh
@@ -891,7 +890,7 @@ end
 
 function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
                                         elected_hard_labels::AbstractVector, thresholds;
-                                        harden_fn=DEFAULT_HARDEN_FN)
+                                        harden_fn=harden_by_threshold)
     class_count = size(predicted_soft_labels, 2)
     return map(1:class_count) do i
         return per_threshold_confusion_statistics(predicted_soft_labels,
@@ -902,7 +901,7 @@ end
 
 function per_threshold_confusion_statistics(predicted_soft_labels::AbstractMatrix,
                                             elected_hard_labels::AbstractVector, thresholds,
-                                            class_index; harden_fn=DEFAULT_HARDEN_FN)
+                                            class_index; harden_fn=harden_by_threshold)
     confusions = [confusion_matrix(2) for _ in 1:length(thresholds)]
     for label_index in 1:length(elected_hard_labels)
         predicted_soft_label = predicted_soft_labels[label_index, class_index]
