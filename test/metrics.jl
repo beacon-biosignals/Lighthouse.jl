@@ -156,3 +156,10 @@ end
     @test all(iszero, totals)
     @test isnan(mean_squared_error)
 end
+
+@testset "`calibration_curve`" begin
+    @test harden_by_threshold(0.2, 0.8) == false
+    @test harden_by_threshold(0.2, 0.2) == true
+    @test harden_by_threshold(0.3, 0.2) == true
+    @test harden_by_threshold.([0, 0, 0], 0.2) == [0, 0, 0]
+end

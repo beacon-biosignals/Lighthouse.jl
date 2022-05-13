@@ -278,8 +278,7 @@ end
         thresh_from_calibration = Lighthouse._calculate_optimal_threshold_from_discrimination_calibration(predicted_soft,
                                                                                                           votes;
                                                                                                           thresholds=plot_data_2["thresholds"],
-                                                                                                          class_of_interest_index=plot_data_2["optimal_threshold_class"],
-                                                                                                          harden_fn=harden_by_threshold).threshold
+                                                                                                          class_of_interest_index=plot_data_2["optimal_threshold_class"]).threshold
         @test !isequal(thresh_from_roc, thresh_from_calibration)
         @test isequal(thresh_from_calibration, plot_data_2["optimal_threshold"])
 
@@ -372,14 +371,12 @@ end
     cal = Lighthouse._calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                                   votes;
                                                                                   thresholds=0.0:0.01:1.0,
-                                                                                  class_of_interest_index=1,
-                                                                                  harden_fn=harden_by_threshold)
+                                                                                  class_of_interest_index=1)
     @test all(cal.mse .<= voter_calibration.mse)
     cal2 = Lighthouse._calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                                    votes;
                                                                                    thresholds=0.0:0.01:1.0,
-                                                                                   class_of_interest_index=2,
-                                                                                   harden_fn=harden_by_threshold)
+                                                                                   class_of_interest_index=2)
     @test cal.mse == cal2.mse
     @test cal.plot_curve_data[2] != cal2.plot_curve_data[2]
 end
@@ -394,8 +391,7 @@ end
     thresholds = [0.25, 0.5, 0.75]
     class_1, class_2 = Lighthouse.per_class_confusion_statistics(predicted_soft_labels,
                                                                  elected_hard_labels,
-                                                                 thresholds;
-                                                                 harden_fn=harden_by_threshold)
+                                                                 thresholds)
     stats_1, stats_2 = class_1[1], class_2[1] # threshold == 0.25
     @test stats_1.actual_negatives == stats_2.actual_positives == 3
     @test stats_1.actual_positives == stats_2.actual_negatives == 2
@@ -478,8 +474,7 @@ end
     thresholds = [0.5]
     class_1, class_2, class_3 = Lighthouse.per_class_confusion_statistics(predicted_soft_labels,
                                                                           elected_hard_labels,
-                                                                          thresholds;
-                                                                          harden_fn=harden_by_threshold)
+                                                                          thresholds)
     stats_1, stats_2, stats_3 = class_1[], class_2[], class_3[] # threshold == 0.5
     @test stats_1.predicted_positives == 1
     @test stats_2.predicted_positives == 3
