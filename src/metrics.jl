@@ -490,19 +490,26 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
     # in the resultant `EvaluationRow` if `optimal_threshold_class` is present
     discrimination_calibration_curve = missing
     discrimination_calibration_score = missing
-    per_expert_discrimination_calibration_curves = missing
-    per_expert_discrimination_calibration_scores = missing
     if has_value(optimal_threshold_class)
         hardened_row_optimal = only(filter(:class_index => ==(optimal_threshold_class),
                                            hardened_rows))
         discrimination_calibration_curve = hardened_row_optimal.discrimination_calibration_curve
         discrimination_calibration_score = hardened_row_optimal.discrimination_calibration_score
+    end
 
+    # Similarly, the following metrics should only be present
+    # in the resultant `EvaluationRow` when doing multirater evaluation
+    per_expert_discrimination_calibration_curves = missing
+    per_expert_discrimination_calibration_scores = missing
+    if has_value(label_rows) && has_value(optimal_threshold_class)
         label_row_optimal = only(filter(:class_index => ==(optimal_threshold_class),
                                         label_rows))
-        per_expert_discrimination_calibration_curves = label_row_optimal.per_expert_discrimination_calibration_curves
+        per_expert_discrimination_calibration_curves = _unpack_curves(_values_or_missing(label_row_optimal.per_expert_discrimination_calibration_curves))
         per_expert_discrimination_calibration_scores = label_row_optimal.per_expert_discrimination_calibration_scores
     end
+
+     multiclass_IRA_kappas = has_value(labels_multi) ? _values_or_missing(labels_multi.ira_kappa) : missing
+    per_class_IRA_kappas = has_value(label_rows) ? _values_or_missing(label_rows.ira_kappa) : missing
 
     # Similarly, due to separate special casing, only get the spearman correlation coefficient
     # from a binary classification problem. It is calculated for both classes, but is
@@ -532,9 +539,9 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
                          per_class_reliability_calibration_scores=_values_or_missing(tradeoff_rows.reliability_calibration_score),
 
                          # from label_metrics_table
-                         per_expert_discrimination_calibration_curves=_unpack_curves(_values_or_missing(per_expert_discrimination_calibration_curves)),
-                         multiclass_IRA_kappas=_values_or_missing(labels_multi.ira_kappa),
-                         per_class_IRA_kappas=_values_or_missing(label_rows.ira_kappa),
+                         per_expert_discrimination_calibration_curves,
+                         multiclass_IRA_kappas,
+                         per_class_IRA_kappas,
                          per_expert_discrimination_calibration_scores,
 
                          # from kwargs:
