@@ -44,7 +44,8 @@ function high_contrast(background_color::Colorant, target_color::Colorant;
                        # chose from whole lightness spectrum
                        lchoices=range(0; stop=100, length=15))
     target = LCHab(target_color)
-    color = distinguishable_colors(1, [RGB(background_color)]; dropseed=true, lchoices=lchoices,
+    color = distinguishable_colors(1, [RGB(background_color)]; dropseed=true,
+                                   lchoices=lchoices,
                                    cchoices=[target.c], hchoices=[target.h])
     return RGBAf(color[1], Makie.Colors.alpha(target_color))
 end
@@ -64,11 +65,13 @@ A series of XYVectors, or a single xyvector.
 const SeriesCurves = Union{XYVector,AbstractVector{<:XYVector}}
 
 function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
-                      class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt, title="No title",
-                      xlabel="x label", ylabel="y label", solid_color=nothing, color=nothing,
+                      class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt,
+                      title="No title",
+                      xlabel="x label", ylabel="y label", solid_color=nothing,
+                      color=nothing,
                       linewidth=nothing, scatter=NamedTuple())
-
-    axis_theme = get_theme(subfig, :SeriesPlot, :Axis; title=title, titlealign=:left, xlabel=xlabel,
+    axis_theme = get_theme(subfig, :SeriesPlot, :Axis; title=title, titlealign=:left,
+                           xlabel=xlabel,
                            ylabel=ylabel, aspect=AxisAspect(1),
                            xticks=0:0.2:1, yticks=0.2:0.2:1)
 
@@ -79,7 +82,7 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
     isnothing(solid_color) || (series_theme[:solid_color] = solid_color)
     isnothing(color) || (series_theme[:color] = color)
     isnothing(linewidth) || (series_theme[:linewidth] = linewidth)
-    series_theme = merge(series_theme, Attributes(;scatter...))
+    series_theme = merge(series_theme, Attributes(; scatter...))
     hidedecorations!(ax; label=false, ticklabels=false, grid=false)
     limits!(ax, 0, 1, 0, 1)
     Makie.series!(ax, per_class_pr_curves; labels=class_labels, series_theme...)
@@ -90,38 +93,47 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
 end
 
 function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
-                         class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt, title="PR curves",
-                         xlabel="True positive rate", ylabel="Precision", scatter=NamedTuple(),
+                         class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt,
+                         title="PR curves",
+                         xlabel="True positive rate", ylabel="Precision",
+                         scatter=NamedTuple(),
                          solid_color=nothing)
-    return series_plot!(subfig, per_class_pr_curves, class_labels; legend=legend, title=title, xlabel=xlabel,
+    return series_plot!(subfig, per_class_pr_curves, class_labels; legend=legend,
+                        title=title, xlabel=xlabel,
                         ylabel=ylabel, scatter=scatter, solid_color=solid_color)
 end
 
 function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCurves,
-                          per_class_roc_aucs::NumberVector, class_labels::AbstractVector{<:String};
+                          per_class_roc_aucs::NumberVector,
+                          class_labels::AbstractVector{<:String};
                           legend=:rb, title="ROC curves", xlabel="False positive rate",
                           ylabel="True positive rate")
     auc_labels = [@sprintf("%s (AUC: %.3f)", class, per_class_roc_aucs[i])
                   for (i, class) in enumerate(class_labels)]
 
-    return series_plot!(subfig, per_class_roc_curves, auc_labels; legend=legend, title=title, xlabel=xlabel,
+    return series_plot!(subfig, per_class_roc_curves, auc_labels; legend=legend,
+                        title=title, xlabel=xlabel,
                         ylabel=ylabel)
 end
 
 function plot_reliability_calibration_curves!(subfig::FigurePosition,
                                               per_class_reliability_calibration_curves::SeriesCurves,
                                               per_class_reliability_calibration_scores::NumberVector,
-                                              class_labels::AbstractVector{String}; legend=:rb)
+                                              class_labels::AbstractVector{String};
+                                              legend=:rb)
     calibration_score_labels = map(enumerate(class_labels)) do (i, class)
         @sprintf("%s (MSE: %.3f)", class, per_class_reliability_calibration_scores[i])
     end
 
-    scatter_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Scatter; marker=Circle,
+    scatter_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Scatter;
+                              marker=Circle,
                               markersize=5, strokewidth=0)
-    ideal_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Ideal; color=(:black, 0.5),
+    ideal_theme = get_theme(subfig, :ReliabilityCalibrationCurves, :Ideal;
+                            color=(:black, 0.5),
                             linestyle=:dash, linewidth=2)
 
-    ax = series_plot!(subfig, per_class_reliability_calibration_curves, calibration_score_labels;
+    ax = series_plot!(subfig, per_class_reliability_calibration_curves,
+                      calibration_score_labels;
                       legend=legend, title="Prediction reliability calibration",
                       xlabel="Predicted probability bin", ylabel="Fraction of positives",
                       scatter=scatter_theme)
@@ -141,12 +153,16 @@ function set_from_kw!(theme, key, kw, default)
 end
 
 function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
-                                                        calibration_curve::SeriesCurves, calibration_score,
+                                                        calibration_curve::SeriesCurves,
+                                                        calibration_score,
                                                         per_expert_calibration_curves::SeriesCurves,
-                                                        per_expert_calibration_scores, optimal_threshold,
-                                                        discrimination_class::AbstractString; kw...)
+                                                        per_expert_calibration_scores,
+                                                        optimal_threshold,
+                                                        discrimination_class::AbstractString;
+                                                        kw...)
     kw = values(kw)
-    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter; strokewidth=0)
+    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter;
+                              strokewidth=0)
     # Hayaah, this theme merging is getting out of hand
     # but we want kw > BinaryDiscriminationCalibrationCurves > Scatter, so we need to somehow set things
     # after the theme merging above, especially, since we also pass those to series!,
@@ -154,14 +170,17 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
     set_from_kw!(scatter_theme, :makersize, kw, 5)
     set_from_kw!(scatter_theme, :marker, kw, :rect)
 
-    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey,
+    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert;
+                           solid_color=:darkgrey,
                            color=nothing)
     set_from_kw!(per_expert, :linewidth, kw, 2)
     ax = series_plot!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
                       title="Detection calibration", xlabel="Expert agreement rate",
-                      ylabel="Predicted positive probability", scatter=scatter_theme, per_expert...)
+                      ylabel="Predicted positive probability", scatter=scatter_theme,
+                      per_expert...)
 
-    calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :CalibrationCurve;
+    calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves,
+                            :CalibrationCurve;
                             solid_color=:navyblue, markerstrokewidth=0)
 
     set_from_kw!(calibration, :markersize, kw, 5)
@@ -170,7 +189,8 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
 
     Makie.series!(ax, calibration_curve; calibration...)
 
-    ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
+    ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal;
+                            color=(:black, 0.5),
                             linestyle=:dash)
     set_from_kw!(ideal_theme, :linewidth, kw, 2)
     linesegments!(ax, [0, 1], [0, 1]; label="Ideal", ideal_theme...)
@@ -195,7 +215,8 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     text_theme = get_theme(subfig, :ConfusionMatrix, :Text; textsize=annotation_text_size)
     heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=(:black, 0.0))
     axis_theme = get_theme(subfig, :ConfusionMatrix, :Axis; xticklabelrotation=pi / 4,
-                           titlealign=:left, title="$(string(normalize_by))-Normalized Confusion",
+                           titlealign=:left,
+                           title="$(string(normalize_by))-Normalized Confusion",
                            xlabel="Elected Class", ylabel="Predicted Class",
                            xticks=(class_indices, class_labels),
                            yticks=(class_indices, class_labels),
@@ -210,7 +231,8 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     crange = (0.0, 1.0)
     nan_color = to_color(heatmap_theme.nan_color[])
     cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
-    heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, nan_color=nan_color, heatmap_theme...)
+    heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, nan_color=nan_color,
+             heatmap_theme...)
     text_color = to_color(to_value(pop!(text_theme, :color, :black)))
     function label_color(i, j)
         c = confusion[i, j]
@@ -221,9 +243,11 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
         end
         return high_contrast(bg_color, text_color)
     end
-    annos = vec([(string(confusion[i, j]), Point2f(j, i)) for i in class_indices, j in class_indices])
+    annos = vec([(string(confusion[i, j]), Point2f(j, i))
+                 for i in class_indices, j in class_indices])
     colors = vec([label_color(i, j) for i in class_indices, j in class_indices])
-    text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size, text_theme...)
+    text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size,
+          text_theme...)
     return ax
 end
 
@@ -273,14 +297,16 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
         aligns, offsets, text_colors = text_attributes(per_class_kappas, 2, bar_colors,
                                                        bg_color, text_color)
         barplot!(ax, per_class_kappas; direction=:x, color=bar_colors[2])
-        text!(ax, annotations; align=aligns, offset=offsets, color=text_colors, text_theme...)
+        text!(ax, annotations; align=aligns, offset=offsets, color=text_colors,
+              text_theme...)
     else
         ax.title = "Inter-rater reliability"
         values = vcat(per_class_kappas, per_class_IRA_kappas)
         groups = vcat(fill(2, nclasses), fill(1, nclasses))
         xvals = vcat(1:nclasses, 1:nclasses)
         cmap = bar_colors
-        bars = barplot!(ax, xvals, max.(0, values); dodge=groups, color=groups, direction=:x,
+        bars = barplot!(ax, xvals, max.(0, values); dodge=groups, color=groups,
+                        direction=:x,
                         colormap=cmap)
         # This is a bit hacky, but for now the easiest way to figure out the exact, dodged positions
         rectangles = bars.plots[][1][]
@@ -493,3 +519,55 @@ plot_roc_curves(args...; kw...) = axisplot(plot_roc_curves!, args; kw...)
                 annotation_text_size=20)
 """
 plot_kappas(args...; kw...) = axisplot(plot_kappas!, args; kw...)
+
+#####
+##### Deprecation support
+#####
+
+"""
+    evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                            predicted_soft_labels::AbstractMatrix,
+                            elected_hard_labels::AbstractVector,
+                            classes,
+                            thresholds=0.0:0.01:1.0;
+                            votes::Union{Nothing,AbstractMatrix}=nothing,
+                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+
+Return a plot and dictionary containing a battery of classifier performance
+metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
+agaist `elected_hard_labels`.
+
+See [`evaluation_metrics`](@ref) for a description of the arguments.
+
+This method is deprecated in favor of calling `evaluation_metrics`
+and [`evaluation_metrics_plot`](@ref) separately.
+"""
+function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                                 predicted_soft_labels::AbstractMatrix,
+                                 elected_hard_labels::AbstractVector, classes, thresholds;
+                                 votes::Union{Nothing,AbstractMatrix}=nothing,
+                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                 optimal_threshold_class::Union{Nothing,Integer}=nothing)
+    Base.depwarn("""
+    ```
+    evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                            predicted_soft_labels::AbstractMatrix,
+                            elected_hard_labels::AbstractVector, classes, thresholds;
+                            votes::Union{Nothing,AbstractMatrix}=nothing,
+                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+    ```
+    has been deprecated in favor of
+    ```
+    plot_dict = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
+                                   elected_hard_labels, classes, thresholds;
+                                   votes, strata, optimal_threshold_class)
+    (evaluation_metrics_plot(plot_dict), plot_dict)
+    ```
+    """, :evaluation_metrics_plot)
+    plot_dict = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
+                                   elected_hard_labels, classes, thresholds; votes, strata,
+                                   optimal_threshold_class)
+    return evaluation_metrics_plot(plot_dict), plot_dict
+end
