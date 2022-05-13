@@ -303,7 +303,8 @@ field guaranteed to be non-missing: `per_expert_discrimination_calibration_curve
 `per_expert_discrimination_calibration_scores`, interrater-agreement (`ira_kappa`).
 """
 function get_label_metrics_multirater(votes, class_index)
-    size(votes, 2) > 1 || throw(ArgumentError("Input `votes` is not multirater (`size(votes) == $(size(votes))`)"))
+    size(votes, 2) > 1 ||
+        throw(ArgumentError("Input `votes` is not multirater (`size(votes) == $(size(votes))`)"))
     expert_cal = _calculate_voter_discrimination_calibration(votes;
                                                              class_of_interest_index=class_index)
     per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
@@ -331,30 +332,89 @@ end
 #####
 
 """
-    refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                      predicted_soft_labels::AbstractMatrix,
-                                      elected_hard_labels::AbstractVector, classes;
-                                      thresholds=0.0:0.01:1.0,
-                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                      strata::Union{Nothing,
-                                                    AbstractVector{Set{T}} where T}=nothing,
-                                      optimal_threshold_class::Union{Missing,Nothing,
-                                                                     Integer}=missing)
+    evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
 
-Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), with identical
-inputs and outputs.
-
-In service of https://github.com/beacon-biosignals/Lighthouse.jl/pull/69.
+Return [`evaluation_metrics_row`](@ref) after converting output `EvaluationRow`
+into a `Dict`. For argument details, see [`evaluation_metrics_row`](@ref).
 """
-function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                           predicted_soft_labels::AbstractMatrix,
-                                           elected_hard_labels::AbstractVector, classes,
-                                           thresholds=0.0:0.01:1.0;
-                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                           strata::Union{Nothing,
-                                                         AbstractVector{Set{T}} where T}=nothing,
-                                           optimal_threshold_class::Union{Missing,Nothing,
-                                                                          Integer}=missing)
+function evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
+    row = evaluation_metrics_row(args...;
+                                 optimal_threshold_class=something(optimal_threshold_class,
+                                                                   missing), kwargs...)
+    return _evaluation_row_dict(row)
+end
+
+"""
+    evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+    evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                           predicted_soft_labels::AbstractMatrix,
+                           elected_hard_labels::AbstractVector,
+                           classes,
+                           thresholds=0.0:0.01:1.0;
+                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+
+Returns `EvaluationRow` containing a battery of classifier performance
+metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
+agaist `elected_hard_labels`.
+
+Where...
+
+- `predicted_soft_labels` is a matrix of soft labels whose columns correspond to
+  classes and whose rows correspond to samples in the evaluation set.
+
+- `predicted_hard_labels` is a vector of hard labels where the `i`th element
+  is the hard label predicted by the model for sample `i` in the evaulation set.
+
+- `elected_hard_labels` is a vector of hard labels where the `i`th element
+  is the hard label elected as "ground truth" for sample `i` in the evaulation set.
+
+- `thresholds` are the range of thresholds used by metrics (e.g. PR curves) that
+  are calculated on the `predicted_soft_labels` for a range of thresholds.
+
+- `votes` is a matrix of hard labels whose columns correspond to voters and whose
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`.
+
+- `strata` is a vector of sets of (arbitrarily typed) groups/strata for each sample
+  in the evaluation set, or `nothing`. If not `nothing`, per-class and multiclass
+  kappas will also be calculated per group/stratum.
+
+- `optimal_threshold_class` is the class index (`1` or `2`) for which to calculate
+  an optimal threshold for converting the `predicted_soft_labels` to
+  `predicted_hard_labels`. If present, the input `predicted_hard_labels` will be
+  ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
+  This is only a valid parameter when `length(classes) == 2`
+
+Alternatively, an `observation_table` that consists of rows of type [`ObservationRow`](@ref)
+can be passed in in place of `predicted_soft_labels`,`predicted_hard_labels`,`elected_hard_labels`,
+and `votes`.
+
+See also [`evaluation_metrics_plot`](@ref).
+"""
+function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+                                strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+    inputs = _observation_table_to_inputs(observation_table)
+    return evaluation_metrics_row(inputs.predicted_hard_labels,
+                                  inputs.predicted_soft_labels, inputs.elected_hard_labels,
+                                  classes, thresholds; inputs.votes, strata,
+                                  optimal_threshold_class)
+end
+
+function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                                predicted_soft_labels::AbstractMatrix,
+                                elected_hard_labels::AbstractVector, classes,
+                                thresholds=0.0:0.01:1.0;
+                                votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                strata::Union{Nothing,
+                                              AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Nothing,
+                                                               Integer}=missing)
     class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
 
@@ -508,8 +568,10 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
         per_expert_discrimination_calibration_scores = label_row_optimal.per_expert_discrimination_calibration_scores
     end
 
-     multiclass_IRA_kappas = has_value(labels_multi) ? _values_or_missing(labels_multi.ira_kappa) : missing
-    per_class_IRA_kappas = has_value(label_rows) ? _values_or_missing(label_rows.ira_kappa) : missing
+    multiclass_IRA_kappas = has_value(labels_multi) ?
+                            _values_or_missing(labels_multi.ira_kappa) : missing
+    per_class_IRA_kappas = has_value(label_rows) ?
+                           _values_or_missing(label_rows.ira_kappa) : missing
 
     # Similarly, due to separate special casing, only get the spearman correlation coefficient
     # from a binary classification problem. It is calculated for both classes, but is
