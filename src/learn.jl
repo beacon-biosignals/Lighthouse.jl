@@ -277,16 +277,20 @@ Where...
 
 """
 function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
-    multiclass = first(cohens_kappa(class_count,
-                                    zip(predicted_hard_labels, elected_hard_labels)))
+    multiclass_kappa = first(cohens_kappa(class_count,
+                                          zip(predicted_hard_labels, elected_hard_labels)))
 
-    CLASS_VS_ALL_CLASS_COUNT = 2
-    per_class = map(1:class_count) do class_index
-        predicted = ((label == class_index) + 1 for label in predicted_hard_labels)
-        elected = ((label == class_index) + 1 for label in elected_hard_labels)
-        return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, zip(predicted, elected)))
+    per_class_kappas = map(1:class_count) do class_index
+        return _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
     end
-    return (per_class_kappas=per_class, multiclass_kappa=multiclass)
+    return (; per_class_kappas, multiclass_kappa)
+end
+
+function _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
+    CLASS_VS_ALL_CLASS_COUNT = 2
+    predicted = ((label == class_index) + 1 for label in predicted_hard_labels)
+    elected = ((label == class_index) + 1 for label in elected_hard_labels)
+    return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, zip(predicted, elected)))
 end
 
 has_value(x) = !isnothing(x) && !ismissing(x)
@@ -313,23 +317,11 @@ no two voters rated the same sample. Note that vote entries of `0` are taken to
 mean that the voter did not rate that sample.
 """
 function _calculate_ira_kappas(votes, classes)
-    # no votes given or only one expert:
-    if !has_value(votes) || size(votes, 2) < 2
-        return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)
-    end
-
-    all_hard_label_pairs = Array{Int}(undef, 0, 2)
-    num_voters = size(votes, 2)
-    for i_voter in 1:(num_voters - 1)
-        for j_voter in (i_voter + 1):num_voters
-            all_hard_label_pairs = vcat(all_hard_label_pairs, votes[:, [i_voter, j_voter]])
-        end
-    end
-    hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
+    hard_label_pairs = _prep_hard_label_pairs(votes)
     length(hard_label_pairs) > 0 ||
         return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)  # No common observations voted on
     length(hard_label_pairs) < 10 &&
-        @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
+           @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
 
     multiclass_ira = first(cohens_kappa(length(classes), hard_label_pairs))
 
@@ -340,6 +332,37 @@ function _calculate_ira_kappas(votes, classes)
         return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
     end
     return (; per_class_IRA_kappas=per_class_ira, multiclass_IRA_kappas=multiclass_ira)
+end
+
+function _prep_hard_label_pairs(votes)
+    if !has_value(votes) || size(votes, 2) < 2
+        # no votes given or only one expert
+        return Tuple{Int64,Int64}[]
+    end
+    all_hard_label_pairs = Array{Int}(undef, 0, 2)
+    num_voters = size(votes, 2)
+    for i_voter in 1:(num_voters - 1)
+        for j_voter in (i_voter + 1):num_voters
+            all_hard_label_pairs = vcat(all_hard_label_pairs, votes[:, [i_voter, j_voter]])
+        end
+    end
+    hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
+    return hard_label_pairs
+end
+
+function _calculate_ira_kappa_multiclass(votes, class_count)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
+    length(hard_label_pairs) == 0 && return missing
+    return first(cohens_kappa(class_count, hard_label_pairs))
+end
+
+function _calculate_ira_kappa(votes, class_index)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
+    length(hard_label_pairs) == 0 && return missing
+    CLASS_VS_ALL_CLASS_COUNT = 2
+    class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index),
+                                        hard_label_pairs)
+    return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
 end
 
 function _spearman_corr(predicted_soft_labels, elected_soft_labels)
@@ -385,8 +408,10 @@ Where...
 
 - `classes` are the two classes voted on.
 """
-function _calculate_spearman_correlation(predicted_soft_labels, votes, classes)
-    length(classes) > 2 && throw(ArgumentError("Only valid for 2-class problems"))
+function _calculate_spearman_correlation(predicted_soft_labels, votes, classes=missing)
+    if !ismissing(classes)
+        length(classes) > 2 && throw(ArgumentError("Only valid for 2-class problems"))
+    end
     if !all(x -> x ≈ 1, sum(predicted_soft_labels; dims=2))
         throw(ArgumentError("Input probabiliities fail softmax assumption"))
     end
@@ -416,6 +441,16 @@ function _calculate_optimal_threshold_from_discrimination_calibration(predicted_
             plot_curve_data=(mean.(curve.bins), curve.fractions))
 end
 
+function _calculate_discrimination_calibration(predicted_hard_labels, votes;
+                                               class_of_interest_index)
+    elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
+    bin_count = min(size(votes, 2) + 1, 10)
+    curve = calibration_curve(elected_probabilities,
+                              predicted_hard_labels .== class_of_interest_index; bin_count)
+    return (mse=curve.mean_squared_error,
+            plot_curve_data=(mean.(curve.bins), curve.fractions))
+end
+
 function _elected_probabilities(votes, class_of_interest_index)
     elected_probabilities = Vector{Float64}()
     for sample_votes in eachrow(votes)
@@ -442,13 +477,17 @@ end
 
 function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
                                          class_of_interest_index)
+    return _get_optimal_threshold_from_ROC(per_class_roc_curves[class_of_interest_index],
+                                           thresholds)
+end
+
+function _get_optimal_threshold_from_ROC(roc_curve, thresholds)
     dist = (p1, p2) -> sqrt((p1[1] - p2[1])^2 + (p1[2] - p2[2])^2)
     min = Inf
     curr_counter = 1
     opt_point = nothing
     threshold_idx = 1
-    for point in zip(per_class_roc_curves[class_of_interest_index][1],
-                     per_class_roc_curves[class_of_interest_index][2])
+    for point in zip(roc_curve[1], roc_curve[2])
         d = dist((0, 1), point)
         if d < min
             min = d
@@ -703,19 +742,26 @@ end
 function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
                                         elected_hard_labels::AbstractVector, thresholds)
     class_count = size(predicted_soft_labels, 2)
-    confusions = [[confusion_matrix(2) for _ in 1:length(thresholds)]
-                  for _ in 1:class_count]
-    for class_index in 1:class_count
-        for label_index in 1:length(elected_hard_labels)
-            predicted_soft_label = predicted_soft_labels[label_index, class_index]
-            elected = (elected_hard_labels[label_index] == class_index) + 1
-            for (threshold_index, threshold) in enumerate(thresholds)
-                predicted = (predicted_soft_label >= threshold) + 1
-                confusions[class_index][threshold_index][predicted, elected] += 1
-            end
+    return map(1:class_count) do i
+        return per_threshold_confusion_statistics(predicted_soft_labels,
+                                                  elected_hard_labels,
+                                                  thresholds, i)
+    end
+end
+
+function per_threshold_confusion_statistics(predicted_soft_labels::AbstractMatrix,
+                                            elected_hard_labels::AbstractVector, thresholds,
+                                            class_index)
+    confusions = [confusion_matrix(2) for _ in 1:length(thresholds)]
+    for label_index in 1:length(elected_hard_labels)
+        predicted_soft_label = predicted_soft_labels[label_index, class_index]
+        elected = (elected_hard_labels[label_index] == class_index) + 1
+        for (threshold_index, threshold) in enumerate(thresholds)
+            predicted = (predicted_soft_label >= threshold) + 1
+            confusions[threshold_index][predicted, elected] += 1
         end
     end
-    return [binary_statistics.(confusions[i], 2) for i in 1:class_count]
+    return binary_statistics.(confusions, 2)
 end
 
 #####

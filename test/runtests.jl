@@ -8,6 +8,7 @@ using Base.Threads
 using CairoMakie
 using Legolas, Tables
 using DataFrames
+using Arrow
 
 # Needs to be set for figures
 # returning true for showable("image/png", obj)

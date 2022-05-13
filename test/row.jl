@@ -99,3 +99,43 @@ end
                                                                            elected_hard_labels=elected_hard_multilabeller,
                                                                            votes)
 end
+
+@testset "`ClassRow" begin
+    @test isa(Lighthouse.ClassRow(; class_index=3).class_index, Int64)
+    @test isa(Lighthouse.ClassRow(; class_index=Int8(3)).class_index, Int64)
+    @test Lighthouse.ClassRow(; class_index=:multiclass).class_index == :multiclass
+
+    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0)
+    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS)
+end
+
+@testset "`ClassRow" begin
+    @test isa(Lighthouse.ClassRow(; class_index=3).class_index, Int64)
+    @test isa(Lighthouse.ClassRow(; class_index=Int8(3)).class_index, Int64)
+    @test Lighthouse.ClassRow(; class_index=:multiclass).class_index == :multiclass
+
+    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0)
+    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS)
+end
+
+@testset "`Curve" begin
+    c = ([1, 2, 3], [4, 5, 6])
+    @test Curve(c...) isa Curve
+    @test Curve(c) isa Curve
+    @test Curve(1:8, 2:9) isa Curve
+    @test Curve([], []) isa Curve
+    @test Curve(Float64[], Float64[]) isa Curve
+
+    @test_throws DimensionMismatch Curve([2], [])
+    @test_throws ArgumentError Curve((3, 2, 1))
+
+    @test isequal(Lighthouse.floatify([3, missing, 2.4]), Float64[3, NaN, 2.4])
+
+    curve = Curve(c...)
+    @test length(curve) == 2
+    @test size(curve) == (2, 3)
+    @test isequal(curve, Curve(c...))
+
+    @test first(Arrow.Table(Arrow.tobuffer([curve])).x) == curve.x
+    @test first(Arrow.Table(Arrow.tobuffer([curve])).y) == curve.y
+end

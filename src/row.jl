@@ -66,7 +66,7 @@ const EVALUATION_ROW_SCHEMA = Legolas.Schema("lighthouse.evaluation@1")
                                    thresholds::Union{Missing,Vector{Float64}})
     EvaluationRow(evaluation_row_dict::Dict{String, Any}) -> EvaluationRow
 
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.evaluation@1@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
+A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.evaluation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing the output metrics computed by [`evaluation_metrics_row`](@ref) and
 [`evaluation_metrics`](@ref).
 
@@ -195,3 +195,156 @@ function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
     Legolas.validate(observation_table, OBSERVATION_ROW_SCHEMA)
     return observation_table
 end
+
+#####
+##### Metrics rows
+#####
+
+"""
+    Curve(x, y)
+
+Represents a (plot) curve of `x` and `y` points.
+
+When constructing a `Curve`, `missing`'s are replaced with `NaN`, and values are converted to `Float64`.
+Curve objects `c` support iteration, `x, y = c`, and indexing, `x = c[1]`, `y = c[2]`.
+"""
+struct Curve
+    x::Vector{Float64}
+    y::Vector{Float64}
+    function Curve(x::Vector{Float64}, y::Vector{Float64})
+        length(x) == length(y) ||
+            throw(DimensionMismatch("Arguments to `Curve` must have same length. Got `length(x)=$(length(x))` and `length(y)=$(length(y))`"))
+        return new(x, y)
+    end
+end
+
+floatify(x) = convert(Vector{Float64}, replace(x, missing => NaN))
+Curve(x, y) = Curve(floatify(x), floatify(y))
+function Curve(t::Tuple)
+    length(t) == 2 ||
+        throw(ArgumentError("Arguments to `Curve` must consist of x- and y- iterators"))
+    return Curve(floatify(first(t)), floatify(last(t)))
+end
+Curve(c::Curve) = c
+Base.iterate(c::Curve, st=1) = st <= fieldcount(Curve) ? (getfield(c, st), st + 1) : nothing
+Base.length(::Curve) = fieldcount(Curve)
+Base.size(c::Curve) = (fieldcount(Curve), length(c.x))
+Base.getindex(c::Curve, i::Int) = getfield(c, i)
+for op in (:(==), :isequal)
+    @eval function Base.$(op)(c1::Curve, c2::Curve)
+        return $op(c1.x, c2.x) && $op(c1.y, c2.y)
+    end
+end
+Base.hash(c::Curve, h::UInt) = hash(:Curve, hash(c.x, hash(c.y, h)))
+
+const CURVE_ARROW_NAME = Symbol("JuliaLang.Lighthouse.Curve")
+ArrowTypes.arrowname(::Type{<:Curve}) = CURVE_ARROW_NAME
+ArrowTypes.JuliaType(::Val{CURVE_ARROW_NAME}) = Curve
+
+"""
+    const ClassRow = Legolas.@row("lighthouse.class@1",
+                                  class_index::Union{Int64,Symbol}
+
+A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.class@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
+representing a single column `class_index` that holds either an integer or the value
+`:multiclass`.
+"""
+const ClassRow = Legolas.@row("lighthouse.class@1",
+                              class_index::Union{Int64,Symbol} = check_valid_class(class_index))
+
+check_valid_class(class_index::Integer) = Int64(class_index)
+
+function check_valid_class(class_index::Any)
+    return class_index === :multiclass ? class_index :
+           throw(ArgumentError("Classes must be integers or the symbol `:multiclass`"))
+end
+
+"""
+    LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
+                                     ira_kappa::Union{Missing,Float64},
+                                     per_expert_discrimination_calibration_curves::Union{Missing,
+                                     Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
+                                                      missing :
+                                                      Curve.(per_expert_discrimination_calibration_curves),
+                                     per_expert_discrimination_calibration_scores::Union{Missing,
+                                                                                         Vector{Float64}})
+
+A type alias for [`Legolas.Row{typeof(Legolas.Schema("label-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
+representing metrics calculated over labels provided by multiple labelers.
+See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multirater_multiclass`](@ref).
+"""
+const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
+                                     ira_kappa::Union{Missing,Float64},
+                                     per_expert_discrimination_calibration_curves::Union{Missing,
+                                     Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
+                                                      missing :
+                                                      Curve.(per_expert_discrimination_calibration_curves),
+                                     per_expert_discrimination_calibration_scores::Union{Missing,
+                                                                                         Vector{Float64}})
+
+"""
+    HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
+                                        "lighthouse.class@1",
+                                        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
+                                        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
+                                                                                                 missing :
+                                                                                                 Curve(discrimination_calibration_curve),
+                                        discrimination_calibration_score::Union{Missing,Float64},
+                                        ea_kappa::Union{Missing,Float64})
+
+A type alias for [`Legolas.Row{typeof(Legolas.Schema("hardened-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
+representing metrics calculated over predicted hard labels.
+See also [`get_hardened_metrics`](@ref), [`get_hardened_metrics_multirater`](@ref),
+and [`get_hardened_metrics_multiclass`](@ref).
+"""
+const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
+                                        "lighthouse.class@1",
+                                        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
+                                        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
+                                                                                                 missing :
+                                                                                                 Curve(discrimination_calibration_curve),
+                                        discrimination_calibration_score::Union{Missing,
+                                                                                Float64},
+                                        ea_kappa::Union{Missing,Float64})
+
+"""
+    TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
+                                      "lighthouse.class@1",
+                                      roc_curve::Curve = ismissing(roc_curve) ?
+                                                         missing : Curve(roc_curve),
+                                      roc_auc::Float64,
+                                      pr_curve::Curve = ismissing(pr_curve) ?
+                                                        missing : Curve(pr_curve),
+                                      spearman_correlation::Union{Missing, Float64},
+                                      spearman_correlation_ci_upper::Union{Missing, Float64},
+                                      spearman_correlation_ci_lower::Union{Missing, Float64},
+                                      n_samples::Union{Missing,Int},
+                                      reliability_calibration_curve::Union{Missing,
+                                      Curve} = ismissing(reliability_calibration_curve) ?
+                                               missing :
+                                               Curve(reliability_calibration_curve),
+                                      reliability_calibration_score::Union{Missing, Float64})
+
+A type alias for [`Legolas.Row{typeof(Legolas.Schema("tradeoff-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
+representing metrics calculated over predicted soft labels.
+See also [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multirater`](@ref).
+"""
+const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
+                                        "lighthouse.class@1",
+                                        roc_curve::Curve = ismissing(roc_curve) ?
+                                                           missing : Curve(roc_curve),
+                                        roc_auc::Float64,
+                                        pr_curve::Curve = ismissing(pr_curve) ?
+                                                          missing : Curve(pr_curve),
+                                        spearman_correlation::Union{Missing,Float64},
+                                        spearman_correlation_ci_upper::Union{Missing,
+                                                                             Float64},
+                                        spearman_correlation_ci_lower::Union{Missing,
+                                                                             Float64},
+                                        n_samples::Union{Missing,Int},
+                                        reliability_calibration_curve::Union{Missing,
+                                        Curve} = ismissing(reliability_calibration_curve) ?
+                                                 missing :
+                                                 Curve(reliability_calibration_curve),
+                                        reliability_calibration_score::Union{Missing,
+                                                                             Float64})
