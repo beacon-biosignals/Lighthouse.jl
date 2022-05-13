@@ -263,13 +263,15 @@ end
     LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
                                      ira_kappa::Union{Missing,Float64},
                                      per_expert_discrimination_calibration_curves::Union{Missing,
-                                                                                         Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ? missing : Curve(per_expert_discrimination_calibration_curves),
+                                     Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
+                                                      missing :
+                                                      Curve.(per_expert_discrimination_calibration_curves),
                                      per_expert_discrimination_calibration_scores::Union{Missing,
                                                                                          Vector{Float64}})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("label-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing metrics calculated over labels provided by multiple labelers.
-See also [`get_label_metrics`](@ref).
+See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multirater_multiclass`](@ref).
 """
 const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
                                      ira_kappa::Union{Missing,Float64},
@@ -287,13 +289,13 @@ const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.
                                         discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
                                                                                                  missing :
                                                                                                  Curve(discrimination_calibration_curve),
-                                        discrimination_calibration_score::Union{Missing,
-                                                                                Float64},
+                                        discrimination_calibration_score::Union{Missing,Float64},
                                         ea_kappa::Union{Missing,Float64})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("hardened-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing metrics calculated over predicted hard labels.
-See also [`get_hardened_metrics`](@ref).
+See also [`get_hardened_metrics`](@ref), [`get_hardened_metrics_multirater`](@ref),
+and [`get_hardened_metrics_multiclass`](@ref).
 """
 const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
                                         "lighthouse.class@1",
@@ -301,48 +303,40 @@ const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
                                         discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
                                                                                                  missing :
                                                                                                  Curve(discrimination_calibration_curve),
-                                        discrimination_calibration_score::Union{Missing,Float64},
+                                        discrimination_calibration_score::Union{Missing,
+                                                                                Float64},
                                         ea_kappa::Union{Missing,Float64})
 
 """
     TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
-                                        "lighthouse.class@1",
-                                        roc_curve::Curve = ismissing(roc_curve) ?
-                                                           missing :
-                                                           Curve(roc_curve),
-                                        roc_auc::Float64,
-                                        pr_curve::Curve = ismissing(pr_curve) ?
-                                                          missing :
-                                                          Curve(pr_curve),
-                                        spearman_correlation::Union{Missing,
-                                                                    Float64},
-                                        spearman_correlation_ci_upper::Union{Missing,
-                                                                             Float64},
-                                        spearman_correlation_ci_lower::Union{Missing,
-                                                                             Float64},
-                                        n_samples::Union{Missing,Int},
-                                        reliability_calibration_curve::Union{Missing,
-                                        Curve} = ismissing(reliability_calibration_curve) ?
-                                                 missing :
-                                                 Curve(reliability_calibration_curve),
-                                        reliability_calibration_score::Union{Missing,
-                                                                             Float64})
+                                      "lighthouse.class@1",
+                                      roc_curve::Curve = ismissing(roc_curve) ?
+                                                         missing : Curve(roc_curve),
+                                      roc_auc::Float64,
+                                      pr_curve::Curve = ismissing(pr_curve) ?
+                                                        missing : Curve(pr_curve),
+                                      spearman_correlation::Union{Missing, Float64},
+                                      spearman_correlation_ci_upper::Union{Missing, Float64},
+                                      spearman_correlation_ci_lower::Union{Missing, Float64},
+                                      n_samples::Union{Missing,Int},
+                                      reliability_calibration_curve::Union{Missing,
+                                      Curve} = ismissing(reliability_calibration_curve) ?
+                                               missing :
+                                               Curve(reliability_calibration_curve),
+                                      reliability_calibration_score::Union{Missing, Float64})
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("tradeoff-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing metrics calculated over predicted soft labels.
-See also [`get_tradeoff_metrics`](@ref).
+See also [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multirater`](@ref).
 """
 const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                         "lighthouse.class@1",
                                         roc_curve::Curve = ismissing(roc_curve) ?
-                                                           missing :
-                                                           Curve(roc_curve),
+                                                           missing : Curve(roc_curve),
                                         roc_auc::Float64,
                                         pr_curve::Curve = ismissing(pr_curve) ?
-                                                          missing :
-                                                          Curve(pr_curve),
-                                        spearman_correlation::Union{Missing,
-                                                                    Float64},
+                                                          missing : Curve(pr_curve),
+                                        spearman_correlation::Union{Missing,Float64},
                                         spearman_correlation_ci_upper::Union{Missing,
                                                                              Float64},
                                         spearman_correlation_ci_lower::Union{Missing,
