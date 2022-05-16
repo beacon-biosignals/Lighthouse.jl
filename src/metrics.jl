@@ -1,3 +1,9 @@
+const BINARIZE_NOTE = string("Supply a function to the keyword argument `binarize` ",
+                             "which takes as input `(soft_label, threshold)` and ",
+                             "outputs a `Bool` indicating whether or not the class of interest")
+
+binarize_by_threshold(soft, threshold) = soft >= threshold
+
 #####
 ##### confusion matrices
 #####
@@ -190,17 +196,18 @@ end
 
 """
     get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                         thresholds)
+                         thresholds, binarize=binarize_by_threshold)
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`, with the following
 fields guaranteed to be non-missing: `roc_curve`, `roc_auc`, pr_curve`,
-`reliability_calibration_curve`, `reliability_calibration_score`.`
+`reliability_calibration_curve`, `reliability_calibration_score`.` $(BINARIZE_NOTE)
+(`class_index`).
 """
 function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                              thresholds)
+                              thresholds, binarize=binarize_by_threshold)
     stats = per_threshold_confusion_statistics(predicted_soft_labels,
                                                elected_hard_labels, thresholds,
-                                               class_index)
+                                               class_index; binarize)
     roc_curve = (map(t -> t.false_positive_rate, stats),
                  map(t -> t.true_positive_rate, stats))
     pr_curve = (map(t -> t.true_positive_rate, stats),
@@ -221,16 +228,17 @@ end
 
 """
     get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels, class_index;
-                                           thresholds)
+                                           thresholds, binarize=binarize_by_threshold)
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`. In addition
 to metrics calculated by [`get_tradeoff_metrics`](@ref), additionally calculates
-`spearman_correlation`-based metrics.
+`spearman_correlation`-based metrics. $(BINARIZE_NOTE) (`class_index`).
 """
 function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels,
-                                                votes, class_index; thresholds)
+                                                votes, class_index; thresholds,
+                                                binarize=binarize_by_threshold)
     basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
-                                     class_index; thresholds)
+                                     class_index; thresholds, binarize)
     corr = _calculate_spearman_correlation(predicted_soft_labels, votes)
     row = Tables.rowmerge(basic_row,
                           (;
@@ -392,18 +400,19 @@ Where...
 
 Alternatively, an `observation_table` that consists of rows of type [`ObservationRow`](@ref)
 can be passed in in place of `predicted_soft_labels`,`predicted_hard_labels`,`elected_hard_labels`,
-and `votes`.
+and `votes`. $(BINARIZE_NOTE).
 
 See also [`evaluation_metrics_plot`](@ref).
 """
 function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing,
+                                binarize=binarize_by_threshold)
     inputs = _observation_table_to_inputs(observation_table)
     return evaluation_metrics_row(inputs.predicted_hard_labels,
                                   inputs.predicted_soft_labels, inputs.elected_hard_labels,
                                   classes, thresholds; inputs.votes, strata,
-                                  optimal_threshold_class)
+                                  optimal_threshold_class, binarize)
 end
 
 function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
@@ -414,7 +423,8 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 strata::Union{Nothing,
                                               AbstractVector{Set{T}} where T}=nothing,
                                 optimal_threshold_class::Union{Missing,Nothing,
-                                                               Integer}=missing)
+                                                               Integer}=missing,
+                                binarize=binarize_by_threshold)
     class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
 
@@ -425,12 +435,12 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
         map(ic -> get_tradeoff_metrics_binary_multirater(predicted_soft_labels,
                                                          elected_hard_labels, votes,
                                                          ic;
-                                                         thresholds),
+                                                         thresholds, binarize),
             class_indices)
     else
         map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
                                        ic;
-                                       thresholds),
+                                       thresholds, binarize),
             class_indices)
     end
 
@@ -440,7 +450,8 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
         cal = _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                            votes;
                                                                            thresholds,
-                                                                           class_of_interest_index=optimal_threshold_class)
+                                                                           class_of_interest_index=optimal_threshold_class,
+                                                                           binarize)
         optimal_threshold = cal.threshold
     elseif has_value(optimal_threshold_class)
         roc_curve = tradeoff_metrics_rows[findfirst(==(optimal_threshold_class),
@@ -457,7 +468,8 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     if !ismissing(optimal_threshold)
         other_class = optimal_threshold_class == 1 ? 2 : 1
         for (i, row) in enumerate(eachrow(predicted_soft_labels))
-            predicted_hard_labels[i] = row[optimal_threshold_class] .>= optimal_threshold ?
+            predicted_hard_labels[i] = binarize(row[optimal_threshold_class],
+                                                optimal_threshold) ?
                                        optimal_threshold_class : other_class
         end
     end
@@ -607,7 +619,7 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
                          per_expert_discrimination_calibration_scores,
 
                          # from kwargs:
-                         optimal_threshold_class = _values_or_missing(optimal_threshold_class),
+                         optimal_threshold_class=_values_or_missing(optimal_threshold_class),
                          class_labels, thresholds, optimal_threshold, stratified_kappas)
 end
 
@@ -800,13 +812,14 @@ end
 
 function _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
                                                                       votes; thresholds,
-                                                                      class_of_interest_index)
+                                                                      class_of_interest_index,
+                                                                      binarize=binarize_by_threshold)
     elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
     bin_count = min(size(votes, 2) + 1, 10)
     per_threshold_curves = map(thresholds) do thresh
+        pred_soft = view(predicted_soft_labels, :, class_of_interest_index)
         return calibration_curve(elected_probabilities,
-                                 predicted_soft_labels[:, class_of_interest_index] .>=
-                                 thresh; bin_count=bin_count)
+                                 binarize.(pred_soft, thresh); bin_count=bin_count)
     end
     i_min = argmin([c.mean_squared_error for c in per_threshold_curves])
     curve = per_threshold_curves[i_min]
@@ -882,24 +895,26 @@ function _validate_threshold_class(optimal_threshold_class, classes)
 end
 
 function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
-                                        elected_hard_labels::AbstractVector, thresholds)
+                                        elected_hard_labels::AbstractVector, thresholds;
+                                        binarize=binarize_by_threshold)
     class_count = size(predicted_soft_labels, 2)
     return map(1:class_count) do i
         return per_threshold_confusion_statistics(predicted_soft_labels,
                                                   elected_hard_labels,
-                                                  thresholds, i)
+                                                  thresholds, i; binarize)
     end
 end
 
 function per_threshold_confusion_statistics(predicted_soft_labels::AbstractMatrix,
                                             elected_hard_labels::AbstractVector, thresholds,
-                                            class_index)
+                                            class_index; binarize=binarize_by_threshold)
     confusions = [confusion_matrix(2) for _ in 1:length(thresholds)]
     for label_index in 1:length(elected_hard_labels)
         predicted_soft_label = predicted_soft_labels[label_index, class_index]
         elected = (elected_hard_labels[label_index] == class_index) + 1
         for (threshold_index, threshold) in enumerate(thresholds)
-            predicted = (predicted_soft_label >= threshold) + 1
+            # Convert from binarized output to 2-class labels (1, 2)
+            predicted = binarize(predicted_soft_label, threshold) + 1
             confusions[threshold_index][predicted, elected] += 1
         end
     end

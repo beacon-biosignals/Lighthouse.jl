@@ -3,7 +3,7 @@ using StableRNGs
 using Lighthouse
 using Lighthouse: plot_reliability_calibration_curves, plot_pr_curves,
                   plot_roc_curves, plot_kappas, plot_confusion_matrix,
-                  evaluation_metrics_plot, evaluation_metrics
+                  evaluation_metrics_plot, evaluation_metrics, binarize_by_threshold
 using Base.Threads
 using CairoMakie
 using Legolas, Tables
@@ -13,7 +13,7 @@ using Arrow
 # Needs to be set for figures
 # returning true for showable("image/png", obj)
 # which TensorBoardLogger.jl uses to determine output
-CairoMakie.activate!(type="png")
+CairoMakie.activate!(; type="png")
 plot_results = joinpath(@__DIR__, "plot_results")
 # Remove any old plots
 isdir(plot_results) && rm(plot_results; force=true, recursive=true)

@@ -156,3 +156,66 @@ end
     @test all(iszero, totals)
     @test isnan(mean_squared_error)
 end
+
+@testset "`calibration_curve`" begin
+    @test binarize_by_threshold(0.2, 0.8) == false
+    @test binarize_by_threshold(0.2, 0.2) == true
+    @test binarize_by_threshold(0.3, 0.2) == true
+    @test binarize_by_threshold.([0, 0, 0], 0.2) == [0, 0, 0]
+end
+
+@testset "Metrics hardening/binarization" begin
+    predicted_soft_labels = [0.51 0.49
+                             0.49 0.51
+                             0.1 0.9
+                             0.9 0.1
+                             0.0 1.0]
+    elected_hard_labels = [1, 2, 2, 2, 1]
+    thresholds = [0.25, 0.5, 0.75]
+    i_class = 2
+    default_metrics = get_tradeoff_metrics(predicted_soft_labels,
+                                           elected_hard_labels,
+                                           i_class; thresholds)
+
+    # Use bogus threshold/hardening function to prove that hardening function is
+    # used internally
+    scaled_binarize_by_threshold = (soft, threshold) -> soft >= threshold / 10
+    scaled_thresholds = 10 .* thresholds
+    scaled_metrics = get_tradeoff_metrics(predicted_soft_labels,
+                                          elected_hard_labels,
+                                          i_class; thresholds=scaled_thresholds,
+                                          binarize=scaled_binarize_by_threshold)
+    @test isequal(default_metrics, scaled_metrics)
+
+    # Discrim calibration
+    votes = [1 1 1
+             0 2 2
+             1 2 2
+             1 1 2
+             0 1 1]
+    cal = Lighthouse._calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+                                                                                  votes;
+                                                                                  thresholds,
+                                                                                  class_of_interest_index=i_class)
+
+    scaled_cal = Lighthouse._calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+                                                                                         votes;
+                                                                                         class_of_interest_index=i_class,
+                                                                                         thresholds=scaled_thresholds,
+                                                                                         binarize=scaled_binarize_by_threshold)
+    for k in keys(cal)
+        if k == :threshold
+            @test cal[k] * 10 == scaled_cal[k] # Should be the same _relative_ threshold
+        else
+            @test isequal(cal[k], scaled_cal[k])
+        end
+    end
+
+    conf = Lighthouse.per_class_confusion_statistics(predicted_soft_labels,
+                                                     elected_hard_labels, thresholds)
+    scaled_conf = Lighthouse.per_class_confusion_statistics(predicted_soft_labels,
+                                                            elected_hard_labels,
+                                                            scaled_thresholds;
+                                                            binarize=scaled_binarize_by_threshold)
+    @test isequal(conf, scaled_conf)
+end
