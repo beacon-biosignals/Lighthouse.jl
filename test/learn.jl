@@ -22,28 +22,6 @@ function Lighthouse.loss_and_prediction(c::TestClassifier, dummy_input_batch)
     return c.dummy_loss, dummy_soft_label_batch
 end
 
-function evaluation_refactor_test(predicted_hard_labels, predicted_soft_labels,
-                                  elected_hard_labels, classes,
-                                  thresholds=0.0:0.01:1.0; votes=nothing,
-                                  strata=nothing, optimal_threshold_class=missing)
-    orig_row = Lighthouse.evaluation_metrics_row(predicted_hard_labels,
-                                                 predicted_soft_labels,
-                                                 elected_hard_labels, classes, thresholds;
-                                                 votes, strata, optimal_threshold_class)
-    new_row = Lighthouse.refactored_evaluation_metrics_row(predicted_hard_labels,
-                                                           predicted_soft_labels,
-                                                           elected_hard_labels, classes,
-                                                           thresholds;
-                                                           votes, strata,
-                                                           optimal_threshold_class)
-    orig_nt = NamedTuple(orig_row)
-    new_nt = NamedTuple(new_row)
-    for k in keys(orig_nt)
-        @test isequal(orig_nt[k], new_nt[k])
-    end
-    return nothing
-end
-
 @testset "Multi-class learn!(::TestModel, ...)" begin
     mktempdir() do tmpdir
         model = TestClassifier(1000000.0, ["class_$i" for i in 1:5])
@@ -118,8 +96,6 @@ end
                            eachrow(votes))
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes)
-        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard,
-                                 model.classes; votes)
         @test length(logger.logged["wheeeeeee/time_in_seconds_for_all_time"]) == 1
         @test length(logger.logged["wheeeeeee/metrics_for_all_time"]) == 1
 
@@ -132,9 +108,6 @@ end
                   for i in 1:size(votes, 1)]
         plot_data = evaluation_metrics(predicted_hard, predicted_soft, elected_hard,
                                        model.classes, 0.0:0.01:1.0; votes, strata)
-        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard,
-                                 model.classes,
-                                 0.0:0.01:1.0; votes, strata)
         @test haskey(plot_data, "stratified_kappas")
         plot = evaluation_metrics_plot(plot_data)
 
@@ -271,9 +244,6 @@ end
 
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=nothing)
-        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard,
-                                 model.classes;
-                                 votes=nothing)
         plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         @test !haskey(plot_data, "per_class_IRA_kappas")
         @test !haskey(plot_data, "multiclass_IRA_kappas")
@@ -281,8 +251,6 @@ end
 
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes)
-        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard,
-                                 model.classes; votes)
         plot_data = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         @test haskey(plot_data, "per_class_IRA_kappas")
         @test haskey(plot_data, "multiclass_IRA_kappas")
@@ -292,14 +260,10 @@ end
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
                   optimal_threshold_class=1)
-        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard,
-                                 model.classes; votes, optimal_threshold_class=1)
         plot_data_1 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         evaluate!(predicted_hard, predicted_soft, elected_hard, model.classes, logger;
                   logger_prefix="wheeeeeee", logger_suffix="_for_all_time", votes=votes,
                   optimal_threshold_class=2)
-        evaluation_refactor_test(predicted_hard, predicted_soft, elected_hard,
-                                 model.classes; votes, optimal_threshold_class=2)
         plot_data_2 = last(logger.logged["wheeeeeee/metrics_for_all_time"])
         test_evaluation_metrics_roundtrip(plot_data_2)
 

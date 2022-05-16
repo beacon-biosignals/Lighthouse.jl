@@ -2,6 +2,8 @@
 ##### miscellaneous
 #####
 
+has_value(x) = !isnothing(x) && !ismissing(x)
+
 function increment_at!(array, index_lists)
     for index_list in index_lists
         array[index_list...] += 1

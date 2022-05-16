@@ -493,3 +493,55 @@ plot_roc_curves(args...; kw...) = axisplot(plot_roc_curves!, args; kw...)
                 annotation_text_size=20)
 """
 plot_kappas(args...; kw...) = axisplot(plot_kappas!, args; kw...)
+
+#####
+##### Deprecation support
+#####
+
+"""
+    evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                            predicted_soft_labels::AbstractMatrix,
+                            elected_hard_labels::AbstractVector,
+                            classes,
+                            thresholds=0.0:0.01:1.0;
+                            votes::Union{Nothing,AbstractMatrix}=nothing,
+                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+
+Return a plot and dictionary containing a battery of classifier performance
+metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
+agaist `elected_hard_labels`.
+
+See [`evaluation_metrics`](@ref) for a description of the arguments.
+
+This method is deprecated in favor of calling `evaluation_metrics`
+and [`evaluation_metrics_plot`](@ref) separately.
+"""
+function evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                                 predicted_soft_labels::AbstractMatrix,
+                                 elected_hard_labels::AbstractVector, classes, thresholds;
+                                 votes::Union{Nothing,AbstractMatrix}=nothing,
+                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                 optimal_threshold_class::Union{Nothing,Integer}=nothing)
+    Base.depwarn("""
+    ```
+    evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                            predicted_soft_labels::AbstractMatrix,
+                            elected_hard_labels::AbstractVector, classes, thresholds;
+                            votes::Union{Nothing,AbstractMatrix}=nothing,
+                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                            optimal_threshold_class::Union{Nothing,Integer}=nothing)
+    ```
+    has been deprecated in favor of
+    ```
+    plot_dict = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
+                                   elected_hard_labels, classes, thresholds;
+                                   votes, strata, optimal_threshold_class)
+    (evaluation_metrics_plot(plot_dict), plot_dict)
+    ```
+    """, :evaluation_metrics_plot)
+    plot_dict = evaluation_metrics(predicted_hard_labels, predicted_soft_labels,
+                                   elected_hard_labels, classes, thresholds; votes, strata,
+                                   optimal_threshold_class)
+    return evaluation_metrics_plot(plot_dict), plot_dict
+end

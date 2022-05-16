@@ -303,7 +303,8 @@ field guaranteed to be non-missing: `per_expert_discrimination_calibration_curve
 `per_expert_discrimination_calibration_scores`, interrater-agreement (`ira_kappa`).
 """
 function get_label_metrics_multirater(votes, class_index)
-    size(votes, 2) > 1 || throw(ArgumentError("Input `votes` is not multirater (`size(votes) == $(size(votes))`)"))
+    size(votes, 2) > 1 ||
+        throw(ArgumentError("Input `votes` is not multirater (`size(votes) == $(size(votes))`)"))
     expert_cal = _calculate_voter_discrimination_calibration(votes;
                                                              class_of_interest_index=class_index)
     per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
@@ -331,30 +332,89 @@ end
 #####
 
 """
-    refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                      predicted_soft_labels::AbstractMatrix,
-                                      elected_hard_labels::AbstractVector, classes;
-                                      thresholds=0.0:0.01:1.0,
-                                      votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                      strata::Union{Nothing,
-                                                    AbstractVector{Set{T}} where T}=nothing,
-                                      optimal_threshold_class::Union{Missing,Nothing,
-                                                                     Integer}=missing)
+    evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
 
-Drop-in replacement for to-be-deprecated [`evaluation_metrics_row`](@ref), with identical
-inputs and outputs.
-
-In service of https://github.com/beacon-biosignals/Lighthouse.jl/pull/69.
+Return [`evaluation_metrics_row`](@ref) after converting output `EvaluationRow`
+into a `Dict`. For argument details, see [`evaluation_metrics_row`](@ref).
 """
-function refactored_evaluation_metrics_row(predicted_hard_labels::AbstractVector,
-                                           predicted_soft_labels::AbstractMatrix,
-                                           elected_hard_labels::AbstractVector, classes,
-                                           thresholds=0.0:0.01:1.0;
-                                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                           strata::Union{Nothing,
-                                                         AbstractVector{Set{T}} where T}=nothing,
-                                           optimal_threshold_class::Union{Missing,Nothing,
-                                                                          Integer}=missing)
+function evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
+    row = evaluation_metrics_row(args...;
+                                 optimal_threshold_class=something(optimal_threshold_class,
+                                                                   missing), kwargs...)
+    return _evaluation_row_dict(row)
+end
+
+"""
+    evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+    evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                           predicted_soft_labels::AbstractMatrix,
+                           elected_hard_labels::AbstractVector,
+                           classes,
+                           thresholds=0.0:0.01:1.0;
+                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+
+Returns `EvaluationRow` containing a battery of classifier performance
+metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
+agaist `elected_hard_labels`.
+
+Where...
+
+- `predicted_soft_labels` is a matrix of soft labels whose columns correspond to
+  classes and whose rows correspond to samples in the evaluation set.
+
+- `predicted_hard_labels` is a vector of hard labels where the `i`th element
+  is the hard label predicted by the model for sample `i` in the evaulation set.
+
+- `elected_hard_labels` is a vector of hard labels where the `i`th element
+  is the hard label elected as "ground truth" for sample `i` in the evaulation set.
+
+- `thresholds` are the range of thresholds used by metrics (e.g. PR curves) that
+  are calculated on the `predicted_soft_labels` for a range of thresholds.
+
+- `votes` is a matrix of hard labels whose columns correspond to voters and whose
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`.
+
+- `strata` is a vector of sets of (arbitrarily typed) groups/strata for each sample
+  in the evaluation set, or `nothing`. If not `nothing`, per-class and multiclass
+  kappas will also be calculated per group/stratum.
+
+- `optimal_threshold_class` is the class index (`1` or `2`) for which to calculate
+  an optimal threshold for converting the `predicted_soft_labels` to
+  `predicted_hard_labels`. If present, the input `predicted_hard_labels` will be
+  ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
+  This is only a valid parameter when `length(classes) == 2`
+
+Alternatively, an `observation_table` that consists of rows of type [`ObservationRow`](@ref)
+can be passed in in place of `predicted_soft_labels`,`predicted_hard_labels`,`elected_hard_labels`,
+and `votes`.
+
+See also [`evaluation_metrics_plot`](@ref).
+"""
+function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+                                strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+    inputs = _observation_table_to_inputs(observation_table)
+    return evaluation_metrics_row(inputs.predicted_hard_labels,
+                                  inputs.predicted_soft_labels, inputs.elected_hard_labels,
+                                  classes, thresholds; inputs.votes, strata,
+                                  optimal_threshold_class)
+end
+
+function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+                                predicted_soft_labels::AbstractMatrix,
+                                elected_hard_labels::AbstractVector, classes,
+                                thresholds=0.0:0.01:1.0;
+                                votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                                strata::Union{Nothing,
+                                              AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Nothing,
+                                                               Integer}=missing)
     class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
 
@@ -472,8 +532,8 @@ _unpack_curves(curves::AbstractVector{Curve}) = Tuple.(curves)
                     optimal_threshold_class=missing, class_labels, thresholds,
                     optimal_threshold, stratified_kappas=missing)
 
-Construct an `EvaluationRow` from tables of constituent Metrics schemas, to facilitate
-[`refactored_evaluation_metrics_row`](@ref):
+Helper function to create an `EvaluationRow` from tables of constituent Metrics schemas,
+to support [`evaluation_metrics_row`](@ref):
 - `tradeoff_metrics_table`: table of [`TradeoffMetricsRow`](@ref)s
 - `hardened_metrics_table`: table of [`HardenedMetricsRow`](@ref)s
 - `label_metrics_table`: table of [`LabelMetricsRow`](@ref)s
@@ -508,8 +568,10 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
         per_expert_discrimination_calibration_scores = label_row_optimal.per_expert_discrimination_calibration_scores
     end
 
-     multiclass_IRA_kappas = has_value(labels_multi) ? _values_or_missing(labels_multi.ira_kappa) : missing
-    per_class_IRA_kappas = has_value(label_rows) ? _values_or_missing(label_rows.ira_kappa) : missing
+    multiclass_IRA_kappas = has_value(labels_multi) ?
+                            _values_or_missing(labels_multi.ira_kappa) : missing
+    per_class_IRA_kappas = has_value(label_rows) ?
+                           _values_or_missing(label_rows.ira_kappa) : missing
 
     # Similarly, due to separate special casing, only get the spearman correlation coefficient
     # from a binary classification problem. It is calculated for both classes, but is
@@ -545,6 +607,301 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
                          per_expert_discrimination_calibration_scores,
 
                          # from kwargs:
-                         optimal_threshold_class, class_labels, thresholds,
-                         optimal_threshold, stratified_kappas)
+                         optimal_threshold_class = _values_or_missing(optimal_threshold_class),
+                         class_labels, thresholds, optimal_threshold, stratified_kappas)
+end
+
+#####
+##### Pipeline helper functions
+#####
+
+function _calculate_stratified_ea_kappas(predicted_hard_labels, elected_hard_labels,
+                                         class_count, strata)
+    groups = reduce(∪, strata)
+    kappas = Pair{String,Any}[]
+    for group in groups
+        index = group .∈ strata
+        predicted = predicted_hard_labels[index]
+        elected = elected_hard_labels[index]
+        k = _calculate_ea_kappas(predicted, elected, class_count)
+        push!(kappas,
+              group => (per_class=k.per_class_kappas, multiclass=k.multiclass_kappa,
+                        n=sum(index)))
+    end
+    kappas = sort(kappas; by=p -> last(p).multiclass)
+    return [k = v for (k, v) in kappas]
+end
+
+"""
+    _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, classes)
+
+Return `NamedTuple` with keys `:per_class_kappas`, `:multiclass_kappa` containing the Cohen's
+Kappa per-class and over all classes, respectively. The value of output key
+`:per_class_kappas` is an `Array` such that item `i` is the Cohen's kappa calculated
+for class `i`.
+
+Where...
+
+- `predicted_hard_labels` is a vector of hard labels where the `i`th element
+  is the hard label predicted by the model for sample `i` in the evaulation set.
+
+- `elected_hard_labels` is a vector of hard labels where the `i`th element
+  is the hard label elected as "ground truth" for sample `i` in the evaulation set.
+
+- `class_count` is the number of possible classes.
+
+"""
+function _calculate_ea_kappas(predicted_hard_labels, elected_hard_labels, class_count)
+    multiclass_kappa = first(cohens_kappa(class_count,
+                                          zip(predicted_hard_labels, elected_hard_labels)))
+
+    per_class_kappas = map(1:class_count) do class_index
+        return _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
+    end
+    return (; per_class_kappas, multiclass_kappa)
+end
+
+function _calculate_ea_kappa(predicted_hard_labels, elected_hard_labels, class_index)
+    CLASS_VS_ALL_CLASS_COUNT = 2
+    predicted = ((label == class_index) + 1 for label in predicted_hard_labels)
+    elected = ((label == class_index) + 1 for label in elected_hard_labels)
+    return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, zip(predicted, elected)))
+end
+
+"""
+    _calculate_ira_kappas(votes, classes)
+
+Return `NamedTuple` with keys `:per_class_IRA_kappas`, `:multiclass_IRA_kappas` containing the Cohen's
+Kappa for inter-rater agreement (IRA) per-class and over all classes, respectively.
+The value of output key `:per_class_IRA_kappas` is an `Array` such that item `i` is the
+IRA kappa calculated for class `i`.
+
+Where...
+
+- `votes` is a matrix of hard labels whose columns correspond to voters and whose
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`.
+
+- `classes` all possible classes voted on.
+
+Returns `(per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)` if `votes` has only a single voter (i.e., a single column) or if
+no two voters rated the same sample. Note that vote entries of `0` are taken to
+mean that the voter did not rate that sample.
+"""
+function _calculate_ira_kappas(votes, classes)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
+    length(hard_label_pairs) > 0 ||
+        return (; per_class_IRA_kappas=missing, multiclass_IRA_kappas=missing)  # No common observations voted on
+    length(hard_label_pairs) < 10 &&
+        @warn "...only $(length(hard_label_pairs)) in common, potentially questionable IRA results"
+
+    multiclass_ira = first(cohens_kappa(length(classes), hard_label_pairs))
+
+    CLASS_VS_ALL_CLASS_COUNT = 2
+    per_class_ira = map(1:length(classes)) do class_index
+        class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index),
+                                            hard_label_pairs)
+        return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
+    end
+    return (; per_class_IRA_kappas=per_class_ira, multiclass_IRA_kappas=multiclass_ira)
+end
+
+function _prep_hard_label_pairs(votes)
+    if !has_value(votes) || size(votes, 2) < 2
+        # no votes given or only one expert
+        return Tuple{Int64,Int64}[]
+    end
+    all_hard_label_pairs = Array{Int}(undef, 0, 2)
+    num_voters = size(votes, 2)
+    for i_voter in 1:(num_voters - 1)
+        for j_voter in (i_voter + 1):num_voters
+            all_hard_label_pairs = vcat(all_hard_label_pairs, votes[:, [i_voter, j_voter]])
+        end
+    end
+    hard_label_pairs = filter(row -> all(row .!= 0), collect(eachrow(all_hard_label_pairs)))
+    return hard_label_pairs
+end
+
+function _calculate_ira_kappa_multiclass(votes, class_count)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
+    length(hard_label_pairs) == 0 && return missing
+    return first(cohens_kappa(class_count, hard_label_pairs))
+end
+
+function _calculate_ira_kappa(votes, class_index)
+    hard_label_pairs = _prep_hard_label_pairs(votes)
+    length(hard_label_pairs) == 0 && return missing
+    CLASS_VS_ALL_CLASS_COUNT = 2
+    class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index),
+                                        hard_label_pairs)
+    return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
+end
+
+function _spearman_corr(predicted_soft_labels, elected_soft_labels)
+    n = length(predicted_soft_labels)
+    ρ = StatsBase.corspearman(predicted_soft_labels, elected_soft_labels)
+    if isnan(ρ)
+        @warn "Uh oh, correlation is NaN! Probably because StatsBase.corspearman(...)
+               returns NaN when a set of labels is all the same!"
+        # Note: accounted for in https://github.com/JuliaStats/HypothesisTests.jl/pull/53/files;
+        # probably not worth implementing here until we need it (at which point maybe
+        # it will be ready in HypothesisTests!)
+    end
+
+    # 95% confidence interval calculated according to
+    # https://stats.stackexchange.com/questions/18887/how-to-calculate-a-confidence-interval-for-spearmans-rank-correlation
+    stderr = 1.0 / sqrt(n - 3)
+    delta = 1.96 * stderr
+    ci_lower = tanh(atanh(ρ) - delta)
+    ci_upper = tanh(atanh(ρ) + delta)
+    return (ρ=ρ, n=n, ci_lower=round(ci_lower; digits=3),
+            ci_upper=round(ci_upper; digits=3))
+end
+
+"""
+    _calculate_spearman_correlation(predicted_soft_labels, votes, classes)
+
+Return `NamedTuple` with keys `:ρ`, `:n`, `:ci_lower`, and `ci_upper` that are
+the Spearman correlation constant ρ and its 95% confidence interval bounds.
+Only valid for binary classification problems (i.e., `length(classes) == 2`)
+
+Where...
+
+- `predicted_soft_labels` is a matrix of soft labels whose columns correspond to
+  the two classes and whose rows correspond to the samples in the test set that have been
+  classified. For a given sample, the two class column values must sum to 1 (i.e.,
+  softmax has been applied to the classification output).
+
+- `votes` is a matrix of hard labels whose columns correspond to voters and whose
+  rows correspond to the samples in the test set that have been voted on. If
+  `votes[sample, voter]` is not a valid hard label for `model`, then `voter` will
+  simply be considered to have not assigned a hard label to `sample`. May contain
+  a single voter (i.e., a single column).
+
+- `classes` are the two classes voted on.
+"""
+function _calculate_spearman_correlation(predicted_soft_labels, votes, classes=missing)
+    if !ismissing(classes)
+        length(classes) > 2 && throw(ArgumentError("Only valid for 2-class problems"))
+    end
+    if !all(x -> x ≈ 1, sum(predicted_soft_labels; dims=2))
+        throw(ArgumentError("Input probabiliities fail softmax assumption"))
+    end
+
+    class_index = 1 # Note: Result will be the same whether class 1 or class 2
+    elected_soft_labels = Vector{Float64}()
+    for sample_votes in eachrow(votes)
+        actual_sample_votes = filter(v -> v in Set([1, 2]), sample_votes)
+        push!(elected_soft_labels, mean(actual_sample_votes .== class_index))
+    end
+    return _spearman_corr(predicted_soft_labels[:, class_index], elected_soft_labels)
+end
+
+function _calculate_optimal_threshold_from_discrimination_calibration(predicted_soft_labels,
+                                                                      votes; thresholds,
+                                                                      class_of_interest_index)
+    elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
+    bin_count = min(size(votes, 2) + 1, 10)
+    per_threshold_curves = map(thresholds) do thresh
+        return calibration_curve(elected_probabilities,
+                                 predicted_soft_labels[:, class_of_interest_index] .>=
+                                 thresh; bin_count=bin_count)
+    end
+    i_min = argmin([c.mean_squared_error for c in per_threshold_curves])
+    curve = per_threshold_curves[i_min]
+    return (threshold=collect(thresholds)[i_min], mse=curve.mean_squared_error,
+            plot_curve_data=(mean.(curve.bins), curve.fractions))
+end
+
+function _calculate_discrimination_calibration(predicted_hard_labels, votes;
+                                               class_of_interest_index)
+    elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
+    bin_count = min(size(votes, 2) + 1, 10)
+    curve = calibration_curve(elected_probabilities,
+                              predicted_hard_labels .== class_of_interest_index; bin_count)
+    return (mse=curve.mean_squared_error,
+            plot_curve_data=(mean.(curve.bins), curve.fractions))
+end
+
+function _elected_probabilities(votes, class_of_interest_index)
+    elected_probabilities = Vector{Float64}()
+    for sample_votes in eachrow(votes)
+        actual_sample_votes = filter(v -> v in Set([1, 2]), sample_votes)
+        push!(elected_probabilities, mean(actual_sample_votes .== class_of_interest_index))
+    end
+    return elected_probabilities
+end
+
+function _calculate_voter_discrimination_calibration(votes; class_of_interest_index)
+    elected_probabilities = _elected_probabilities(votes, class_of_interest_index)
+
+    bin_count = min(size(votes, 2) + 1, 10)
+    per_voter_calibration_curves = map(1:size(votes, 2)) do i_voter
+        return calibration_curve(elected_probabilities,
+                                 votes[:, i_voter] .== class_of_interest_index;
+                                 bin_count=bin_count)
+    end
+
+    return (mse=map(curve -> curve.mean_squared_error, per_voter_calibration_curves),
+            plot_curve_data=map(curve -> (mean.(curve.bins), curve.fractions),
+                                per_voter_calibration_curves))
+end
+
+function _get_optimal_threshold_from_ROC(per_class_roc_curves; thresholds,
+                                         class_of_interest_index)
+    return _get_optimal_threshold_from_ROC(per_class_roc_curves[class_of_interest_index],
+                                           thresholds)
+end
+
+function _get_optimal_threshold_from_ROC(roc_curve, thresholds)
+    dist = (p1, p2) -> sqrt((p1[1] - p2[1])^2 + (p1[2] - p2[2])^2)
+    min = Inf
+    curr_counter = 1
+    opt_point = nothing
+    threshold_idx = 1
+    for point in zip(roc_curve[1], roc_curve[2])
+        d = dist((0, 1), point)
+        if d < min
+            min = d
+            threshold_idx = curr_counter
+            opt_point = point
+        end
+        curr_counter += 1
+    end
+    return collect(thresholds)[threshold_idx]
+end
+
+function _validate_threshold_class(optimal_threshold_class, classes)
+    has_value(optimal_threshold_class) || return nothing
+    length(classes) == 2 ||
+        throw(ArgumentError("Only valid for binary classification problems"))
+    optimal_threshold_class in Set([1, 2]) ||
+        throw(ArgumentError("Invalid threshold class"))
+    return nothing
+end
+
+function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
+                                        elected_hard_labels::AbstractVector, thresholds)
+    class_count = size(predicted_soft_labels, 2)
+    return map(1:class_count) do i
+        return per_threshold_confusion_statistics(predicted_soft_labels,
+                                                  elected_hard_labels,
+                                                  thresholds, i)
+    end
+end
+
+function per_threshold_confusion_statistics(predicted_soft_labels::AbstractMatrix,
+                                            elected_hard_labels::AbstractVector, thresholds,
+                                            class_index)
+    confusions = [confusion_matrix(2) for _ in 1:length(thresholds)]
+    for label_index in 1:length(elected_hard_labels)
+        predicted_soft_label = predicted_soft_labels[label_index, class_index]
+        elected = (elected_hard_labels[label_index] == class_index) + 1
+        for (threshold_index, threshold) in enumerate(thresholds)
+            predicted = (predicted_soft_label >= threshold) + 1
+            confusions[threshold_index][predicted, elected] += 1
+        end
+    end
+    return binary_statistics.(confusions, 2)
 end

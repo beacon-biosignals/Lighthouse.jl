@@ -22,9 +22,6 @@ Lighthouse.is_early_stopping_exception
 learn!
 evaluate!
 predict!
-Lighthouse._calculate_ea_kappas
-Lighthouse._calculate_ira_kappas
-Lighthouse._calculate_spearman_correlation
 ```
 
 ## The logging interface
@@ -85,8 +82,10 @@ get_hardened_metrics_multiclass
 LabelMetricsRow
 get_label_metrics_multirater
 get_label_metrics_multirater_multiclass
-Lighthouse.refactored_evaluation_metrics_row
 Lighthouse._evaluation_row
+Lighthouse._calculate_ea_kappas
+Lighthouse._calculate_ira_kappas
+Lighthouse._calculate_spearman_correlation
 ```
 
 ## Utilities
