@@ -179,7 +179,7 @@ function _observation_table_to_inputs(observation_table)
     votes = any(ismissing, df_table.votes) ? missing :
             transpose(reduce(hcat, df_table.votes))
 
-    predicted_soft_labels = _observation_table_to_predicted_soft(df_table.predicted_soft_labels)
+    predicted_soft_labels = _predicted_soft_to_matrix(df_table.predicted_soft_labels)
     return (; predicted_hard_labels=df_table.predicted_hard_label, predicted_soft_labels,
             elected_hard_labels=df_table.elected_hard_label, votes)
 end

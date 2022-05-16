@@ -158,13 +158,13 @@ end
 end
 
 @testset "`calibration_curve`" begin
-    @test harden_by_threshold(0.2, 0.8) == false
-    @test harden_by_threshold(0.2, 0.2) == true
-    @test harden_by_threshold(0.3, 0.2) == true
-    @test harden_by_threshold.([0, 0, 0], 0.2) == [0, 0, 0]
+    @test binarize_by_threshold(0.2, 0.8) == false
+    @test binarize_by_threshold(0.2, 0.2) == true
+    @test binarize_by_threshold(0.3, 0.2) == true
+    @test binarize_by_threshold.([0, 0, 0], 0.2) == [0, 0, 0]
 end
 
-@testset "Hardening" begin
+@testset "Metrics hardening/binarization" begin
     predicted_soft_labels = [0.51 0.49
                              0.49 0.51
                              0.1 0.9
@@ -179,12 +179,12 @@ end
 
     # Use bogus threshold/hardening function to prove that hardening function is
     # used internally
-    scaled_harden_fn = (soft, threshold) -> soft >= threshold / 10
+    scaled_binarize_by_threshold = (soft, threshold) -> soft >= threshold / 10
     scaled_thresholds = 10 .* thresholds
     scaled_metrics = get_tradeoff_metrics(predicted_soft_labels,
                                           elected_hard_labels,
                                           i_class; thresholds=scaled_thresholds,
-                                          harden_fn=scaled_harden_fn)
+                                          binarize=scaled_binarize_by_threshold)
     @test isequal(default_metrics, scaled_metrics)
 
     # Discrim calibration
@@ -202,7 +202,7 @@ end
                                                                                          votes;
                                                                                          class_of_interest_index=i_class,
                                                                                          thresholds=scaled_thresholds,
-                                                                                         harden_fn=scaled_harden_fn)
+                                                                                         binarize=scaled_binarize_by_threshold)
     for k in keys(cal)
         if k == :threshold
             @test cal[k] * 10 == scaled_cal[k] # Should be the same _relative_ threshold
@@ -212,10 +212,10 @@ end
     end
 
     conf = Lighthouse.per_class_confusion_statistics(predicted_soft_labels,
-                                          elected_hard_labels, thresholds)
+                                                     elected_hard_labels, thresholds)
     scaled_conf = Lighthouse.per_class_confusion_statistics(predicted_soft_labels,
-                                                           elected_hard_labels,
-                                                           scaled_thresholds;
-                                                           harden_fn=scaled_harden_fn)
+                                                            elected_hard_labels,
+                                                            scaled_thresholds;
+                                                            binarize=scaled_binarize_by_threshold)
     @test isequal(conf, scaled_conf)
 end
