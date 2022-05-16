@@ -159,6 +159,16 @@ const ObservationRow = Legolas.@row("lighthouse.observation@1",
                                     elected_hard_label::Int64,
                                     votes::Union{Missing,Vector{Int64}})
 
+# Convert vector of per-class soft label vectors to expected matrix format, e.g.,
+# [[0.1, .2, .7], [0.8, .1, .1]] for 2 observations of 3-class classification returns
+# ```
+# [0.1 0.2 0.7;
+# 0.8 0.1 0.1]
+# ```
+function _predicted_soft_to_matrix(per_observation_soft_labels)
+    return transpose(reduce(hcat, per_observation_soft_labels))
+end
+
 function _observation_table_to_inputs(observation_table)
     Legolas.validate(observation_table, OBSERVATION_ROW_SCHEMA)
     df_table = Tables.columns(observation_table)
@@ -169,7 +179,7 @@ function _observation_table_to_inputs(observation_table)
     votes = any(ismissing, df_table.votes) ? missing :
             transpose(reduce(hcat, df_table.votes))
 
-    predicted_soft_labels = transpose(reduce(hcat, df_table.predicted_soft_labels))
+    predicted_soft_labels = _observation_table_to_predicted_soft(df_table.predicted_soft_labels)
     return (; predicted_hard_labels=df_table.predicted_hard_label, predicted_soft_labels,
             elected_hard_labels=df_table.elected_hard_label, votes)
 end
