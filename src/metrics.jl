@@ -1,3 +1,7 @@
+const BINARIZE_NOTE = "Supply a function to the keyword argument `binarize` which \
+                       takes as input `(soft_label, threshold)` and outputs a `Bool` \
+                       indicating whether or not the class of interest"
+
 binarize_by_threshold(soft, threshold) = soft >= threshold
 
 #####
@@ -196,7 +200,8 @@ end
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`, with the following
 fields guaranteed to be non-missing: `roc_curve`, `roc_auc`, pr_curve`,
-`reliability_calibration_curve`, `reliability_calibration_score`.`
+`reliability_calibration_curve`, `reliability_calibration_score`.` $(BINARIZE_NOTE)
+(`class_index`).
 """
 function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
                               thresholds, binarize=binarize_by_threshold)
@@ -227,7 +232,7 @@ end
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`. In addition
 to metrics calculated by [`get_tradeoff_metrics`](@ref), additionally calculates
-`spearman_correlation`-based metrics.
+`spearman_correlation`-based metrics. $(BINARIZE_NOTE) (`class_index`).
 """
 function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels,
                                                 votes, class_index; thresholds,
@@ -395,7 +400,7 @@ Where...
 
 Alternatively, an `observation_table` that consists of rows of type [`ObservationRow`](@ref)
 can be passed in in place of `predicted_soft_labels`,`predicted_hard_labels`,`elected_hard_labels`,
-and `votes`.
+and `votes`. $(BINARIZE_NOTE).
 
 See also [`evaluation_metrics_plot`](@ref).
 """
