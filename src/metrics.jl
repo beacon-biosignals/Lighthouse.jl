@@ -1,6 +1,6 @@
-const BINARIZE_NOTE = "Supply a function to the keyword argument `binarize` which \
-                       takes as input `(soft_label, threshold)` and outputs a `Bool` \
-                       indicating whether or not the class of interest"
+const BINARIZE_NOTE = string("Supply a function to the keyword argument `binarize` ",
+                             "which takes as input `(soft_label, threshold)` and ",
+                             "outputs a `Bool` indicating whether or not the class of interest")
 
 binarize_by_threshold(soft, threshold) = soft >= threshold
 
