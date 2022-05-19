@@ -332,7 +332,8 @@ function evaluation_metrics_plot(row::EvaluationRow; resolution=(1000, 1000),
     kappa_data = multiclass ? vcat(row.multiclass_kappa, row.per_class_kappas) :
                  row.per_class_kappas
 
-    if issubset([:multiclass_IRA_kappas, :per_class_IRA_kappas], keys(row))
+    if issubset([:multiclass_IRA_kappas, :per_class_IRA_kappas], keys(row)) &&
+       all(has_value.([row.multiclass_IRA_kappas, row.per_class_IRA_kappas]))
         IRA_kappa_data = multiclass ?
                          vcat(row.multiclass_IRA_kappas, row.per_class_IRA_kappas) :
                          row.per_class_IRA_kappas

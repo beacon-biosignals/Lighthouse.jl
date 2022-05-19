@@ -99,6 +99,13 @@ end
         @test length(logger.logged["wheeeeeee/time_in_seconds_for_all_time"]) == 1
         @test length(logger.logged["wheeeeeee/metrics_for_all_time"]) == 1
 
+        # Test plotting with no votes directly with eval row
+        eval_row = Lighthouse.evaluation_metrics_row(predicted_hard, predicted_soft,
+                                                     elected_hard, model.classes;
+                                                     votes=nothing)
+        all_together_no_ira = evaluation_metrics_plot(eval_row)
+        @testplot all_together_no_ira
+
         # Round-trip `onehot` for codecov
         onehot_hard = map(h -> vec(Lighthouse.onehot(model, h)), predicted_hard)
         @test map(h -> findfirst(h), onehot_hard) == predicted_hard
