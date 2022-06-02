@@ -196,7 +196,7 @@ end
 
 """
     get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                         thresholds, binarize=binarize_by_threshold)
+                         thresholds, binarize=binarize_by_threshold, class_labels=missing)
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`, with the following
 fields guaranteed to be non-missing: `roc_curve`, `roc_auc`, pr_curve`,
@@ -204,7 +204,7 @@ fields guaranteed to be non-missing: `roc_curve`, `roc_auc`, pr_curve`,
 (`class_index`).
 """
 function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                              thresholds, binarize=binarize_by_threshold)
+                              thresholds, binarize=binarize_by_threshold, class_labels = missing)
     stats = per_threshold_confusion_statistics(predicted_soft_labels,
                                                elected_hard_labels, thresholds,
                                                class_index; binarize)
@@ -220,7 +220,7 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
                                      reliability_calibration.fractions)
     reliability_calibration_score = reliability_calibration.mean_squared_error
 
-    return TradeoffMetricsRow(; class_index, roc_curve,
+    return TradeoffMetricsRow(; class_index, class_labels,roc_curve,
                               roc_auc=area_under_curve(roc_curve...),
                               pr_curve, reliability_calibration_curve,
                               reliability_calibration_score)
@@ -228,7 +228,7 @@ end
 
 """
     get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels, class_index;
-                                           thresholds, binarize=binarize_by_threshold)
+                                           thresholds, binarize=binarize_by_threshold, class_labels=nothing)
 
 Return [`TradeoffMetricsRow`] calculated for the given `class_index`. In addition
 to metrics calculated by [`get_tradeoff_metrics`](@ref), additionally calculates
@@ -238,7 +238,7 @@ function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_h
                                                 votes, class_index; thresholds,
                                                 binarize=binarize_by_threshold)
     basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
-                                     class_index; thresholds, binarize)
+                                     class_index; thresholds, binarize, class_labels)
     corr = _calculate_spearman_correlation(predicted_soft_labels, votes)
     row = Tables.rowmerge(basic_row,
                           (;
@@ -251,13 +251,13 @@ end
 
 """
     get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
-                         thresholds)
+                         class_labels)
 
 Return [`HardenedMetricsRow`] calculated for the given `class_index`, with the following
 field guaranteed to be non-missing: expert-algorithm agreement (`ea_kappa`).
 """
-function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index)
-    return HardenedMetricsRow(; class_index,
+function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index; class_labels)
+    return HardenedMetricsRow(; class_index, class_labels,
                               ea_kappa=_calculate_ea_kappa(predicted_hard_labels,
                                                            elected_hard_labels,
                                                            class_index))
@@ -265,16 +265,16 @@ end
 
 """
     get_hardened_metrics_multirater(predicted_hard_labels, elected_hard_labels, class_index;
-                         thresholds)
+                         class_labels)
 
 Return [`HardenedMetricsRow`] calculated for the given `class_index`. In addition
 to metrics calculated by [`get_hardened_metrics`](@ref), additionally calculates
 `discrimination_calibration_curve` and `discrimination_calibration_score`.
 """
 function get_hardened_metrics_multirater(predicted_hard_labels, elected_hard_labels,
-                                         votes, class_index)
+                                         votes, class_index; class_labels)
     basic_row = get_hardened_metrics(predicted_hard_labels, elected_hard_labels,
-                                     class_index)
+                                     class_index; class_labels)
     cal = _calculate_discrimination_calibration(predicted_hard_labels, votes;
                                                 class_of_interest_index=class_index)
     row = Tables.rowmerge(basic_row,
@@ -286,17 +286,17 @@ end
 
 """
     get_hardened_metrics_multiclass(predicted_hard_labels, elected_hard_labels,
-                                    class_count)
+                                    class_count; class_labels)
 
 Return [`HardenedMetricsRow`] calculated over all `class_count` classes. Calculates
 expert-algorithm agreement (`ea_kappa`) over all classes, as well as the multiclass
 `confusion_matrix`.
 """
 function get_hardened_metrics_multiclass(predicted_hard_labels, elected_hard_labels,
-                                         class_count)
+                                         class_count; class_labels)
     ea_kappa = first(cohens_kappa(class_count,
                                   zip(predicted_hard_labels, elected_hard_labels)))
-    return HardenedMetricsRow(; class_index=:multiclass,
+    return HardenedMetricsRow(; class_index=:multiclass, class_labels,
                               confusion_matrix=confusion_matrix(class_count,
                                                                 zip(predicted_hard_labels,
                                                                     elected_hard_labels)),
@@ -304,34 +304,34 @@ function get_hardened_metrics_multiclass(predicted_hard_labels, elected_hard_lab
 end
 
 """
-    get_label_metrics_multirater(votes, class_index)
+    get_label_metrics_multirater(votes, class_index; class_labels)
 
 Return [`LabelMetricsRow`] calculated for the given `class_index`, with the following
 field guaranteed to be non-missing: `per_expert_discrimination_calibration_curves`,
 `per_expert_discrimination_calibration_scores`, interrater-agreement (`ira_kappa`).
 """
-function get_label_metrics_multirater(votes, class_index)
+function get_label_metrics_multirater(votes, class_index; class_labels)
     size(votes, 2) > 1 ||
         throw(ArgumentError("Input `votes` is not multirater (`size(votes) == $(size(votes))`)"))
     expert_cal = _calculate_voter_discrimination_calibration(votes;
                                                              class_of_interest_index=class_index)
     per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
     per_expert_discrimination_calibration_scores = expert_cal.mse
-    return LabelMetricsRow(; class_index, per_expert_discrimination_calibration_curves,
+    return LabelMetricsRow(; class_index, class_labels, per_expert_discrimination_calibration_curves,
                            per_expert_discrimination_calibration_scores,
                            ira_kappa=_calculate_ira_kappa(votes, class_index))
 end
 
 """
-    get_label_metrics_multirater_multiclass(votes, class_count)
+    get_label_metrics_multirater_multiclass(votes, class_count; class_labels)
 
 Return [`LabelMetricsRow`] calculated over all `class_count` classes. Calculates
 the multiclass interrater agreement (`ira_kappa`).
 """
-function get_label_metrics_multirater_multiclass(votes, class_count)
+function get_label_metrics_multirater_multiclass(votes, class_count; class_labels)
     size(votes, 2) > 1 ||
         throw(ArgumentError("Input `votes` is not multirater (`size(votes) == $(size(votes))`)"))
-    return LabelMetricsRow(; class_index=:multiclass,
+    return LabelMetricsRow(; class_index=:multiclass, class_labels,
                            ira_kappa=_calculate_ira_kappa_multiclass(votes, class_count))
 end
 
