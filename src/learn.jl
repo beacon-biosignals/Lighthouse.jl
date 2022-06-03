@@ -33,6 +33,26 @@ Logs a series plot to `logger` under `field`, where...
 """
 log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
 
+
+"""
+    log_hardened_row!!(logger, field::AbstractString, metrics)
+
+Log a hardened row `metrics` to `field`.
+"""
+log_hardened_row!(logger, field::AbstractString, metrics)
+"""
+    log_tradeoff_row!!(logger, field::AbstractString, metrics)
+
+Log a tradeoff row `metrics` to `field`.
+"""
+log_tradeoff_row!(logger, field::AbstractString, metrics)
+"""
+    log_labels_row!!(logger, field::AbstractString, metrics)
+
+Log a labels row `metrics` to `field`.
+"""
+log_labels_row!(logger, field::AbstractString, metrics)
+
 # The following have default implementations.
 
 """
@@ -89,18 +109,6 @@ function log_arrays!(logger, values)
     return nothing
 end
 
-function log_hardened_row!(logger, field::AbstractString, metrics)
-    @warn "Not implemented for" typeof(logger)
-    return nothing
-end
-function log_tradeoff_row!(logger, field::AbstractString, metrics)
-    @warn "Not implemented for" typeof(logger)
-    return nothing
-end
-function log_labels_row!(logger, field::AbstractString, metrics)
-    @warn "Not implemented for" typeof(logger)
-    return nothing
-end
 
 """
     log_evaluation_row!(logger, field::AbstractString, metrics)
