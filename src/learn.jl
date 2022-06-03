@@ -33,6 +33,7 @@ Logs a series plot to `logger` under `field`, where...
 """
 log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
 
+
 # The following have default implementations.
 
 """
@@ -64,6 +65,33 @@ function log_values!(logger, values)
     return nothing
 end
 
+function log_numeric_and_string!(logger, field::AbstractString, values)
+    # TODO: FIXME
+    values = filter!(value -> isa(value[2], Union{Number, AbstractString}), values)
+    values = map((value) -> (string(field, value[1]), value[2]), values)
+    log_values!(logger,values)
+    return nothing
+end
+
+"""
+    log_hardened_row!!(logger, field::AbstractString, metrics)
+
+Log a hardened row `metrics` to `field`.
+"""
+log_hardened_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
+"""
+    log_tradeoff_row!!(logger, field::AbstractString, metrics)
+
+Log a tradeoff row `metrics` to `field`.
+"""
+log_tradeoff_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
+"""
+    log_label_row!!(logger, field::AbstractString, metrics)
+
+Log a labels row `metrics` to `field`.
+"""
+log_label_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
+
 """
     log_array!(logger::Any, field::AbstractString, value)
 
@@ -88,6 +116,7 @@ function log_arrays!(logger, values)
     end
     return nothing
 end
+
 
 """
     log_evaluation_row!(logger, field::AbstractString, metrics)

@@ -360,3 +360,5 @@ const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                                                                               Curve(reliability_calibration_curve),
                                         reliability_calibration_score::Union{Missing,
                                                                              Float64})
+
+

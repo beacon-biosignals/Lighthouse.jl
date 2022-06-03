@@ -54,3 +54,5 @@ end
         @test logger.logged["arr3"] == [1.0]
     end
 end
+
+
