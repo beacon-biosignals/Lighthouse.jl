@@ -173,9 +173,10 @@ end
     elected_hard_labels = [1, 2, 2, 2, 1]
     thresholds = [0.25, 0.5, 0.75]
     i_class = 2
+    class_labels = ["a", "b"]
     default_metrics = get_tradeoff_metrics(predicted_soft_labels,
                                            elected_hard_labels,
-                                           i_class; thresholds)
+                                           i_class; thresholds, class_labels)
 
     # Use bogus threshold/hardening function to prove that hardening function is
     # used internally
@@ -184,7 +185,7 @@ end
     scaled_metrics = get_tradeoff_metrics(predicted_soft_labels,
                                           elected_hard_labels,
                                           i_class; thresholds=scaled_thresholds,
-                                          binarize=scaled_binarize_by_threshold)
+                                          binarize=scaled_binarize_by_threshold, class_labels)
     @test isequal(default_metrics, scaled_metrics)
 
     # Discrim calibration
