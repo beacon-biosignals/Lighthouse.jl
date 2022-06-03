@@ -104,7 +104,7 @@ end
     @test isa(Lighthouse.ClassRow(; class_index=3, class_labels=missing).class_index, Int64)
     @test isa(Lighthouse.ClassRow(; class_index=Int8(3), class_labels=missing).class_index, Int64)
     @test Lighthouse.ClassRow(; class_index=:multiclass).class_index == :multiclass
-    @test Lighthouse.ClassRow(; class_index=:multiclass, class_labels=["a, "b]).class_labels == ["a", "b"]
+    @test Lighthouse.ClassRow(; class_index=:multiclass, class_labels=["a, "b"]).class_labels == ["a", "b"]
 
     @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0, class_labels=missing)
     @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS, class_labels=missing)
