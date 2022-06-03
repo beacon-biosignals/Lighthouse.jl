@@ -103,13 +103,32 @@ end
 @testset "`ClassRow" begin
     @test isa(Lighthouse.ClassRow(; class_index=3, class_labels=missing).class_index, Int64)
     @test isa(Lighthouse.ClassRow(; class_index=Int8(3), class_labels=missing).class_index, Int64)
-    @test Lighthouse.ClassRow(; class_index=:multiclass, class_labels=missing).class_index == :multiclass
+    @test Lighthouse.ClassRow(; class_index=:multiclass).class_index == :multiclass
+    @test Lighthouse.ClassRow(; class_index=:multiclass, class_labels=["a", "b"]).class_labels == ["a", "b"]
 
     @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0, class_labels=missing)
     @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS, class_labels=missing)
 end
 
-@testset "`Curve" begin
+@testset "class_labels" begin
+    predicted_soft_labels = [0.51 0.49
+                             0.49 0.51
+                             0.1 0.9
+                             0.9 0.1
+                             0.0 1.0]
+    elected_hard_labels = [1, 2, 2, 2, 1]
+    predicted_hard_labels = [1,2,2,1,2]
+    thresholds = [0.25, 0.5, 0.75]
+    i_class = 2
+    class_labels = ["a", "b"]
+    default_metrics = get_tradeoff_metrics(predicted_soft_labels,
+                                           elected_hard_labels,
+                                           i_class; thresholds, class_labels)
+    @test default_metrics.class_labels == class_labels
+end
+
+
+@testset "`Curve`" begin
     c = ([1, 2, 3], [4, 5, 6])
     @test Curve(c...) isa Curve
     @test Curve(c) isa Curve
