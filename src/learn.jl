@@ -34,25 +34,6 @@ Logs a series plot to `logger` under `field`, where...
 log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
 
 
-"""
-    log_hardened_row!!(logger, field::AbstractString, metrics)
-
-Log a hardened row `metrics` to `field`.
-"""
-log_hardened_row!(logger, field::AbstractString, metrics)
-"""
-    log_tradeoff_row!!(logger, field::AbstractString, metrics)
-
-Log a tradeoff row `metrics` to `field`.
-"""
-log_tradeoff_row!(logger, field::AbstractString, metrics)
-"""
-    log_labels_row!!(logger, field::AbstractString, metrics)
-
-Log a labels row `metrics` to `field`.
-"""
-log_labels_row!(logger, field::AbstractString, metrics)
-
 # The following have default implementations.
 
 """
@@ -83,6 +64,32 @@ function log_values!(logger, values)
     end
     return nothing
 end
+
+function log_numeric_and_string!(logger, field::AbstractString, values)
+    values = filter!((k, v) -> isa(v, Union{Number, AbstractString}), values)
+    values = map((k, v) -> (string(field, k), v), values)
+    log_values!(logger,values)
+    return nothing
+end
+
+"""
+    log_hardened_row!!(logger, field::AbstractString, metrics)
+
+Log a hardened row `metrics` to `field`.
+"""
+log_hardened_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
+"""
+    log_tradeoff_row!!(logger, field::AbstractString, metrics)
+
+Log a tradeoff row `metrics` to `field`.
+"""
+log_tradeoff_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
+"""
+    log_labels_row!!(logger, field::AbstractString, metrics)
+
+Log a labels row `metrics` to `field`.
+"""
+log_labels_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
 
 """
     log_array!(logger::Any, field::AbstractString, value)
