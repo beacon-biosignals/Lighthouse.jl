@@ -263,7 +263,8 @@ representing a single column `class_index` that holds either an integer or the v
 """
 const ClassRow = Legolas.@row("lighthouse.class@1",
                               class_index::Union{Int64,Symbol} = check_valid_class(class_index),
-                              class_labels::Union{Missing,Vector{String}} = missing)
+                              class_labels::Union{Missing,Vector{String}} = coalesce(class_labels,
+                                                                                     missing))
 
 check_valid_class(class_index::Integer) = Int64(class_index)
 
