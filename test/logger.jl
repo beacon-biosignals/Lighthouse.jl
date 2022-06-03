@@ -54,3 +54,23 @@ end
         @test logger.logged["arr3"] == [1.0]
     end
 end
+
+
+@testset "`log_foo_row!`" begin
+    predicted_soft_labels = [0.51 0.49
+                             0.49 0.51
+                             0.1 0.9
+                             0.9 0.1
+                             0.0 1.0]
+    elected_hard_labels = [1, 2, 2, 2, 1]
+    predicted_hard_labels = [1,2,2,1,2]
+    thresholds = [0.25, 0.5, 0.75]
+    class_index = 2
+    class_labels = ["a", "b"]
+    tradeoff_metrics = get_tradeoff_metrics(predicted_soft_labels,
+                                           elected_hard_labels,
+                                           class_index; thresholds, class_labels)
+    hardened_metrics = get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
+                              class_labels)
+
+end
