@@ -259,7 +259,7 @@ ArrowTypes.JuliaType(::Val{CURVE_ARROW_NAME}) = Curve
 
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.class@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing a single column `class_index` that holds either an integer or the value
-`:multiclass`, and the associated class names
+`:multiclass`, and the class names associated to the integer class indices.
 """
 const ClassRow = Legolas.@row("lighthouse.class@1",
                               class_index::Union{Int64,Symbol} = check_valid_class(class_index),
