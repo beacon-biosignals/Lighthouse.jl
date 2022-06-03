@@ -56,37 +56,3 @@ end
 end
 
 
-@testset "`log_foo_row!`" begin
-    predicted_soft_labels = [0.51 0.49
-                             0.49 0.51
-                             0.1 0.9
-                             0.9 0.1
-                             0.0 1.0]
-    elected_hard_labels = [1, 2, 2, 2, 1]
-    predicted_hard_labels = [1,2,2,1,2]
-    thresholds = [0.25, 0.5, 0.75]
-    class_index = 2
-    class_labels = ["a", "b"]
-    tradeoff_metrics = get_tradeoff_metrics(predicted_soft_labels,
-                                           elected_hard_labels,
-                                           class_index; thresholds, class_labels)
-    hardened_metrics = get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
-                              class_labels)
-    k, n = 2, 3
-    rng = StableRNG(22)
-    votes = [rand(rng, possible_vote_labels) for sample in 1:(n * 10), voter in 1:7]
-    votes[:, [1, 2, 3]] .= votes[:, 4] # Voter 1-3 voted identically to voter 4 (force non-zero agreement)
-    label_metrics =get_label_metrics_multirater(votes, class_index; class_labels)
-
-    mktempdir() do logdir
-        logger = LearnLogger(logdir, "test_run")
-        log_tradeoff_metrics(logger, "foo-", tradeoff_metrics)
-        log_hardened_metrics(logger, "bar-", hardened_metrics)
-        log_label_metrics(logger, "baz-", label_metrics)
-        @test haskey(logger.logged,"baz-ira_kappa")
-        @test haskey(logger.logged,"bar-ea_kappa")
-        @test haskey(logger.logged,"foo-roc_auc")
-    end
-
-
-end
