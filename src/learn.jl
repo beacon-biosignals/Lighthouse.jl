@@ -89,6 +89,29 @@ function log_arrays!(logger, values)
     return nothing
 end
 
+function log_hardened_row!(logger, field::AbstractString, metrics)
+    return nothing
+end
+function log_tradeoff_row!(logger, field::AbstractString, metrics)
+    return nothing
+end
+"""
+    log_metrics_row!(logger, field::AbstractString, metrics)
+
+Log
+
+
+
+# Arguments
+
+- `field::AbstractString`:
+`logger`:
+`metrics`:
+"""
+function log_metrics_row!(logger, field::AbstractString, metrics)
+    return nothing
+end
+
 """
     log_evaluation_row!(logger, field::AbstractString, metrics)
 
