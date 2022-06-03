@@ -72,5 +72,21 @@ end
                                            class_index; thresholds, class_labels)
     hardened_metrics = get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
                               class_labels)
+    k, n = 2, 3
+    rng = StableRNG(22)
+    votes = [rand(rng, possible_vote_labels) for sample in 1:(n * 10), voter in 1:7]
+    votes[:, [1, 2, 3]] .= votes[:, 4] # Voter 1-3 voted identically to voter 4 (force non-zero agreement)
+    label_metrics =get_label_metrics_multirater(votes, class_index; class_labels)
+
+    mktempdir() do logdir
+        logger = LearnLogger(logdir, "test_run")
+        log_tradeoff_metrics(logger, "foo-", tradeoff_metrics)
+        log_hardened_metrics(logger, "bar-", hardened_metrics)
+        log_label_metrics(logger, "baz-", label_metrics)
+        @test haskey(logger.logged,"baz-ira_kappa")
+        @test haskey(logger.logged,"bar-ea_kappa")
+        @test haskey(logger.logged,"foo-roc_auc")
+    end
+
 
 end

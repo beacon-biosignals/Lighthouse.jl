@@ -85,11 +85,11 @@ Log a tradeoff row `metrics` to `field`.
 """
 log_tradeoff_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
 """
-    log_labels_row!!(logger, field::AbstractString, metrics)
+    log_label_row!!(logger, field::AbstractString, metrics)
 
 Log a labels row `metrics` to `field`.
 """
-log_labels_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
+log_label_row!(logger, field::AbstractString, metrics) = log_numeric_and_string!(logger, pairs(metrics))
 
 """
     log_array!(logger::Any, field::AbstractString, value)
