@@ -66,8 +66,8 @@ function log_values!(logger, values)
 end
 
 function log_numeric_and_string!(logger, field::AbstractString, values)
-    values = filter!((k, v) -> isa(v, Union{Number, AbstractString}), values)
-    values = map((k, v) -> (string(field, k), v), values)
+    values = filter!(value -> isa(value[2], Union{Number, AbstractString}), values)
+    values = map((value) -> (string(field, value[1]), value[2]), values)
     log_values!(logger,values)
     return nothing
 end

@@ -42,9 +42,12 @@ These primitives can be used in implementations of [`train!`](@ref), [`evaluate!
 ```@docs
 log_event!
 Lighthouse.log_evaluation_row!
+log_hardened_row!
+log_labels_row!
 log_values!
 log_array!
 log_arrays!
+log__row!
 ```
 
 ### `LearnLogger`s
