@@ -204,14 +204,13 @@ fields guaranteed to be non-missing: `roc_curve`, `roc_auc`, pr_curve`,
 (`class_index`).
 """
 function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
-                              thresholds, binarize=binarize_by_threshold, class_labels = missing)
-    stats = per_threshold_confusion_statistics(predicted_soft_labels,
-                                               elected_hard_labels, thresholds,
-                                               class_index; binarize)
+                              thresholds, binarize=binarize_by_threshold,
+                              class_labels=missing)
+    stats = per_threshold_confusion_statistics(predicted_soft_labels, elected_hard_labels,
+                                               thresholds, class_index; binarize)
     roc_curve = (map(t -> t.false_positive_rate, stats),
                  map(t -> t.true_positive_rate, stats))
-    pr_curve = (map(t -> t.true_positive_rate, stats),
-                map(t -> t.precision, stats))
+    pr_curve = (map(t -> t.true_positive_rate, stats), map(t -> t.precision, stats))
 
     class_probabilities = view(predicted_soft_labels, :, class_index)
     reliability_calibration = calibration_curve(class_probabilities,
@@ -220,10 +219,9 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
                                      reliability_calibration.fractions)
     reliability_calibration_score = reliability_calibration.mean_squared_error
 
-    return TradeoffMetricsRow(; class_index, class_labels,roc_curve,
-                              roc_auc=area_under_curve(roc_curve...),
-                              pr_curve, reliability_calibration_curve,
-                              reliability_calibration_score)
+    return TradeoffMetricsRow(; class_index, class_labels, roc_curve,
+                              roc_auc=area_under_curve(roc_curve...), pr_curve,
+                              reliability_calibration_curve, reliability_calibration_score)
 end
 
 """
@@ -236,16 +234,15 @@ to metrics calculated by [`get_tradeoff_metrics`](@ref), additionally calculates
 """
 function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels,
                                                 votes, class_index; thresholds,
-                                                binarize=binarize_by_threshold, class_labels=missing)
+                                                binarize=binarize_by_threshold,
+                                                class_labels=missing)
     basic_row = get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
                                      class_index; thresholds, binarize, class_labels)
     corr = _calculate_spearman_correlation(predicted_soft_labels, votes)
     row = Tables.rowmerge(basic_row,
-                          (;
-                           spearman_correlation=corr.ρ,
+                          (; spearman_correlation=corr.ρ,
                            spearman_correlation_ci_upper=corr.ci_upper,
-                           spearman_correlation_ci_lower=corr.ci_lower,
-                           n_samples=corr.n))
+                           spearman_correlation_ci_lower=corr.ci_lower, n_samples=corr.n))
     return TradeoffMetricsRow(; row...)
 end
 
@@ -256,7 +253,8 @@ end
 Return [`HardenedMetricsRow`] calculated for the given `class_index`, with the following
 field guaranteed to be non-missing: expert-algorithm agreement (`ea_kappa`).
 """
-function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index; class_labels=missing)
+function get_hardened_metrics(predicted_hard_labels, elected_hard_labels, class_index;
+                              class_labels=missing)
     return HardenedMetricsRow(; class_index, class_labels,
                               ea_kappa=_calculate_ea_kappa(predicted_hard_labels,
                                                            elected_hard_labels,
@@ -271,15 +269,14 @@ Return [`HardenedMetricsRow`] calculated for the given `class_index`. In additio
 to metrics calculated by [`get_hardened_metrics`](@ref), additionally calculates
 `discrimination_calibration_curve` and `discrimination_calibration_score`.
 """
-function get_hardened_metrics_multirater(predicted_hard_labels, elected_hard_labels,
-                                         votes, class_index; class_labels=missing)
+function get_hardened_metrics_multirater(predicted_hard_labels, elected_hard_labels, votes,
+                                         class_index; class_labels=missing)
     basic_row = get_hardened_metrics(predicted_hard_labels, elected_hard_labels,
                                      class_index; class_labels)
     cal = _calculate_discrimination_calibration(predicted_hard_labels, votes;
                                                 class_of_interest_index=class_index)
     row = Tables.rowmerge(basic_row,
-                          (;
-                           discrimination_calibration_curve=cal.plot_curve_data,
+                          (; discrimination_calibration_curve=cal.plot_curve_data,
                            discrimination_calibration_score=cal.mse))
     return HardenedMetricsRow(; row...)
 end
@@ -317,7 +314,8 @@ function get_label_metrics_multirater(votes, class_index; class_labels=missing)
                                                              class_of_interest_index=class_index)
     per_expert_discrimination_calibration_curves = expert_cal.plot_curve_data
     per_expert_discrimination_calibration_scores = expert_cal.mse
-    return LabelMetricsRow(; class_index, class_labels, per_expert_discrimination_calibration_curves,
+    return LabelMetricsRow(; class_index, class_labels,
+                           per_expert_discrimination_calibration_curves,
                            per_expert_discrimination_calibration_scores,
                            ira_kappa=_calculate_ira_kappa(votes, class_index))
 end
@@ -420,10 +418,8 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                 elected_hard_labels::AbstractVector, classes,
                                 thresholds=0.0:0.01:1.0;
                                 votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                                strata::Union{Nothing,
-                                              AbstractVector{Set{T}} where T}=nothing,
-                                optimal_threshold_class::Union{Missing,Nothing,
-                                                               Integer}=missing,
+                                strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                                optimal_threshold_class::Union{Missing,Nothing,Integer}=missing,
                                 binarize=binarize_by_threshold)
     class_labels = string.(collect(classes)) # Plots.jl expects this to be an `AbstractVector`
     class_indices = 1:length(classes)
@@ -433,15 +429,12 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     # so do that here as well.
     tradeoff_metrics_rows = if length(classes) == 2 && has_value(votes)
         map(ic -> get_tradeoff_metrics_binary_multirater(predicted_soft_labels,
-                                                         elected_hard_labels, votes,
-                                                         ic;
+                                                         elected_hard_labels, votes, ic;
                                                          thresholds, binarize),
             class_indices)
     else
-        map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels,
-                                       ic;
-                                       thresholds, binarize),
-            class_indices)
+        map(ic -> get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, ic;
+                                       thresholds, binarize), class_indices)
     end
 
     # Step 2a: Choose optimal threshold and use it to harden predictions
@@ -455,8 +448,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
         optimal_threshold = cal.threshold
     elseif has_value(optimal_threshold_class)
         roc_curve = tradeoff_metrics_rows[findfirst(==(optimal_threshold_class),
-                                                    tradeoff_metrics_rows.classes),
-                                          :]
+                                                    tradeoff_metrics_rows.classes), :]
         optimal_threshold = _get_optimal_threshold_from_ROC(roc_curve, thresholds)
     else
         @warn "Not selecting and/or using optimal threshold; using `predicted_hard_labels` provided by default"
@@ -480,8 +472,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                                            elected_hard_labels, votes,
                                                            class_index), class_indices)
     else
-        map(class_index -> get_hardened_metrics(predicted_hard_labels,
-                                                elected_hard_labels,
+        map(class_index -> get_hardened_metrics(predicted_hard_labels, elected_hard_labels,
                                                 class_index), class_indices)
     end
     hardened_metrics_table = vcat(hardened_metrics_table,
@@ -505,8 +496,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     stratified_kappas = has_value(strata) ?
                         _calculate_stratified_ea_kappas(predicted_hard_labels,
                                                         elected_hard_labels,
-                                                        length(classes),
-                                                        strata) : missing
+                                                        length(classes), strata) : missing
 
     return _evaluation_row(tradeoff_metrics_rows, hardened_metrics_table,
                            labels_metrics_table; optimal_threshold_class, class_labels,
@@ -551,9 +541,8 @@ to support [`evaluation_metrics_row`](@ref):
 - `label_metrics_table`: table of [`LabelMetricsRow`](@ref)s
 """
 function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
-                         label_metrics_table;
-                         optimal_threshold_class=missing, class_labels, thresholds,
-                         optimal_threshold, stratified_kappas=missing)
+                         label_metrics_table; optimal_threshold_class=missing, class_labels,
+                         thresholds, optimal_threshold, stratified_kappas=missing)
     tradeoff_rows, _ = _split_classes_from_multiclass(tradeoff_metrics_table)
     hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
     label_rows, labels_multi = _split_classes_from_multiclass(label_metrics_table)
@@ -614,8 +603,7 @@ function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
 
                          # from label_metrics_table
                          per_expert_discrimination_calibration_curves,
-                         multiclass_IRA_kappas,
-                         per_class_IRA_kappas,
+                         multiclass_IRA_kappas, per_class_IRA_kappas,
                          per_expert_discrimination_calibration_scores,
 
                          # from kwargs:
@@ -745,8 +733,7 @@ function _calculate_ira_kappa(votes, class_index)
     hard_label_pairs = _prep_hard_label_pairs(votes)
     length(hard_label_pairs) == 0 && return missing
     CLASS_VS_ALL_CLASS_COUNT = 2
-    class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index),
-                                        hard_label_pairs)
+    class_v_other_hard_label_pair = map(row -> 1 .+ (row .== class_index), hard_label_pairs)
     return first(cohens_kappa(CLASS_VS_ALL_CLASS_COUNT, class_v_other_hard_label_pair))
 end
 
@@ -818,8 +805,8 @@ function _calculate_optimal_threshold_from_discrimination_calibration(predicted_
     bin_count = min(size(votes, 2) + 1, 10)
     per_threshold_curves = map(thresholds) do thresh
         pred_soft = view(predicted_soft_labels, :, class_of_interest_index)
-        return calibration_curve(elected_probabilities,
-                                 binarize.(pred_soft, thresh); bin_count=bin_count)
+        return calibration_curve(elected_probabilities, binarize.(pred_soft, thresh);
+                                 bin_count=bin_count)
     end
     i_min = argmin([c.mean_squared_error for c in per_threshold_curves])
     curve = per_threshold_curves[i_min]
@@ -900,8 +887,8 @@ function per_class_confusion_statistics(predicted_soft_labels::AbstractMatrix,
     class_count = size(predicted_soft_labels, 2)
     return map(1:class_count) do i
         return per_threshold_confusion_statistics(predicted_soft_labels,
-                                                  elected_hard_labels,
-                                                  thresholds, i; binarize)
+                                                  elected_hard_labels, thresholds, i;
+                                                  binarize)
     end
 end
 

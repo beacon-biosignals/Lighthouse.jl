@@ -153,8 +153,7 @@ const OBSERVATION_ROW_SCHEMA = Legolas.Schema("lighthouse.observation@1")
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.observation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing the per-observation input values required to compute [`evaluation_metrics_row`](@ref).
 """
-const ObservationRow = Legolas.@row("lighthouse.observation@1",
-                                    predicted_hard_label::Int64,
+const ObservationRow = Legolas.@row("lighthouse.observation@1", predicted_hard_label::Int64,
                                     predicted_soft_labels::Vector{Float32},
                                     elected_hard_label::Int64,
                                     votes::Union{Missing,Vector{Int64}})
@@ -191,8 +190,10 @@ function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
     votes_itr = has_value(votes) ? eachrow(votes) :
                 (missing for _ in 1:length(predicted_hard_labels))
     predicted_soft_labels_itr = eachrow(predicted_soft_labels)
-    if !(length(predicted_hard_labels) == length(predicted_soft_labels_itr) ==
-         length(elected_hard_labels) == length(votes_itr))
+    if !(length(predicted_hard_labels) ==
+         length(predicted_soft_labels_itr) ==
+         length(elected_hard_labels) ==
+         length(votes_itr))
         throw(DimensionMismatch("Inputs do not all have the same number of observations"))
     end
     observation_table = map(predicted_hard_labels, elected_hard_labels,
@@ -262,7 +263,7 @@ representing a single column `class_index` that holds either an integer or the v
 """
 const ClassRow = Legolas.@row("lighthouse.class@1",
                               class_index::Union{Int64,Symbol} = check_valid_class(class_index),
-                              class_labels::Union{Missing,Vector{String}}=missing)
+                              class_labels::Union{Missing,Vector{String}} = missing)
 
 check_valid_class(class_index::Integer) = Int64(class_index)
 
@@ -287,10 +288,9 @@ See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multira
 """
 const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
                                      ira_kappa::Union{Missing,Float64},
-                                     per_expert_discrimination_calibration_curves::Union{Missing,
-                                     Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
-                                                      missing :
-                                                      Curve.(per_expert_discrimination_calibration_curves),
+                                     per_expert_discrimination_calibration_curves::Union{Missing,Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
+                                                                                                                  missing :
+                                                                                                                  Curve.(per_expert_discrimination_calibration_curves),
                                      per_expert_discrimination_calibration_scores::Union{Missing,
                                                                                          Vector{Float64}})
 
@@ -343,22 +343,19 @@ See also [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multir
 """
 const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
                                         "lighthouse.class@1",
-                                        roc_curve::Curve = ismissing(roc_curve) ?
-                                                           missing : Curve(roc_curve),
+                                        roc_curve::Curve = ismissing(roc_curve) ? missing :
+                                                           Curve(roc_curve),
                                         roc_auc::Float64,
-                                        pr_curve::Curve = ismissing(pr_curve) ?
-                                                          missing : Curve(pr_curve),
+                                        pr_curve::Curve = ismissing(pr_curve) ? missing :
+                                                          Curve(pr_curve),
                                         spearman_correlation::Union{Missing,Float64},
                                         spearman_correlation_ci_upper::Union{Missing,
                                                                              Float64},
                                         spearman_correlation_ci_lower::Union{Missing,
                                                                              Float64},
                                         n_samples::Union{Missing,Int},
-                                        reliability_calibration_curve::Union{Missing,
-                                        Curve} = ismissing(reliability_calibration_curve) ?
-                                                 missing :
-                                                 Curve(reliability_calibration_curve),
+                                        reliability_calibration_curve::Union{Missing,Curve} = ismissing(reliability_calibration_curve) ?
+                                                                                              missing :
+                                                                                              Curve(reliability_calibration_curve),
                                         reliability_calibration_score::Union{Missing,
                                                                              Float64})
-
-
