@@ -180,22 +180,25 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
 end
 
 function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
-                                class_labels::AbstractVector{String}, normalize_by::Symbol;
+                                class_labels::AbstractVector{String}, normalize_by::Union{Symbol,Nothing}=nothing;
                                 annotation_text_size=20, colormap=:Blues)
-    normdim = get((Row=2, Column=1), normalize_by) do
-        return error("normalize_by must be either :Row or :Column, found: $(normalize_by)")
-    end
-
     nclasses = length(class_labels)
     if size(confusion) != (nclasses, nclasses)
-        error("Labels must match size of square confusion matrix. Found $(nclasses) labels for an $(size(confusion)) matrix")
+        throw(ArgumentError("Labels must match size of square confusion matrix. Found $(nclasses) labels for an $(size(confusion)) matrix"))
     end
-    confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
+    title = "Confusion Matrix"
+    if !isnothing(normalize_by)
+        normdim = get((Row=2, Column=1), normalize_by) do
+            throw(ArgumentError("normalize_by must be :Row, :Column, or `nothing`; found: $(normalize_by)"))
+        end
+        confusion = round.(confusion ./ sum(confusion; dims=normdim); digits=3)
+        title = "$(string(normalize_by))-Normalized Confusion"
+    end
     class_indices = 1:nclasses
     text_theme = get_theme(subfig, :ConfusionMatrix, :Text; textsize=annotation_text_size)
     heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=(:black, 0.0))
     axis_theme = get_theme(subfig, :ConfusionMatrix, :Axis; xticklabelrotation=pi / 4,
-                           titlealign=:left, title="$(string(normalize_by))-Normalized Confusion",
+                           titlealign=:left, title,
                            xlabel="Elected Class", ylabel="Predicted Class",
                            xticks=(class_indices, class_labels),
                            yticks=(class_indices, class_labels),
