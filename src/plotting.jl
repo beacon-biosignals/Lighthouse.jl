@@ -210,8 +210,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     ylims!(ax, nclasses + 0.5, 0.5)
     tightlimits!(ax)
     plot_bg_color = to_color(ax.backgroundcolor[])
-    crange = isnothing(normalize_by) ? (0.0, 1.0) :
-             (0.0, maximum(filter(!isnan, confusion)))
+    crange = isnothing(normalize_by) ? (0.0, maximum(filter(!isnan, confusion))) : (0.0, 1.0)
     nan_color = to_color(heatmap_theme.nan_color[])
     cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
     heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, nan_color=nan_color, heatmap_theme...)
