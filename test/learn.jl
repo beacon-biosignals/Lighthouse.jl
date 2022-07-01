@@ -170,6 +170,13 @@ end
                                               plot_data["class_labels"], :Column)
         @testplot confusion_col
 
+        confusion_basic = plot_confusion_matrix(plot_data["confusion_matrix"],
+                                                plot_data["class_labels"])
+        @testplot confusion_basic
+
+        @test_throws ArgumentError plot_confusion_matrix(plot_data["confusion_matrix"],
+                                                         plot_data["class_labels"], :norm)
+
         all_together_2 = evaluation_metrics_plot(plot_data)
         @testplot all_together_2
 
