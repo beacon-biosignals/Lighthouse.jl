@@ -248,6 +248,23 @@ for op in (:(==), :isequal)
 end
 Base.hash(c::Curve, h::UInt) = hash(:Curve, hash(c.x, hash(c.y, h)))
 
+
+check_valid_class(class_index::Integer) = Int64(class_index)
+
+function check_valid_class(class_index::Any)
+    return class_index === :multiclass ? class_index :
+           throw(ArgumentError("Classes must be integers or the symbol `:multiclass`"))
+end
+
+check_valid_class_labels(::Any, ::Missing) = missing
+
+function check_valid_class_labels(class_index, class_labels)
+    if class_index != :multiclass
+        length(class_labels) == 1 || throw(ArgumentError("..."))
+    end
+    return class_labels
+end
+
 const CURVE_ARROW_NAME = Symbol("JuliaLang.Lighthouse.Curve")
 ArrowTypes.arrowname(::Type{<:Curve}) = CURVE_ARROW_NAME
 ArrowTypes.JuliaType(::Val{CURVE_ARROW_NAME}) = Curve
@@ -263,15 +280,8 @@ representing a single column `class_index` that holds either an integer or the v
 """
 const ClassRow = Legolas.@row("lighthouse.class@1",
                               class_index::Union{Int64,Symbol} = check_valid_class(class_index),
-                              class_labels::Union{Missing,Vector{String}} = coalesce(class_labels,
-                                                                                     missing))
+    class_labels::Union{Missing,Vector{String}} = coalesce(check_valid_class_labels(class_index, class_labels), missing))
 
-check_valid_class(class_index::Integer) = Int64(class_index)
-
-function check_valid_class(class_index::Any)
-    return class_index === :multiclass ? class_index :
-           throw(ArgumentError("Classes must be integers or the symbol `:multiclass`"))
-end
 
 """
     LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
