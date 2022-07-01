@@ -210,7 +210,8 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     ylims!(ax, nclasses + 0.5, 0.5)
     tightlimits!(ax)
     plot_bg_color = to_color(ax.backgroundcolor[])
-    crange = (0.0, 1.0)
+    crange = isnothing(normalize_by) ? (0.0, 1.0) :
+             (0.0, maximum(filter(!isnan, confusion)))
     nan_color = to_color(heatmap_theme.nan_color[])
     cmap = to_colormap(to_value(pop!(heatmap_theme, :colormap, colormap)))
     heatmap!(ax, confusion'; colorrange=crange, colormap=cmap, nan_color=nan_color, heatmap_theme...)
@@ -407,22 +408,23 @@ end
 """
     plot_confusion_matrix!(subfig::FigurePosition, args...; kw...)
 
-    plot_confusion_matrix(confusion::AbstractMatrix{<: Number}, class_labels::AbstractVector{String}, normalize_by::Symbol;
+    plot_confusion_matrix(confusion::AbstractMatrix{<: Number}, class_labels::AbstractVector{String}, normalize_by::Union{Symbol,Nothing}=nothing;
                           resolution=(800,600),
                           annotation_text_size=20)
 
 
 Lighthouse plots confusion matrices, which are simple tables
 showing the empirical distribution of predicted class (the rows)
-versus the elected class (the columns). These come in two variants:
+versus the elected class (the columns). These can optionally be normalized:
 
-* row-normalized: this means each row has been normalized to sum to 1. Thus, the row-normalized confusion matrix shows the empirical distribution of elected classes for a given predicted class. E.g. the first row of the row-normalized confusion matrix shows the empirical probabilities of the elected classes for a sample which was predicted to be in the first class.
-* column-normalized: this means each column has been normalized to sum to 1. Thus, the column-normalized confusion matrix shows the empirical distribution of predicted classes for a given elected class. E.g. the first column of the column-normalized confusion matrix shows the empirical probabilities of the predicted classes for a sample which was elected to be in the first class.
+* row-normalized (`:Row`): this means each row has been normalized to sum to 1. Thus, the row-normalized confusion matrix shows the empirical distribution of elected classes for a given predicted class. E.g. the first row of the row-normalized confusion matrix shows the empirical probabilities of the elected classes for a sample which was predicted to be in the first class.
+* column-normalized (`:Column`): this means each column has been normalized to sum to 1. Thus, the column-normalized confusion matrix shows the empirical distribution of predicted classes for a given elected class. E.g. the first column of the column-normalized confusion matrix shows the empirical probabilities of the predicted classes for a sample which was elected to be in the first class.
 
 ```
-fig, ax, p = plot_confusion_matrix(rand(2, 2), ["1", "2"], :Row)
+fig, ax, p = plot_confusion_matrix(rand(2, 2), ["1", "2"])
 fig = Figure()
-ax = plot_confusion_matrix!(fig[1, 1], rand(2, 2), ["1", "2"], :Column)
+ax = plot_confusion_matrix!(fig[1, 1], rand(2, 2), ["1", "2"], :Row)
+ax = plot_confusion_matrix!(fig[1, 2], rand(2, 2), ["1", "2"], :Column)
 ```
 """
 plot_confusion_matrix(args...; kw...) = axisplot(plot_confusion_matrix!, args; kw...)
