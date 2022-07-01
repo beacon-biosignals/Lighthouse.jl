@@ -407,9 +407,10 @@ end
 """
     plot_confusion_matrix!(subfig::FigurePosition, args...; kw...)
 
-    plot_confusion_matrix(confusion::AbstractMatrix{<: Number}, class_labels::AbstractVector{String}, normalize_by::Union{Symbol,Nothing}=nothing;
-                          resolution=(800,600),
-                          annotation_text_size=20)
+    plot_confusion_matrix(confusion::AbstractMatrix{<: Number},
+                          class_labels::AbstractVector{String},
+                          normalize_by::Union{Symbol,Nothing}=nothing;
+                          resolution=(800,600), annotation_text_size=20)
 
 
 Lighthouse plots confusion matrices, which are simple tables
