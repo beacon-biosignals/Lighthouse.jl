@@ -86,6 +86,33 @@
     @test isnan(stats.precision)
     @test isnan(stats.f1)
 
+    c = [0 0
+         0 8]
+    stats = binary_statistics(c, 1)
+    @test stats.true_positives == 0
+    @test stats.true_negatives == 8
+    @test stats.false_positives == 0
+    @test stats.false_negatives == 0
+    @test isnan(stats.f1)
+
+    c = [0 2
+         0 6]
+    stats = binary_statistics(c, 1)
+    @test stats.true_positives == 0
+    @test stats.true_negatives == 6
+    @test stats.false_positives == 2
+    @test stats.false_negatives == 0
+    @test stats.f1 == 0
+
+    c = [0 0
+         2 6]
+    stats = binary_statistics(c, 1)
+    @test stats.true_positives == 0
+    @test stats.true_negatives == 6
+    @test stats.false_positives == 0
+    @test stats.false_negatives == 2
+    @test stats.f1 == 0
+
     for p in 0:0.1:1
         @test Lighthouse._cohens_kappa(p, p) == 0
         if p > 0
