@@ -41,7 +41,7 @@ jobs:
       - name: Percy Upload
         uses: percy/exec-action@v0.3.1
         with:
-          custom-command: "npx percy upload ./test/plot_results"
+          custom-command: "npx @percy/cli upload ./test/plot_results"
         env:
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
       - uses: julia-actions/julia-processcoverage@v1
