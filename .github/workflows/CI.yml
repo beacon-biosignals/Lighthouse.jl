@@ -40,6 +40,7 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
       - name: Percy Upload
         uses: percy/exec-action@v0.3.1
+        if: matrix.version == 1
         with:
           custom-command: "npx @percy/cli upload ./test/plot_results"
         env:
