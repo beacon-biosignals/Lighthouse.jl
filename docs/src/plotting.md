@@ -216,7 +216,7 @@ plot_kappas(stable_rand(5), classes, stable_rand(5))
 with_theme(
         Kappas = (
             Axis = (
-                xticklabelvisible=false,
+                xticklabelsvisible=false,
                 xticksvisible=false,
                 leftspinevisible = false,
                 rightspinevisible = false,
