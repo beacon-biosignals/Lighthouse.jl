@@ -483,7 +483,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     # Step 4: Calculate all metrics derived directly from labels (does not depend on
     # predictions)
     labels_metrics_table = LabelMetricsRow[]
-    if has_value(votes)
+    if has_value(votes) && size(votes, 2) > 1
         labels_metrics_table = map(c -> get_label_metrics_multirater(votes, c),
                                    class_indices)
         labels_metrics_table = vcat(labels_metrics_table,
