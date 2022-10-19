@@ -142,7 +142,7 @@ end
 
 function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                                                         calibration_curve::SeriesCurves, calibration_score,
-                                                        per_expert_calibration_curves::SeriesCurves,
+                                                        per_expert_calibration_curves::Union{SeriesCurves,Missing},
                                                         per_expert_calibration_scores, optimal_threshold,
                                                         discrimination_class::AbstractString; kw...)
     kw = values(kw)
@@ -154,12 +154,14 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
     set_from_kw!(scatter_theme, :makersize, kw, 5)
     set_from_kw!(scatter_theme, :marker, kw, :rect)
 
-    per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey,
-                           color=nothing)
-    set_from_kw!(per_expert, :linewidth, kw, 2)
-    ax = series_plot!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
-                      title="Detection calibration", xlabel="Expert agreement rate",
-                      ylabel="Predicted positive probability", scatter=scatter_theme, per_expert...)
+    if ismissing(per_expert_calibration_curves)
+        ax = Axis(subfig)
+    else
+        per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert; solid_color=:darkgrey,
+                            color=nothing)
+        set_from_kw!(per_expert, :linewidth, kw, 2)
+        ax = series_plot!(subfig, per_expert_calibration_curves, nothing;  scatter=scatter_theme, per_expert...)
+    end
 
     calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :CalibrationCurve;
                             solid_color=:navyblue, markerstrokewidth=0)
@@ -168,7 +170,9 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
     set_from_kw!(calibration, :marker, kw, :rect)
     set_from_kw!(calibration, :linewidth, kw, 2)
 
-    Makie.series!(ax, calibration_curve; calibration...)
+    Makie.series!(ax, calibration_curve;
+                title="Detection calibration", xlabel="Expert agreement rate",
+                ylabel="Predicted positive probability", calibration...)
 
     ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
                             linestyle=:dash)
