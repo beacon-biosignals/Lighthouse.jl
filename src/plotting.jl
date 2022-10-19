@@ -163,8 +163,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                   ylabel="Predicted positive probability")
     else
         per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert;
-                               solid_color=:darkgrey,
-                               color=nothing)
+                               solid_color=:darkgrey, color=nothing)
         set_from_kw!(per_expert, :linewidth, kw, 2)
         ax = series_plot!(subfig, per_expert_calibration_curves, nothing; legend=nothing,
                           title="Detection calibration", xlabel="Expert agreement rate",
