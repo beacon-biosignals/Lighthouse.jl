@@ -150,8 +150,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                                                         discrimination_class::AbstractString;
                                                         kw...)
     kw = values(kw)
-    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter;
-                              strokewidth=0)
+    scatter_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Scatter; strokewidth=0)
     # Hayaah, this theme merging is getting out of hand
     # but we want kw > BinaryDiscriminationCalibrationCurves > Scatter, so we need to somehow set things
     # after the theme merging above, especially, since we also pass those to series!,
@@ -173,8 +172,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
                           per_expert...)
     end
 
-    calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves,
-                            :CalibrationCurve;
+    calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :CalibrationCurve;
                             solid_color=:navyblue, markerstrokewidth=0)
 
     set_from_kw!(calibration, :markersize, kw, 5)
@@ -183,8 +181,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
 
     Makie.series!(ax, calibration_curve; calibration...)
 
-    ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal;
-                            color=(:black, 0.5),
+    ideal_theme = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :Ideal; color=(:black, 0.5),
                             linestyle=:dash)
     set_from_kw!(ideal_theme, :linewidth, kw, 2)
     linesegments!(ax, [0, 1], [0, 1]; label="Ideal", ideal_theme...)
