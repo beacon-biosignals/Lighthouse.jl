@@ -160,7 +160,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
 
     if ismissing(per_expert_calibration_curves)
         ax = Axis(subfig; title="Detection calibration", xlabel="Expert agreement rate",
-                  ylabel="Predicted positive probability", legend=nothing)
+                  ylabel="Predicted positive probability")
     else
         per_expert = get_theme(subfig, :BinaryDiscriminationCalibrationCurves, :PerExpert;
                                solid_color=:darkgrey,
