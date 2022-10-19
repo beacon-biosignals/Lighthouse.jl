@@ -296,17 +296,6 @@ end
         @test !isequal(thresh_from_roc, thresh_from_calibration)
         @test isequal(thresh_from_calibration, plot_data_2["optimal_threshold"])
 
-        # Test binary discrimination with no multiclass votes
-        plot_data_1["per_expert_discrimination_calibration_curves"] = missing
-        no_expert_calibration = evaluation_metrics_plot(EvaluationRow(plot_data_1))
-        @testplot no_expert_calibration
-
-        # Test that plotting succeeds (no specialization relative to the multi-class tests)
-        plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
-        all_together = evaluation_metrics_plot(plot_data)
-        #savefig(all_together, "/tmp/binary.png")
-        @testplot all_together
-
         # Also, let's make sure we get an isolated discrimination plots
         discrimination_cal = Lighthouse.plot_binary_discrimination_calibration_curves(plot_data_1["discrimination_calibration_curve"],
                                                                                       plot_data_1["discrimination_calibration_score"],
@@ -322,6 +311,18 @@ end
                                                                                                  missing,
                                                                                                  plot_data_1["optimal_threshold"],
                                                                                                  plot_data_1["class_labels"][plot_data_1["optimal_threshold_class"]])
+
+        # Test binary discrimination with no multiclass votes
+        plot_data_1["per_expert_discrimination_calibration_curves"] = missing
+        no_expert_calibration = evaluation_metrics_plot(EvaluationRow(plot_data_1))
+        @testplot no_expert_calibration
+
+        # Test that plotting succeeds (no specialization relative to the multi-class tests)
+        plot_data = last(logger.logged["validation_set_evaluation/metrics_per_epoch"])
+        all_together = evaluation_metrics_plot(plot_data)
+        #savefig(all_together, "/tmp/binary.png")
+        @testplot all_together
+
         @testplot discrimination_cal_no_experts
     end
 end
