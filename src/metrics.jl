@@ -340,21 +340,21 @@ end
 """
     evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
 
-Return [`evaluation_metrics_row`](@ref) after converting output `EvaluationV1`
-into a `Dict`. For argument details, see [`evaluation_metrics_row`](@ref).
+Return [`evaluation_metrics_record`](@ref) after converting output `EvaluationV1`
+into a `Dict`. For argument details, see [`evaluation_metrics_record`](@ref).
 """
 function evaluation_metrics(args...; optimal_threshold_class=nothing, kwargs...)
-    row = evaluation_metrics_row(args...;
-                                 optimal_threshold_class=something(optimal_threshold_class,
-                                                                   missing), kwargs...)
-    return _evaluation_row_dict(row)
+    row = evaluation_metrics_record(args...;
+                                    optimal_threshold_class=something(optimal_threshold_class,
+                                                                      missing), kwargs...)
+    return _evaluation_dict(row)
 end
 
 """
-    evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+    evaluation_metrics_record(observation_table, classes, thresholds=0.0:0.01:1.0;
                            strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
                            optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
-    evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+    evaluation_metrics_record(predicted_hard_labels::AbstractVector,
                            predicted_soft_labels::AbstractMatrix,
                            elected_hard_labels::AbstractVector,
                            classes,
@@ -402,18 +402,18 @@ and `votes`. $(BINARIZE_NOTE).
 
 See also [`evaluation_metrics_plot`](@ref).
 """
-function evaluation_metrics_row(observation_table, classes, thresholds=0.0:0.01:1.0;
+function evaluation_metrics_record(observation_table, classes, thresholds=0.0:0.01:1.0;
                                 strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
                                 optimal_threshold_class::Union{Missing,Nothing,Integer}=missing,
                                 binarize=binarize_by_threshold)
     inputs = _observation_table_to_inputs(observation_table)
-    return evaluation_metrics_row(inputs.predicted_hard_labels,
+    return evaluation_metrics_record(inputs.predicted_hard_labels,
                                   inputs.predicted_soft_labels, inputs.elected_hard_labels,
                                   classes, thresholds; inputs.votes, strata,
                                   optimal_threshold_class, binarize)
 end
 
-function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
+function evaluation_metrics_record(predicted_hard_labels::AbstractVector,
                                 predicted_soft_labels::AbstractMatrix,
                                 elected_hard_labels::AbstractVector, classes,
                                 thresholds=0.0:0.01:1.0;
@@ -425,7 +425,7 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
     class_indices = 1:length(classes)
 
     # Step 1: Calculate all metrics that do not require hardened predictions
-    # In our `evaluation_metrics_row` we special-case multirater binary classification,
+    # In our `evaluation_metrics_record` we special-case multirater binary classification,
     # so do that here as well.
     tradeoff_metrics_rows = if length(classes) == 2 && has_value(votes)
         map(ic -> get_tradeoff_metrics_binary_multirater(predicted_soft_labels,
@@ -498,9 +498,9 @@ function evaluation_metrics_row(predicted_hard_labels::AbstractVector,
                                                         elected_hard_labels,
                                                         length(classes), strata) : missing
 
-    return _evaluation_row(tradeoff_metrics_rows, hardened_metrics_table,
-                           labels_metrics_table; optimal_threshold_class, class_labels,
-                           thresholds, optimal_threshold, stratified_kappas)
+    return _evaluation_record(tradeoff_metrics_rows, hardened_metrics_table,
+                              labels_metrics_table; optimal_threshold_class, class_labels,
+                              thresholds, optimal_threshold, stratified_kappas)
 end
 
 function _split_classes_from_multiclass(table)
@@ -530,9 +530,9 @@ _unpack_curves(curve::Union{Missing,Curve}) = ismissing(curve) ? missing : Tuple
 _unpack_curves(curves::AbstractVector{Curve}) = Tuple.(curves)
 
 """
-    _evaluation_row(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
-                    optimal_threshold_class=missing, class_labels, thresholds,
-                    optimal_threshold, stratified_kappas=missing)
+    _evaluation_record(tradeoff_metrics_table, hardened_metrics_table, label_metrics_table;
+                       optimal_threshold_class=missing, class_labels, thresholds,
+                       optimal_threshold, stratified_kappas=missing)
 
 Helper function to create an `EvaluationV1` from tables of constituent Metrics schemas,
 to support [`evaluation_metrics_record`](@ref):
@@ -540,9 +540,9 @@ to support [`evaluation_metrics_record`](@ref):
 - `hardened_metrics_table`: table of [`HardenedMetricsV1`](@ref)s
 - `label_metrics_table`: table of [`LabelMetricsV1`](@ref)s
 """
-function _evaluation_row(tradeoff_metrics_table, hardened_metrics_table,
-                         label_metrics_table; optimal_threshold_class=missing, class_labels,
-                         thresholds, optimal_threshold, stratified_kappas=missing)
+function _evaluation_record(tradeoff_metrics_table, hardened_metrics_table,
+                            label_metrics_table; optimal_threshold_class=missing, class_labels,
+                            thresholds, optimal_threshold, stratified_kappas=missing)
     tradeoff_rows, _ = _split_classes_from_multiclass(tradeoff_metrics_table)
     hardened_rows, hardened_multi = _split_classes_from_multiclass(hardened_metrics_table)
     label_rows, labels_multi = _split_classes_from_multiclass(label_metrics_table)

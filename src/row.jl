@@ -95,7 +95,7 @@ end
 
 #TODO change the name of the funtions. We probably wont have *_row anymore.
 A Legolas-generated record type representing metrics used in model evaluation,
-computed by [`evaluation_metrics_row`](@ref) and [`evaluation_metrics`](@ref).
+computed by [`evaluation_metrics_record`](@ref) and [`evaluation_metrics`](@ref).
 
 #TODO what will happen to the constructors?
 Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@ref)
@@ -141,7 +141,7 @@ end
     end
 #TODO change the name of the funtions. We probably wont have *_row anymore.
 A Legolas-generated record type representing the per-observation input values
-required to compute [`evaluation_metrics_row`](@ref).
+required to compute [`evaluation_metrics_record`](@ref).
 See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
 """
 ObservationV1

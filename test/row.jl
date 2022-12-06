@@ -44,11 +44,11 @@ end
                                              votes)
 
     # ...and parity in evaluation_metrics calculation:
-    metrics_from_inputs = Lighthouse.evaluation_metrics_row(predicted_hard_labels,
+    metrics_from_inputs = Lighthouse.evaluation_metrics_record(predicted_hard_labels,
                                                             predicted_soft_labels,
                                                             elected_hard_one_labeller,
                                                             classes; votes)
-    metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
+    metrics_from_table = Lighthouse.evaluation_metrics_record(table, classes)
     @test isequal(metrics_from_inputs, metrics_from_table)
 
     # Multiple labelers: round-trip `ObservationV1`...
@@ -68,11 +68,11 @@ end
                                                  votes)
 
         # ...is there parity in evaluation_metrics calculations?
-        metrics_from_inputs = Lighthouse.evaluation_metrics_row(predicted_hard_labels,
-                                                                predicted_soft_labels,
-                                                                elected_hard_multilabeller,
-                                                                classes; votes)
-        metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
+        metrics_from_inputs = Lighthouse.evaluation_metrics_record(predicted_hard_labels,
+                                                                   predicted_soft_labels,
+                                                                   elected_hard_multilabeller,
+                                                                   classes; votes)
+        metrics_from_table = Lighthouse.evaluation_metrics_record(table, classes)
         @test isequal(metrics_from_inputs, metrics_from_table)
 
         r_table = Lighthouse._inputs_to_observation_table(; predicted_soft_labels,

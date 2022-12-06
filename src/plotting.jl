@@ -321,7 +321,7 @@ end
     evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
     evaluation_metrics_plot(row::EvaluationV1; kwargs...)
 
-Plot all evaluation metrics generated via [`evaluation_metrics_row`](@ref) and/or
+Plot all evaluation metrics generated via [`evaluation_metrics_record`](@ref) and/or
 [`evaluation_metrics`](@ref) in a single image.
 """
 function evaluation_metrics_plot(data::Dict; kwargs...)
