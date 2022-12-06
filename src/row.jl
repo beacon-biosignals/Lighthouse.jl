@@ -43,13 +43,12 @@ const GenericCurve = Tuple{Vector{Float64},Vector{Float64}}
                                             ci_upper::Float64}}
     thresholds::Union{Missing,Vector{Float64}}
 end
+
 """
     @version EvaluationV1 begin
         class_labels::Union{Missing,Vector{String}}
         confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
-        discrimination_calibration_curve::Union{Missing,
-                                                Tuple{Vector{Float64},
-                                                      Vector{Float64}}}
+        discrimination_calibration_curve::Union{Missing,GenericCurve}
         discrimination_calibration_score::Union{Missing,Float64}
         multiclass_IRA_kappas::Union{Missing,Float64}
         multiclass_kappa::Union{Missing,Float64}
@@ -58,52 +57,37 @@ end
         per_class_IRA_kappas::Union{Missing,Vector{Float64}}
         per_class_kappas::Union{Missing,Vector{Float64}}
         stratified_kappas::Union{Missing,
-                                 Vector{NamedTuple{(:per_class,
-                                                    :multiclass,
-                                                    :n),
-                                                   Tuple{Vector{Float64},
-                                                         Float64,
-                                                         Int64}}}}
-        per_class_pr_curves::Union{Missing,
-                                   Vector{Tuple{Vector{Float64},
-                                                Vector{Float64}}}}
-        per_class_reliability_calibration_curves::Union{Missing,
-                                                        Vector{Tuple{Vector{Float64},
-                                                                     Vector{Float64}}}}
-        per_class_reliability_calibration_scores::Union{Missing,
-                                                        Vector{Float64}}
+                                 Vector{@NamedTuple{per_class::Vector{Float64},
+                                                    multiclass::Float64,
+                                                    n::Int64}}}
+        per_class_pr_curves::Union{Missing,Vector{GenericCurve}}
+        per_class_reliability_calibration_curves::Union{Missing,Vector{GenericCurve}}
+        per_class_reliability_calibration_scores::Union{Missing,Vector{Float64}}
         per_class_roc_aucs::Union{Missing,Vector{Float64}}
-        per_class_roc_curves::Union{Missing,
-                                    Vector{Tuple{Vector{Float64},
-                                                 Vector{Float64}}}}
-        per_expert_discrimination_calibration_curves::Union{Missing,
-                                                            Vector{Tuple{Vector{Float64},
-                                                                         Vector{Float64}}}}
-        per_expert_discrimination_calibration_scores::Union{Missing,
-                                                            Vector{Float64}}
+        per_class_roc_curves::Union{Missing,Vector{GenericCurve}}
+        per_expert_discrimination_calibration_curves::Union{Missing,Vector{GenericCurve}}
+        per_expert_discrimination_calibration_scores::Union{Missing,Vector{Float64}}
         spearman_correlation::Union{Missing,
-                                    NamedTuple{(:ρ, :n,
-                                                :ci_lower,
-                                                :ci_upper),
-                                               Tuple{Float64,
-                                                     Int64,
-                                                     Float64,
-                                                     Float64}}}
+                                    @NamedTuple{ρ::Float64,  # Note: is rho not 'p' 😢
+                                                n::Int64,
+                                                ci_lower::Float64,
+                                                ci_upper::Float64}}
         thresholds::Union{Missing,Vector{Float64}}
     end
-`Dict` of metrics results (e.g. from Lighthouse <v0.14.0) into an [`EvaluationV1`](@ref).
 
-#TODO change the name of the funtions. We probably wont have *_row anymore.
-A Legolas-generated record type representing metrics used in model evaluation,
-computed by [`evaluation_metrics_record`](@ref) and [`evaluation_metrics`](@ref).
+A Legolas record representing the output metrics computed by
+[`evaluation_metrics_row`](@ref) and [`evaluation_metrics`](@ref).
 
-#TODO what will happen to the constructors?
-Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@ref)
-
-See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+See [Legolas.jl](https://github.com/beacon-biosignals/Legolas.jl) for details regarding
+Legolas record types.
 """
 EvaluationV1
 
+"""
+    EvaluationV1(d::Dict) -> EvaluationV1
+
+`Dict` of metrics results (e.g. from Lighthouse <v0.14.0) into an [`EvaluationV1`](@ref).
+"""
 function EvaluationV1(d::Dict)
     row = (; (Symbol(k) => v for (k, v) in pairs(d))...)
     return EvaluationV1(row)
@@ -133,16 +117,15 @@ end
 end
 
 """
-    @version ObservationObjectV1 begin
+    @version ObservationV1 begin
         predicted_hard_label::Int64
         predicted_soft_labels::Vector{Float32}
         elected_hard_label::Int64
         votes::Union{Missing,Vector{Int64}}
     end
-#TODO change the name of the funtions. We probably wont have *_row anymore.
-A Legolas-generated record type representing the per-observation input values
-required to compute [`evaluation_metrics_record`](@ref).
-See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+
+A Legolas record representing the per-observation input values required to compute
+[`evaluation_metrics_row`](@ref).
 """
 ObservationV1
 
@@ -246,15 +229,13 @@ ArrowTypes.JuliaType(::Val{CURVE_ARROW_NAME}) = Curve
 end
 
 """
-    @version ClassObjectV1 begin
+    @version ClassV1 begin
         class_index::Union{Int64,Symbol} = check_valid_class(class_index)
-        class_labels::Union{Missing,Vector{String}} = coalesce(class_labels, missing)
+        class_labels::Union{Missing,Vector{String}}
     end
 
-A Legolas-generated record type representing a single column `class_index`
-that holds either an integer or the value `:multiclass`, and the class names
-associated to the integer class indices.
-See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+A Legolas record representing a single column `class_index` that holds either an integer or
+the value `:multiclass`, and the class names associated to the integer class indices.
 """
 ClassV1
 
@@ -274,18 +255,15 @@ end
 end
 
 """
-    @version LabelMetricsObjectV1 begin
+    @version LabelMetricsV1 > ClassV1 begin
         ira_kappa::Union{Missing,Float64}
-        per_expert_discrimination_calibration_curves::Union{Missing,Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
-                                                                                     missing :
-                                                                                     Curve.(per_expert_discrimination_calibration_curves)
+        per_expert_discrimination_calibration_curves::Union{Missing,Vector{Curve}} = lift(v -> Curve.(v),
+                                                                                          per_expert_discrimination_calibration_curves)
         per_expert_discrimination_calibration_scores::Union{Missing,Vector{Float64}}
     end
 
-A Legolas-generated record type representing metrics calculated over labels
-provided by multiple labelers. See also [`get_label_metrics_multirater`](@ref)
-and [`get_label_metrics_multirater_multiclass`](@ref).
-See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+A Legolas record representing metrics calculated over labels provided by multiple labelers.
+See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multirater_multiclass`](@ref).
 """
 LabelMetricsV1
 
@@ -299,21 +277,17 @@ LabelMetricsV1
 end
 
 """
-    @version HardenedMetricsObjectV1 > ClassObjectV1 begin
+    @version HardenedMetricsV1 > ClassV1 begin
         confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
-        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
-                                                                 missing :
-                                                                 Curve(discrimination_calibration_curve)
-        discrimination_calibration_score::Union{Missing,
-                                                Float64}
+        discrimination_calibration_curve::Union{Missing,Curve} = lift(Curve,
+                                                                      discrimination_calibration_curve)
+        discrimination_calibration_score::Union{Missing,Float64}
         ea_kappa::Union{Missing,Float64}
     end
 
-A Legolas-generated record type representing metrics calculated over predicted
-hard labels. See also [`get_hardened_metrics`](@ref),
-[`get_hardened_metrics_multirater`](@ref), and [`get_hardened_metrics_multiclass`](@ref).
-
-See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+A Legolas record representing metrics calculated over predicted hard labels.
+See also [`get_hardened_metrics`](@ref), [`get_hardened_metrics_multirater`](@ref),
+and [`get_hardened_metrics_multiclass`](@ref).
 """
 HardenedMetricsV1
 
@@ -330,29 +304,22 @@ HardenedMetricsV1
                                                                reliability_calibration_curve)
     reliability_calibration_score::Union{Missing,Float64}
 end
+
 """
-@version TradeOffMetricsObjectV1 > ClassObjectV1 begin
-    roc_curve::Curve = ismissing(roc_curve) ? missing :
-    Curve(roc_curve),
-    roc_auc::Float64,
-    pr_curve::Curve = ismissing(pr_curve) ? missing :
-    Curve(pr_curve),
-    spearman_correlation::Union{Missing,Float64},
-    spearman_correlation_ci_upper::Union{Missing,
-        Float64},
-        spearman_correlation_ci_lower::Union{Missing,
-        Float64},
-        n_samples::Union{Missing,Int},
-        reliability_calibration_curve::Union{Missing,Curve} = ismissing(reliability_calibration_curve) ?
-                                                              missing :
-                                                              Curve(reliability_calibration_curve),
-                                                              reliability_calibration_score::Union{Missing,
-                                                                                                   Float64}
+    @version TradeOffMetricsV1 > ClassV1 begin
+        roc_curve::Curve = lift(Curve, roc_curve)
+        roc_auc::Float64
+        pr_curve::Curve = lift(Curve, pr_curve)
+        spearman_correlation::Union{Missing,Float64}
+        spearman_correlation_ci_upper::Union{Missing,Float64}
+        spearman_correlation_ci_lower::Union{Missing,Float64}
+        n_samples::Union{Missing,Int}
+        reliability_calibration_curve::Union{Missing,Curve} = lift(Curve,
+                                                                   reliability_calibration_curve)
+        reliability_calibration_score::Union{Missing,Float64}
+    end
 
-A Legolas-generated record type representing metrics calculated over predicted
-metrics calculated over predicted soft labels. See also
+A Legolas record representing metrics calculated over predicted soft labels. See also
 [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multirater`](@ref).
-
-See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
 """
 TradeOffMetricsV1
