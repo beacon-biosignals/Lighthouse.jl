@@ -315,15 +315,16 @@ representing metrics calculated over predicted hard labels.
 See also [`get_hardened_metrics`](@ref), [`get_hardened_metrics_multirater`](@ref),
 and [`get_hardened_metrics_multiclass`](@ref).
 """
-const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
-                                        "lighthouse.class@1",
-                                        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
-                                        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
-                                                                                                 missing :
-                                                                                                 Curve(discrimination_calibration_curve),
-                                        discrimination_calibration_score::Union{Missing,
-                                                                                Float64},
-                                        ea_kappa::Union{Missing,Float64})
+@schema "lighthouse.hardened-metrics" HardenedMetricsObject
+@version HardenedMetricsObjectV1 > ClassObjectV1 begin
+    confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
+    discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
+                                                     missing :
+                                                     Curve(discrimination_calibration_curve)
+    discrimination_calibration_score::Union{Missing,
+                                    Float64}
+    ea_kappa::Union{Missing,Float64}
+end
 
 """
     TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
