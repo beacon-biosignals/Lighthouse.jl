@@ -17,62 +17,6 @@ vec_to_mat(x::Missing) = return missing
 _schema_version(x::SchemaVersion) = x
 _schema_version(x::AbstractString) = first(parse_identifier(x))
 
-"""
-    const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
-                                   class_labels::Union{Missing,Vector{String}},
-                                   confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
-                                   discrimination_calibration_curve::Union{Missing,
-                                                                           Tuple{Vector{Float64},
-                                                                                 Vector{Float64}}},
-                                   discrimination_calibration_score::Union{Missing,Float64},
-                                   multiclass_IRA_kappas::Union{Missing,Float64},
-                                   multiclass_kappa::Union{Missing,Float64},
-                                   optimal_threshold::Union{Missing,Float64},
-                                   optimal_threshold_class::Union{Missing,Int64},
-                                   per_class_IRA_kappas::Union{Missing,Vector{Float64}},
-                                   per_class_kappas::Union{Missing,Vector{Float64}},
-                                   stratified_kappas::Union{Missing,
-                                                            Vector{NamedTuple{(:per_class,
-                                                                               :multiclass,
-                                                                               :n),
-                                                                              Tuple{Vector{Float64},
-                                                                                    Float64,
-                                                                                    Int64}}}},
-                                   per_class_pr_curves::Union{Missing,
-                                                              Vector{Tuple{Vector{Float64},
-                                                                           Vector{Float64}}}},
-                                   per_class_reliability_calibration_curves::Union{Missing,
-                                                                                   Vector{Tuple{Vector{Float64},
-                                                                                                Vector{Float64}}}},
-                                   per_class_reliability_calibration_scores::Union{Missing,
-                                                                                   Vector{Float64}},
-                                   per_class_roc_aucs::Union{Missing,Vector{Float64}},
-                                   per_class_roc_curves::Union{Missing,
-                                                               Vector{Tuple{Vector{Float64},
-                                                                            Vector{Float64}}}},
-                                   per_expert_discrimination_calibration_curves::Union{Missing,
-                                                                                       Vector{Tuple{Vector{Float64},
-                                                                                                    Vector{Float64}}}},
-                                   per_expert_discrimination_calibration_scores::Union{Missing,
-                                                                                       Vector{Float64}},
-                                   spearman_correlation::Union{Missing,
-                                                               NamedTuple{(:ρ, :n,
-                                                                           :ci_lower,
-                                                                           :ci_upper),
-                                                                          Tuple{Float64,
-                                                                                Int64,
-                                                                                Float64,
-                                                                                Float64}}},
-                                   thresholds::Union{Missing,Vector{Float64}})
-    EvaluationRow(evaluation_row_dict::Dict{String, Any}) -> EvaluationRow
-
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.evaluation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing the output metrics computed by [`evaluation_metrics_row`](@ref) and
-[`evaluation_metrics`](@ref).
-
-Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@ref)
-`Dict` of metrics results (e.g. from Lighthouse <v0.14.0) into an [`EvaluationRow`](@ref).
-"""
 @schema "lighthouse.evaluation" EvaluationObject
 @version EvaluationObjectV1 begin
     class_labels::Union{Missing,Vector{String}}
@@ -121,7 +65,68 @@ Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@re
                                                  Float64}}}
     thresholds::Union{Missing,Vector{Float64}}
 end
+"""
+    @version EvaluationObjectV1 begin
+        class_labels::Union{Missing,Vector{String}}
+        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
+        discrimination_calibration_curve::Union{Missing,
+                                                Tuple{Vector{Float64},
+                                                      Vector{Float64}}}
+        discrimination_calibration_score::Union{Missing,Float64}
+        multiclass_IRA_kappas::Union{Missing,Float64}
+        multiclass_kappa::Union{Missing,Float64}
+        optimal_threshold::Union{Missing,Float64}
+        optimal_threshold_class::Union{Missing,Int64}
+        per_class_IRA_kappas::Union{Missing,Vector{Float64}}
+        per_class_kappas::Union{Missing,Vector{Float64}}
+        stratified_kappas::Union{Missing,
+                                 Vector{NamedTuple{(:per_class,
+                                                    :multiclass,
+                                                    :n),
+                                                   Tuple{Vector{Float64},
+                                                         Float64,
+                                                         Int64}}}}
+        per_class_pr_curves::Union{Missing,
+                                   Vector{Tuple{Vector{Float64},
+                                                Vector{Float64}}}}
+        per_class_reliability_calibration_curves::Union{Missing,
+                                                        Vector{Tuple{Vector{Float64},
+                                                                     Vector{Float64}}}}
+        per_class_reliability_calibration_scores::Union{Missing,
+                                                        Vector{Float64}}
+        per_class_roc_aucs::Union{Missing,Vector{Float64}}
+        per_class_roc_curves::Union{Missing,
+                                    Vector{Tuple{Vector{Float64},
+                                                 Vector{Float64}}}}
+        per_expert_discrimination_calibration_curves::Union{Missing,
+                                                            Vector{Tuple{Vector{Float64},
+                                                                         Vector{Float64}}}}
+        per_expert_discrimination_calibration_scores::Union{Missing,
+                                                            Vector{Float64}}
+        spearman_correlation::Union{Missing,
+                                    NamedTuple{(:ρ, :n,
+                                                :ci_lower,
+                                                :ci_upper),
+                                               Tuple{Float64,
+                                                     Int64,
+                                                     Float64,
+                                                     Float64}}}
+        thresholds::Union{Missing,Vector{Float64}}
+    end
+`Dict` of metrics results (e.g. from Lighthouse <v0.14.0) into an [`EvaluationRow`](@ref).
 
+#TODO change the name of the funtions. We probably wont have *_row anymore.
+A Legolas-generated record type representing metrics used in model evaluation,
+computed by [`evaluation_metrics_row`](@ref) and [`evaluation_metrics`](@ref).
+
+#TODO what will happen to the constructors?
+Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@ref)
+
+See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+"""
+EvaluationObjectV1
+
+#TODO How to convert these functionns?
 function Legolas.Row{S}(evaluation_row_dict::Dict) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
                                                                             1}}
     row = (; (Symbol(k) => v for (k, v) in pairs(evaluation_row_dict))...)
