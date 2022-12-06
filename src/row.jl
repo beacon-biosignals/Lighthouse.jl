@@ -221,7 +221,7 @@ function _inputs_to_observation_table(; predicted_hard_labels::AbstractVector,
 end
 
 #####
-##### Metrics rows
+##### Metrics Objects
 #####
 
 """
@@ -265,20 +265,24 @@ const CURVE_ARROW_NAME = Symbol("JuliaLang.Lighthouse.Curve")
 ArrowTypes.arrowname(::Type{<:Curve}) = CURVE_ARROW_NAME
 ArrowTypes.JuliaType(::Val{CURVE_ARROW_NAME}) = Curve
 
-"""
-    const ClassRow = Legolas.@row("lighthouse.class@1",
-                                   class_labels::Union{Missing,Vector{String}},
-                                   class_index::Union{Int64,Symbol})
-
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.class@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing a single column `class_index` that holds either an integer or the value
-`:multiclass`, and the class names associated to the integer class indices.
-"""
 @schema "lighthouse.class" ClassObject
 @version ClassObjectV1 begin
     class_index::Union{Int64,Symbol} = check_valid_class(class_index)
     class_labels::Union{Missing,Vector{String}} = coalesce(class_labels, missing)
 end
+
+"""
+    @version ClassObjectV1 begin
+        class_index::Union{Int64,Symbol} = check_valid_class(class_index)
+        class_labels::Union{Missing,Vector{String}} = coalesce(class_labels, missing)
+    end
+
+A Legolas-generated record type representing a single column `class_index`
+that holds either an integer or the value `:multiclass`, and the class names
+associated to the integer class indices.
+See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+"""
+ClassObjectV1
 
 check_valid_class(class_index::Integer) = Int64(class_index)
 
@@ -287,20 +291,6 @@ function check_valid_class(class_index::Any)
            throw(ArgumentError("Classes must be integers or the symbol `:multiclass`"))
 end
 
-"""
-    LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
-                                     ira_kappa::Union{Missing,Float64},
-                                     per_expert_discrimination_calibration_curves::Union{Missing,
-                                     Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
-                                                      missing :
-                                                      Curve.(per_expert_discrimination_calibration_curves),
-                                     per_expert_discrimination_calibration_scores::Union{Missing,
-                                                                                         Vector{Float64}})
-
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("label-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing metrics calculated over labels provided by multiple labelers.
-See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multirater_multiclass`](@ref).
-"""
 @schema "lighthouse.label-metrics" LabelMetricsObject
 @version LabelMetricsObjectV1 begin
     ira_kappa::Union{Missing,Float64}
@@ -311,20 +301,21 @@ See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multira
 end
 
 """
-    HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
-                                        "lighthouse.class@1",
-                                        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
-                                        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
-                                                                                                 missing :
-                                                                                                 Curve(discrimination_calibration_curve),
-                                        discrimination_calibration_score::Union{Missing,Float64},
-                                        ea_kappa::Union{Missing,Float64})
+    @version LabelMetricsObjectV1 begin
+        ira_kappa::Union{Missing,Float64}
+        per_expert_discrimination_calibration_curves::Union{Missing,Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
+                                                                                     missing :
+                                                                                     Curve.(per_expert_discrimination_calibration_curves)
+        per_expert_discrimination_calibration_scores::Union{Missing,Vector{Float64}}
+    end
 
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("hardened-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing metrics calculated over predicted hard labels.
-See also [`get_hardened_metrics`](@ref), [`get_hardened_metrics_multirater`](@ref),
-and [`get_hardened_metrics_multiclass`](@ref).
+A Legolas-generated record type representing metrics calculated over labels
+provided by multiple labelers. See also [`get_label_metrics_multirater`](@ref)
+and [`get_label_metrics_multirater_multiclass`](@ref).
+See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
 """
+LabelMetricsObjectV1
+
 @schema "lighthouse.hardened-metrics" HardenedMetricsObject
 @version HardenedMetricsObjectV1 > ClassObjectV1 begin
     confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
@@ -337,27 +328,26 @@ and [`get_hardened_metrics_multiclass`](@ref).
 end
 
 """
-    TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
-                                      "lighthouse.class@1",
-                                      roc_curve::Curve = ismissing(roc_curve) ?
-                                                         missing : Curve(roc_curve),
-                                      roc_auc::Float64,
-                                      pr_curve::Curve = ismissing(pr_curve) ?
-                                                        missing : Curve(pr_curve),
-                                      spearman_correlation::Union{Missing, Float64},
-                                      spearman_correlation_ci_upper::Union{Missing, Float64},
-                                      spearman_correlation_ci_lower::Union{Missing, Float64},
-                                      n_samples::Union{Missing,Int},
-                                      reliability_calibration_curve::Union{Missing,
-                                      Curve} = ismissing(reliability_calibration_curve) ?
-                                               missing :
-                                               Curve(reliability_calibration_curve),
-                                      reliability_calibration_score::Union{Missing, Float64})
+    @version HardenedMetricsObjectV1 > ClassObjectV1 begin
+        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
+        discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
+                                                                 missing :
+                                                                 Curve(discrimination_calibration_curve)
+        discrimination_calibration_score::Union{Missing,
+                                                Float64}
+        ea_kappa::Union{Missing,Float64}
+    end
 
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("tradeoff-metrics@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing metrics calculated over predicted soft labels.
-See also [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multirater`](@ref).
+A Legolas-generated record type representing metrics calculated over predicted
+hard labels. See also [`get_hardened_metrics`](@ref),
+[`get_hardened_metrics_multirater`](@ref), and [`get_hardened_metrics_multiclass`](@ref).
+
+See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
 """
+HardenedMetricsObjectV1
+
+
+
 @schema "lighthouse.tradeoff-metrics" TradeOffMetricsObject
 @version TradeOffMetricsObjectV1 > ClassObjectV1 begin
     roc_curve::Curve = ismissing(roc_curve) ? missing :
@@ -377,3 +367,29 @@ See also [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multir
                                                           reliability_calibration_score::Union{Missing,
                                                                                                Float64}
 end
+"""
+    @version TradeOffMetricsObjectV1 > ClassObjectV1 begin
+        roc_curve::Curve = ismissing(roc_curve) ? missing :
+        Curve(roc_curve),
+        roc_auc::Float64,
+        pr_curve::Curve = ismissing(pr_curve) ? missing :
+        Curve(pr_curve),
+        spearman_correlation::Union{Missing,Float64},
+        spearman_correlation_ci_upper::Union{Missing,
+        Float64},
+        spearman_correlation_ci_lower::Union{Missing,
+        Float64},
+        n_samples::Union{Missing,Int},
+        reliability_calibration_curve::Union{Missing,Curve} = ismissing(reliability_calibration_curve) ?
+                                                              missing :
+                                                              Curve(reliability_calibration_curve),
+                                                              reliability_calibration_score::Union{Missing,
+                                                                                                   Float64}
+
+A Legolas-generated record type representing metrics calculated over predicted
+metrics calculated over predicted soft labels. See also
+[`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multirater`](@ref).
+
+See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+"""
+TradeOffMetricsObjectV1
