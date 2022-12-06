@@ -264,10 +264,11 @@ A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.class@1"))}`](h
 representing a single column `class_index` that holds either an integer or the value
 `:multiclass`, and the class names associated to the integer class indices.
 """
-const ClassRow = Legolas.@row("lighthouse.class@1",
-                              class_index::Union{Int64,Symbol} = check_valid_class(class_index),
-                              class_labels::Union{Missing,Vector{String}} = coalesce(class_labels,
-                                                                                     missing))
+@schema "lighthouse.class" ClassObject
+@version ClassObjectV1 begin
+    class_index::Union{Int64,Symbol} = check_valid_class(class_index)
+    class_labels::Union{Missing,Vector{String}} = coalesce(class_labels, missing)
+end
 
 check_valid_class(class_index::Integer) = Int64(class_index)
 
