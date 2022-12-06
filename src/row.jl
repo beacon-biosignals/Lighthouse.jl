@@ -1,6 +1,6 @@
 
 #####
-##### `EvaluationRow`
+##### `EvaluationObject
 #####
 
 # Arrow can't handle matrices---so when we write/read matrices, we have to pack and unpack them o_O
@@ -145,19 +145,9 @@ function _evaluation_row_dict(row::EvaluationRow)
 end
 
 #####
-##### `ObservationRow`
+##### `ObservationObject
 #####
 
-"""
-    const ObservationRow = Legolas.@row("lighthouse.observation@1",
-                                        predicted_hard_label::Int64,
-                                        predicted_soft_labels::Vector{Float32},
-                                        elected_hard_label::Int64,
-                                        votes::Union{Missing,Vector{Int64}})
-
-A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.observation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
-representing the per-observation input values required to compute [`evaluation_metrics_row`](@ref).
-"""
 @schema "lighthouse.observation" ObservatioObject
 @version ObservatioObjectV1 begin
     predicted_hard_label::Int64
@@ -165,6 +155,21 @@ representing the per-observation input values required to compute [`evaluation_m
     elected_hard_label::Int64
     votes::Union{Missing,Vector{Int64}}
 end
+
+"""
+    @version ObservatioObjectV1 begin
+        predicted_hard_label::Int64
+        predicted_soft_labels::Vector{Float32}
+        elected_hard_label::Int64
+        votes::Union{Missing,Vector{Int64}}
+    end
+#TODO change the name of the funtions. We probably wont have *_row anymore.
+A Legolas-generated record type representing the per-observation input values
+required to compute [`evaluation_metrics_row`](@ref).
+See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
+"""
+ObservatioObjectV1
+
 
 # Convert vector of per-class soft label vectors to expected matrix format, e.g.,
 # [[0.1, .2, .7], [0.8, .1, .1]] for 2 observations of 3-class classification returns
