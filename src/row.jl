@@ -17,7 +17,6 @@ vec_to_mat(x::Missing) = return missing
 _schema_version(x::SchemaVersion) = x
 _schema_version(x::AbstractString) = first(parse_identifier(x))
 
-# Redefinition is workaround for https://github.com/beacon-biosignals/Legolas.jl/issues/9
 """
     const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                    class_labels::Union{Missing,Vector{String}},
@@ -123,7 +122,6 @@ Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@re
     thresholds::Union{Missing,Vector{Float64}}
 end
 
-#TODO how to transform this function?
 function Legolas.Row{S}(evaluation_row_dict::Dict) where {S<:Legolas.Schema{Symbol("lighthouse.evaluation"),
                                                                             1}}
     row = (; (Symbol(k) => v for (k, v) in pairs(evaluation_row_dict))...)
@@ -145,8 +143,6 @@ end
 ##### `ObservationRow`
 #####
 
-# Redefinition is workaround for https://github.com/beacon-biosignals/Legolas.jl/issues/9
-const OBSERVATION_ROW_SCHEMA = Legolas.Schema("lighthouse.observation@1")
 """
     const ObservationRow = Legolas.@row("lighthouse.observation@1",
                                         predicted_hard_label::Int64,
@@ -157,10 +153,13 @@ const OBSERVATION_ROW_SCHEMA = Legolas.Schema("lighthouse.observation@1")
 A type alias for [`Legolas.Row{typeof(Legolas.Schema("lighthouse.observation@1"))}`](https://beacon-biosignals.github.io/Legolas.jl/stable/#Legolas.@row)
 representing the per-observation input values required to compute [`evaluation_metrics_row`](@ref).
 """
-const ObservationRow = Legolas.@row("lighthouse.observation@1", predicted_hard_label::Int64,
-                                    predicted_soft_labels::Vector{Float32},
-                                    elected_hard_label::Int64,
-                                    votes::Union{Missing,Vector{Int64}})
+@schema "lighthouse.observation" ObservatioObject
+@version ObservatioObjectV1 begin
+    predicted_hard_label::Int64
+    predicted_soft_labels::Vector{Float32}
+    elected_hard_label::Int64
+    votes::Union{Missing,Vector{Int64}}
+end
 
 # Convert vector of per-class soft label vectors to expected matrix format, e.g.,
 # [[0.1, .2, .7], [0.8, .1, .1]] for 2 observations of 3-class classification returns
