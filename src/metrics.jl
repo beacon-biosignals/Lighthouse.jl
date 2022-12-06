@@ -523,10 +523,16 @@ end
 
 function _values_or_missing(values)
     has_value(values) || return missing
-    return all(ismissing, values) ? missing : values
+    return if Base.IteratorSize(values) == Base.HasShape{0}()
+        values
+    else
+        T = nonmissingtype(eltype(values))
+        all(!ismissing, values) ? convert(Array{T}, values) : missing
+    end
 end
 
-_unpack_curves(curve::Union{Missing,Curve}) = ismissing(curve) ? missing : Tuple(curve)
+_unpack_curves(curve::Missing) = missing
+_unpack_curves(curve::Curve) = Tuple(curve)
 _unpack_curves(curves::AbstractVector{Curve}) = Tuple.(curves)
 
 """
