@@ -379,7 +379,7 @@ function evaluation_metrics_plot(row::EvaluationV1; resolution=(1000, 1000),
                                                        row.optimal_threshold,
                                                        row.class_labels[row.optimal_threshold_class])
     end
-    legend_plots = filter(Makie.MakieLayout.get_plots(ax)) do plot
+    legend_plots = filter(Makie.get_plots(ax)) do plot
         return haskey(plot, :label)
     end
     elements = map(legend_plots) do elem
