@@ -41,6 +41,7 @@ end
     @test result isa Matrix{Int}
 end
 
+
 @testset "Multi-class learn!(::TestModel, ...)" begin
     mktempdir() do tmpdir
         model = TestClassifier(1000000.0, ["class_$i" for i in 1:5])
