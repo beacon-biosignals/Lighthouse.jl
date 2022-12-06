@@ -291,13 +291,14 @@ A type alias for [`Legolas.Row{typeof(Legolas.Schema("label-metrics@1"))}`](http
 representing metrics calculated over labels provided by multiple labelers.
 See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multirater_multiclass`](@ref).
 """
-const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.class@1",
-                                     ira_kappa::Union{Missing,Float64},
-                                     per_expert_discrimination_calibration_curves::Union{Missing,Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
-                                                                                                                  missing :
-                                                                                                                  Curve.(per_expert_discrimination_calibration_curves),
-                                     per_expert_discrimination_calibration_scores::Union{Missing,
-                                                                                         Vector{Float64}})
+@schema "lighthouse.label-metrics" LabelMetricsObject
+@version LabelMetricsObjectV1 begin
+    ira_kappa::Union{Missing,Float64}
+    per_expert_discrimination_calibration_curves::Union{Missing,Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
+                                                                      missing :
+                                                                      Curve.(per_expert_discrimination_calibration_curves)
+    per_expert_discrimination_calibration_scores::Union{Missing, Vector{Float64}}
+end
 
 """
     HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
