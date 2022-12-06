@@ -78,8 +78,8 @@ Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@re
     class_labels::Union{Missing,Vector{String}}
     confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
     discrimination_calibration_curve::Union{Missing,
-                                   Tuple{Vector{Float64},
-                                         Vector{Float64}}}
+                                            Tuple{Vector{Float64},
+                                                  Vector{Float64}}}
     discrimination_calibration_score::Union{Missing,Float64}
     multiclass_IRA_kappas::Union{Missing,Float64}
     multiclass_kappa::Union{Missing,Float64}
@@ -88,37 +88,37 @@ Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@re
     per_class_IRA_kappas::Union{Missing,Vector{Float64}}
     per_class_kappas::Union{Missing,Vector{Float64}}
     stratified_kappas::Union{Missing,
-                    Vector{NamedTuple{(:per_class,
-                                       :multiclass,
-                                       :n),
-                                      Tuple{Vector{Float64},
-                                            Float64,
-                                            Int64}}}}
+                             Vector{NamedTuple{(:per_class,
+                                                :multiclass,
+                                                :n),
+                                               Tuple{Vector{Float64},
+                                                     Float64,
+                                                     Int64}}}}
     per_class_pr_curves::Union{Missing,
-                      Vector{Tuple{Vector{Float64},
-                                   Vector{Float64}}}}
+                               Vector{Tuple{Vector{Float64},
+                                            Vector{Float64}}}}
     per_class_reliability_calibration_curves::Union{Missing,
-                                           Vector{Tuple{Vector{Float64},
-                                                        Vector{Float64}}}}
+                                                    Vector{Tuple{Vector{Float64},
+                                                                 Vector{Float64}}}}
     per_class_reliability_calibration_scores::Union{Missing,
-                                           Vector{Float64}}
+                                                    Vector{Float64}}
     per_class_roc_aucs::Union{Missing,Vector{Float64}}
     per_class_roc_curves::Union{Missing,
-                       Vector{Tuple{Vector{Float64},
-                                    Vector{Float64}}}}
+                                Vector{Tuple{Vector{Float64},
+                                             Vector{Float64}}}}
     per_expert_discrimination_calibration_curves::Union{Missing,
-                                               Vector{Tuple{Vector{Float64},
-                                                            Vector{Float64}}}}
+                                                        Vector{Tuple{Vector{Float64},
+                                                                     Vector{Float64}}}}
     per_expert_discrimination_calibration_scores::Union{Missing,
-                                               Vector{Float64}}
+                                                        Vector{Float64}}
     spearman_correlation::Union{Missing,
-                       NamedTuple{(:ρ, :n,
-                                   :ci_lower,
-                                   :ci_upper),
-                                  Tuple{Float64,
-                                        Int64,
-                                        Float64,
-                                        Float64}}}
+                                NamedTuple{(:ρ, :n,
+                                            :ci_lower,
+                                            :ci_upper),
+                                           Tuple{Float64,
+                                                 Int64,
+                                                 Float64,
+                                                 Float64}}}
     thresholds::Union{Missing,Vector{Float64}}
 end
 
@@ -295,9 +295,9 @@ See also [`get_label_metrics_multirater`](@ref) and  [`get_label_metrics_multira
 @version LabelMetricsObjectV1 begin
     ira_kappa::Union{Missing,Float64}
     per_expert_discrimination_calibration_curves::Union{Missing,Vector{Curve}} = ismissing(per_expert_discrimination_calibration_curves) ?
-                                                                      missing :
-                                                                      Curve.(per_expert_discrimination_calibration_curves)
-    per_expert_discrimination_calibration_scores::Union{Missing, Vector{Float64}}
+                                                                                 missing :
+                                                                                 Curve.(per_expert_discrimination_calibration_curves)
+    per_expert_discrimination_calibration_scores::Union{Missing,Vector{Float64}}
 end
 
 """
@@ -319,10 +319,10 @@ and [`get_hardened_metrics_multiclass`](@ref).
 @version HardenedMetricsObjectV1 > ClassObjectV1 begin
     confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
     discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
-                                                     missing :
-                                                     Curve(discrimination_calibration_curve)
+                                                             missing :
+                                                             Curve(discrimination_calibration_curve)
     discrimination_calibration_score::Union{Missing,
-                                    Float64}
+                                            Float64}
     ea_kappa::Union{Missing,Float64}
 end
 
@@ -351,19 +351,19 @@ See also [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multir
 @schema "lighthouse.tradeoff-metrics" TradeOffMetricsObject
 @version TradeOffMetricsObjectV1 > ClassObjectV1 begin
     roc_curve::Curve = ismissing(roc_curve) ? missing :
-               Curve(roc_curve),
+    Curve(roc_curve),
     roc_auc::Float64,
     pr_curve::Curve = ismissing(pr_curve) ? missing :
-              Curve(pr_curve),
+    Curve(pr_curve),
     spearman_correlation::Union{Missing,Float64},
     spearman_correlation_ci_upper::Union{Missing,
-                                 Float64},
+    Float64},
     spearman_correlation_ci_lower::Union{Missing,
-                                 Float64},
+    Float64},
     n_samples::Union{Missing,Int},
     reliability_calibration_curve::Union{Missing,Curve} = ismissing(reliability_calibration_curve) ?
-                                                  missing :
-                                                  Curve(reliability_calibration_curve),
-    reliability_calibration_score::Union{Missing,
-                                 Float64}
+                                                          missing :
+                                                          Curve(reliability_calibration_curve),
+                                                          reliability_calibration_score::Union{Missing,
+                                                                                               Float64}
 end
