@@ -28,15 +28,15 @@ macro testplot(fig_name)
     end
 end
 
-const EVALUATION_ROW_KEYS = string.(keys(EvaluationRow()))
+const EVALUATION_V1_KEYS = string.(fieldnames(EvaluationV1))
 
 function test_evaluation_metrics_roundtrip(row_dict::Dict{String,S}) where {S}
-    # Make sure we're capturing all metrics keys in our Schema
-    keys_not_in_schema = setdiff(keys(row_dict), EVALUATION_ROW_KEYS)
+    # Make sure all metrics keys are captured in our schema and are not thrown away
+    keys_not_in_schema = setdiff(keys(row_dict), EVALUATION_V1_KEYS)
     @test isempty(keys_not_in_schema)
 
     # Do the roundtripping (will fail if schema types do not validate after roundtrip)
-    row = EvaluationRow(row_dict)
+    record = EvaluationV1(row_dict)
     rt_row = roundtrip_row(row)
 
     # Make sure full row roundtrips correctly
@@ -50,7 +50,7 @@ function test_evaluation_metrics_roundtrip(row_dict::Dict{String,S}) where {S}
     end
 
     # Make sure originating metrics dictionary roundtrips correctly
-    rt_dict = Lighthouse._evaluation_row_dict(rt_row)
+    rt_dict = Lighthouse._evaluation_dict(rt_row)
     for (k, v) in pairs(row_dict)
         if ismissing(v)
             @test ismissing(rt_dict[k])
@@ -65,7 +65,7 @@ function roundtrip_row(row::EvaluationRow)
     p = mktempdir() * "rt_test.arrow"
     tbl = [row]
     Legolas.write(p, tbl, Lighthouse.EVALUATION_ROW_SCHEMA)
-    return EvaluationRow(only(Tables.rows(Legolas.read(p))))
+    return EvaluationV1(only(Tables.rows(Legolas.read(p))))
 end
 
 include("plotting.jl")

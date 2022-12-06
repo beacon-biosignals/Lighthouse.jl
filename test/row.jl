@@ -6,8 +6,8 @@
     @test_throws DimensionMismatch Lighthouse.vec_to_mat(collect(1:6)) # Invalid dimensions
 end
 
-@testset "`EvaluationRow` basics" begin
-    # Most EvaluationRow testing happens via the `test_evaluation_metrics_roundtrip`
+@testset "`EvaluationV1` basics" begin
+    # Most Evaluation testing happens via the `test_evaluation_metrics_roundtrip`
     # in test/learn.jl
 
     # Roundtrip from dict
@@ -29,14 +29,14 @@ function test_roundtrip_observation_table(; kwargs...)
     return table
 end
 
-@testset "`ObservationRow`" begin
+@testset "`ObservationV1`" begin
     # Multiclass
     num_observations = 100
     classes = ["A", "B", "C", "D"]
     predicted_soft_labels = rand(StableRNG(22), Float32, num_observations, length(classes))
     predicted_hard_labels = map(argmax, eachrow(predicted_soft_labels))
 
-    # Single labeler: round-trip `ObservationRow``...
+    # Single labeler: round-trip `ObservationV1`...
     elected_hard_one_labeller = predicted_hard_labels[[1:50..., 1:50...]]  # Force 50% TP overall
     votes = missing
     table = test_roundtrip_observation_table(; predicted_soft_labels, predicted_hard_labels,
@@ -51,7 +51,7 @@ end
     metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
     @test isequal(metrics_from_inputs, metrics_from_table)
 
-    # Multiple labelers: round-trip `ObservationRow``...
+    # Multiple labelers: round-trip `ObservationV1`...
     for num_voters in (1, 5)
         possible_vote_labels = collect(0:length(classes)) # vote 0 == "no vote"
         vote_rng = StableRNG(22)
