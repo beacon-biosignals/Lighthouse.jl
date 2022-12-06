@@ -37,11 +37,11 @@ function test_evaluation_metrics_roundtrip(row_dict::Dict{String,S}) where {S}
 
     # Do the roundtripping (will fail if schema types do not validate after roundtrip)
     record = EvaluationV1(row_dict)
-    rt_row = roundtrip_row(row)
+    rt_row = roundtrip_row(record)
 
     # Make sure full row roundtrips correctly
-    @test issetequal(keys(row), keys(rt_row))
-    for (k, v) in pairs(row)
+    @test issetequal(keys(record), keys(rt_row))
+    for (k, v) in pairs(record)
         if ismissing(v)
             @test ismissing(rt_row[k])
         else
