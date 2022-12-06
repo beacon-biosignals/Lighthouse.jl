@@ -198,7 +198,7 @@ end
     get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_index;
                          thresholds, binarize=binarize_by_threshold, class_labels=missing)
 
-Return [`TradeOffMetricsV1`] calculated for the given `class_index`, with the following
+Return [`TradeoffMetricsV1`] calculated for the given `class_index`, with the following
 fields guaranteed to be non-missing: `roc_curve`, `roc_auc`, pr_curve`,
 `reliability_calibration_curve`, `reliability_calibration_score`.` $(BINARIZE_NOTE)
 (`class_index`).
@@ -219,7 +219,7 @@ function get_tradeoff_metrics(predicted_soft_labels, elected_hard_labels, class_
                                      reliability_calibration.fractions)
     reliability_calibration_score = reliability_calibration.mean_squared_error
 
-    return TradeOffMetricsV1(; class_index, class_labels, roc_curve,
+    return TradeoffMetricsV1(; class_index, class_labels, roc_curve,
                               roc_auc=area_under_curve(roc_curve...), pr_curve,
                               reliability_calibration_curve, reliability_calibration_score)
 end
@@ -228,7 +228,7 @@ end
     get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_hard_labels, class_index;
                                            thresholds, binarize=binarize_by_threshold, class_labels=missing)
 
-Return [`TradeOffMetricsV1`] calculated for the given `class_index`. In addition
+Return [`TradeoffMetricsV1`] calculated for the given `class_index`. In addition
 to metrics calculated by [`get_tradeoff_metrics`](@ref), additionally calculates
 `spearman_correlation`-based metrics. $(BINARIZE_NOTE) (`class_index`).
 """
@@ -243,7 +243,7 @@ function get_tradeoff_metrics_binary_multirater(predicted_soft_labels, elected_h
                           (; spearman_correlation=corr.ρ,
                            spearman_correlation_ci_upper=corr.ci_upper,
                            spearman_correlation_ci_lower=corr.ci_lower, n_samples=corr.n))
-    return TradeOffMetricsV1(; row...)
+    return TradeoffMetricsV1(; row...)
 end
 
 """
@@ -542,7 +542,7 @@ _unpack_curves(curves::AbstractVector{Curve}) = Tuple.(curves)
 
 Helper function to create an `EvaluationV1` from tables of constituent Metrics schemas,
 to support [`evaluation_metrics_record`](@ref):
-- `tradeoff_metrics_table`: table of [`TradeOffMetricsV1`](@ref)s
+- `tradeoff_metrics_table`: table of [`TradeoffMetricsV1`](@ref)s
 - `hardened_metrics_table`: table of [`HardenedMetricsV1`](@ref)s
 - `label_metrics_table`: table of [`LabelMetricsV1`](@ref)s
 """

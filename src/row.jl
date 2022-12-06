@@ -76,7 +76,7 @@ end
     end
 
 A Legolas record representing the output metrics computed by
-[`evaluation_metrics_row`](@ref) and [`evaluation_metrics`](@ref).
+[`evaluation_metrics_record`](@ref) and [`evaluation_metrics`](@ref).
 
 See [Legolas.jl](https://github.com/beacon-biosignals/Legolas.jl) for details regarding
 Legolas record types.
@@ -125,7 +125,7 @@ end
     end
 
 A Legolas record representing the per-observation input values required to compute
-[`evaluation_metrics_row`](@ref).
+[`evaluation_metrics_record`](@ref).
 """
 ObservationV1
 
@@ -291,8 +291,8 @@ and [`get_hardened_metrics_multiclass`](@ref).
 """
 HardenedMetricsV1
 
-@schema "lighthouse.tradeoff-metrics" TradeOffMetrics
-@version TradeOffMetricsV1 > ClassV1 begin
+@schema "lighthouse.tradeoff-metrics" TradeoffMetrics
+@version TradeoffMetricsV1 > ClassV1 begin
     roc_curve::Curve = lift(Curve, roc_curve)
     roc_auc::Float64
     pr_curve::Curve = lift(Curve, pr_curve)
@@ -306,7 +306,7 @@ HardenedMetricsV1
 end
 
 """
-    @version TradeOffMetricsV1 > ClassV1 begin
+    @version TradeoffMetricsV1 > ClassV1 begin
         roc_curve::Curve = lift(Curve, roc_curve)
         roc_auc::Float64
         pr_curve::Curve = lift(Curve, pr_curve)
@@ -322,4 +322,4 @@ end
 A Legolas record representing metrics calculated over predicted soft labels. See also
 [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multirater`](@ref).
 """
-TradeOffMetricsV1
+TradeoffMetricsV1

@@ -70,7 +70,7 @@ EvaluationV1
 ObservationV1
 Lighthouse.evaluation_metrics
 Lighthouse._evaluation_dict
-Lighthouse.evaluation_metrics_row
+Lighthouse.evaluation_metrics_record
 Lighthouse.ClassV1
 TradeoffMetricsV1
 get_tradeoff_metrics
