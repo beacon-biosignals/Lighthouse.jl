@@ -37,7 +37,7 @@ const GenericCurve = Tuple{Vector{Float64},Vector{Float64}}
     per_expert_discrimination_calibration_curves::Union{Missing,Vector{GenericCurve}}
     per_expert_discrimination_calibration_scores::Union{Missing,Vector{Float64}}
     spearman_correlation::Union{Missing,
-                                @NamedTuple{p::Float64,
+                                @NamedTuple{ρ::Float64,  # Note: is rho not 'p' 😢
                                             n::Int64,
                                             ci_lower::Float64,
                                             ci_upper::Float64}}
