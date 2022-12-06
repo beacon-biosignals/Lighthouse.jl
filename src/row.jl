@@ -348,21 +348,22 @@ A type alias for [`Legolas.Row{typeof(Legolas.Schema("tradeoff-metrics@1"))}`](h
 representing metrics calculated over predicted soft labels.
 See also [`get_tradeoff_metrics`](@ref) and [`get_tradeoff_metrics_binary_multirater`](@ref).
 """
-const TradeoffMetricsRow = Legolas.@row("lighthouse.tradeoff-metrics@1" >
-                                        "lighthouse.class@1",
-                                        roc_curve::Curve = ismissing(roc_curve) ? missing :
-                                                           Curve(roc_curve),
-                                        roc_auc::Float64,
-                                        pr_curve::Curve = ismissing(pr_curve) ? missing :
-                                                          Curve(pr_curve),
-                                        spearman_correlation::Union{Missing,Float64},
-                                        spearman_correlation_ci_upper::Union{Missing,
-                                                                             Float64},
-                                        spearman_correlation_ci_lower::Union{Missing,
-                                                                             Float64},
-                                        n_samples::Union{Missing,Int},
-                                        reliability_calibration_curve::Union{Missing,Curve} = ismissing(reliability_calibration_curve) ?
-                                                                                              missing :
-                                                                                              Curve(reliability_calibration_curve),
-                                        reliability_calibration_score::Union{Missing,
-                                                                             Float64})
+@schema "lighthouse.tradeoff-metrics" TradeOffMetricsObject
+@version TradeOffMetricsObjectV1 > ClassObjectV1 begin
+    roc_curve::Curve = ismissing(roc_curve) ? missing :
+               Curve(roc_curve),
+    roc_auc::Float64,
+    pr_curve::Curve = ismissing(pr_curve) ? missing :
+              Curve(pr_curve),
+    spearman_correlation::Union{Missing,Float64},
+    spearman_correlation_ci_upper::Union{Missing,
+                                 Float64},
+    spearman_correlation_ci_lower::Union{Missing,
+                                 Float64},
+    n_samples::Union{Missing,Int},
+    reliability_calibration_curve::Union{Missing,Curve} = ismissing(reliability_calibration_curve) ?
+                                                  missing :
+                                                  Curve(reliability_calibration_curve),
+    reliability_calibration_score::Union{Missing,
+                                 Float64}
+end
