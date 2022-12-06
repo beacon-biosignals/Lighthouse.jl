@@ -6,14 +6,14 @@ using StatsBase: StatsBase
 using TensorBoardLogger
 using Makie
 using Printf
-using Legolas
+using Legolas: Legolas, @schema, @version, lift
 using Tables
 using DataFrames
 using ArrowTypes
 
 include("row.jl")
-export EvaluationRow, ObservationRow, Curve, TradeoffMetricsRow, HardenedMetricsRow,
-       LabelMetricsRow, Curve
+export EvaluationV1, ObservationV1, Curve, TradeoffMetricsV1, HardenedMetricsV1,
+       LabelMetricsV1
 
 include("plotting.jl")
 
