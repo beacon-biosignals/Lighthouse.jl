@@ -180,7 +180,7 @@ end
         all_together_2 = evaluation_metrics_plot(plot_data)
         @testplot all_together_2
 
-        all_together_3 = evaluation_metrics_plot(EvaluationRow(plot_data))
+        all_together_3 = evaluation_metrics_plot(EvaluationV1(plot_data))
         @testplot all_together_3
 
         #savefig(all_together_2, "/tmp/multiclass.png")
@@ -314,7 +314,7 @@ end
 
         # Test binary discrimination with no multiclass votes
         plot_data_1["per_expert_discrimination_calibration_curves"] = missing
-        no_expert_calibration = evaluation_metrics_plot(EvaluationRow(plot_data_1))
+        no_expert_calibration = evaluation_metrics_plot(EvaluationV1(plot_data_1))
         @testplot no_expert_calibration
 
         # Test that plotting succeeds (no specialization relative to the multi-class tests)

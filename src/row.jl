@@ -91,7 +91,7 @@ end
                                                      Float64}}}
         thresholds::Union{Missing,Vector{Float64}}
     end
-`Dict` of metrics results (e.g. from Lighthouse <v0.14.0) into an [`EvaluationRow`](@ref).
+`Dict` of metrics results (e.g. from Lighthouse <v0.14.0) into an [`EvaluationV1`](@ref).
 
 #TODO change the name of the funtions. We probably wont have *_row anymore.
 A Legolas-generated record type representing metrics used in model evaluation,
@@ -104,17 +104,16 @@ See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legola
 """
 EvaluationV1
 
-#TODO How to convert these functionns?
 function EvaluationV1(d::Dict)
     row = (; (Symbol(k) => v for (k, v) in pairs(d))...)
     return EvaluationV1(row)
 end
 
 """
-    _evaluation_row_dict(row::EvaluationRow) -> Dict{String,Any}
+    _evaluation_row_dict(row::EvaluationV1) -> Dict{String,Any}
 
-Convert [`EvaluationRow`](@ref) into `::Dict{String, Any}` results, as are
-output by `[`evaluation_metrics`](@ref)` (and predated use of `EvaluationRow` in
+Convert [`EvaluationV1`](@ref) into `::Dict{String, Any}` results, as are
+output by `[`evaluation_metrics`](@ref)` (and predated use of `EvaluationV1` in
 Lighthouse <v0.14.0).
 """
 function _evaluation_dict(row::EvaluationV1)
@@ -288,7 +287,7 @@ provided by multiple labelers. See also [`get_label_metrics_multirater`](@ref)
 and [`get_label_metrics_multirater_multiclass`](@ref).
 See https://github.com/beacon-biosignals/Legolas.jl for details regarding Legolas record types.
 """
-LabelMetricsObjectV1
+LabelMetricsV1
 
 @schema "lighthouse.hardened-metrics" HardenedMetrics
 @version HardenedMetricsV1 > ClassV1 begin

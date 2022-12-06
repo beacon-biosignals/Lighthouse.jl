@@ -319,16 +319,16 @@ end
 
 """
     evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
-    evaluation_metrics_plot(row::EvaluationRow; kwargs...)
+    evaluation_metrics_plot(row::EvaluationV1; kwargs...)
 
 Plot all evaluation metrics generated via [`evaluation_metrics_row`](@ref) and/or
 [`evaluation_metrics`](@ref) in a single image.
 """
 function evaluation_metrics_plot(data::Dict; kwargs...)
-    return evaluation_metrics_plot(EvaluationRow(data); kwargs...)
+    return evaluation_metrics_plot(EvaluationV1(data); kwargs...)
 end
 
-function evaluation_metrics_plot(row::EvaluationRow; resolution=(1000, 1000),
+function evaluation_metrics_plot(row::EvaluationV1; resolution=(1000, 1000),
                                  textsize=12)
     fig = Figure(; resolution=resolution, Axis=(titlesize=17,))
 

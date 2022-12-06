@@ -28,7 +28,7 @@ log_value!(logger, field::AbstractString, value)
 
 Logs a series plot to `logger` under `field`, where...
 
-- `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationRow` field `per_class_roc_curves`
+- `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationV1` field `per_class_roc_curves`
 - `labels` is the class label for each curve, which defaults to the numeric index of each curve.
 """
 log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
@@ -92,7 +92,7 @@ end
 """
     log_evaluation_row!(logger, field::AbstractString, metrics)
 
-From fields in [`EvaluationRow`](@ref), generate and plot the composite [`evaluation_metrics_plot`](@ref)
+From fields in [`EvaluationV1`](@ref), generate and plot the composite [`evaluation_metrics_plot`](@ref)
 as well as `spearman_correlation` (if present).
 """
 function log_evaluation_row!(logger, field::AbstractString, metrics)

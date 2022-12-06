@@ -79,7 +79,7 @@ end
                                                           predicted_hard_labels,
                                                           elected_hard_labels=elected_hard_multilabeller,
                                                           votes)
-        @test isnothing(Legolas.validate(r_table, Lighthouse.OBSERVATION_ROW_SCHEMA))
+        @test Legolas.complies_with(Tables.schema(r_table), Lighthouse.ObservationV1SchemaVersion())
 
         # ...can we handle both dataframe input and more generic row iterators?
         df_table = DataFrame(r_table)
@@ -104,18 +104,18 @@ end
     end
 end
 
-@testset "`ClassRow" begin
-    @test isa(Lighthouse.ClassRow(; class_index=3, class_labels=missing).class_index, Int64)
-    @test isa(Lighthouse.ClassRow(; class_index=Int8(3), class_labels=missing).class_index,
+@testset "`ClassV1" begin
+    @test isa(Lighthouse.ClassV1(; class_index=3, class_labels=missing).class_index, Int64)
+    @test isa(Lighthouse.ClassV1(; class_index=Int8(3), class_labels=missing).class_index,
               Int64)
-    @test Lighthouse.ClassRow(; class_index=:multiclass).class_index == :multiclass
-    @test Lighthouse.ClassRow(; class_index=:multiclass,
-                              class_labels=["a", "b"]).class_labels == ["a", "b"]
+    @test Lighthouse.ClassV1(; class_index=:multiclass).class_index == :multiclass
+    @test Lighthouse.ClassV1(; class_index=:multiclass,
+                             class_labels=["a", "b"]).class_labels == ["a", "b"]
 
-    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0,
-                                                   class_labels=missing)
-    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS,
-                                                   class_labels=missing)
+    @test_throws ArgumentError Lighthouse.ClassV1(; class_index=3.0f0,
+                                                  class_labels=missing)
+    @test_throws ArgumentError Lighthouse.ClassV1(; class_index=:mUlTiClAsS,
+                                                  class_labels=missing)
 end
 
 @testset "class_labels" begin

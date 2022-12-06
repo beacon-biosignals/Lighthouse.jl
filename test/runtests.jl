@@ -61,10 +61,10 @@ function test_evaluation_metrics_roundtrip(row_dict::Dict{String,S}) where {S}
     return nothing
 end
 
-function roundtrip_row(row::EvaluationRow)
+function roundtrip_row(row::EvaluationV1)
     p = mktempdir() * "rt_test.arrow"
     tbl = [row]
-    Legolas.write(p, tbl, Lighthouse.EVALUATION_ROW_SCHEMA)
+    Legolas.write(p, tbl, Lighthouse.EvaluationV1SchemaVersion())
     return EvaluationV1(only(Tables.rows(Legolas.read(p))))
 end
 
