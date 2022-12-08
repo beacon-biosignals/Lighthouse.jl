@@ -396,7 +396,7 @@ Where...
   ignored and new `predicted_hard_labels` will be recalculated from the new threshold.
   This is only a valid parameter when `length(classes) == 2`
 
-Alternatively, an `observation_table` that consists of rows of type [`ObservationRow`](@ref)
+Alternatively, an `observation_table` that consists of rows of type [`ObservationV1`](@ref)
 can be passed in in place of `predicted_soft_labels`,`predicted_hard_labels`,`elected_hard_labels`,
 and `votes`. $(BINARIZE_NOTE).
 
