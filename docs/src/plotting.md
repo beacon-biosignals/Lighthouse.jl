@@ -274,8 +274,8 @@ data["optimal_threshold"] = missing
 evaluation_metrics_plot(data)
 ```
 
-Plots can also be generated directly from an `EvaluationRow`:
+Plots can also be generated directly from an `EvaluationV1`:
 ```@example 1
-data_row = EvaluationRow(data)
+data_row = EvaluationV1(data)
 evaluation_metrics_plot(data_row)
 ```

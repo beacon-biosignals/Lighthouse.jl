@@ -22,6 +22,25 @@ function Lighthouse.loss_and_prediction(c::TestClassifier, dummy_input_batch)
     return c.dummy_loss, dummy_soft_label_batch
 end
 
+@testset "`_values_or_missing`" begin
+    @test Lighthouse._values_or_missing(nothing) === missing
+    @test Lighthouse._values_or_missing(missing) === missing
+    @test Lighthouse._values_or_missing(1) === 1
+    @test Lighthouse._values_or_missing([1, 2, 3]) == [1, 2, 3]
+    @test Lighthouse._values_or_missing([missing]) === missing
+    @test Lighthouse._values_or_missing([1, missing]) === missing
+
+    input = Union{Int,Missing}[1, 2, 3]
+    result = Lighthouse._values_or_missing(input)
+    @test result == input
+    @test result isa Vector{Int}
+
+    input = Union{Int,Missing}[1 2; 3 4]
+    result = Lighthouse._values_or_missing(input)
+    @test result == input
+    @test result isa Matrix{Int}
+end
+
 @testset "Multi-class learn!(::TestModel, ...)" begin
     mktempdir() do tmpdir
         model = TestClassifier(1000000.0, ["class_$i" for i in 1:5])
@@ -100,9 +119,9 @@ end
         @test length(logger.logged["wheeeeeee/metrics_for_all_time"]) == 1
 
         # Test plotting with no votes directly with eval row
-        eval_row = Lighthouse.evaluation_metrics_row(predicted_hard, predicted_soft,
-                                                     elected_hard, model.classes;
-                                                     votes=nothing)
+        eval_row = Lighthouse.evaluation_metrics_record(predicted_hard, predicted_soft,
+                                                        elected_hard, model.classes;
+                                                        votes=nothing)
         all_together_no_ira = evaluation_metrics_plot(eval_row)
         @testplot all_together_no_ira
 
@@ -180,7 +199,7 @@ end
         all_together_2 = evaluation_metrics_plot(plot_data)
         @testplot all_together_2
 
-        all_together_3 = evaluation_metrics_plot(EvaluationRow(plot_data))
+        all_together_3 = evaluation_metrics_plot(EvaluationV1(plot_data))
         @testplot all_together_3
 
         #savefig(all_together_2, "/tmp/multiclass.png")
@@ -314,7 +333,7 @@ end
 
         # Test binary discrimination with no multiclass votes
         plot_data_1["per_expert_discrimination_calibration_curves"] = missing
-        no_expert_calibration = evaluation_metrics_plot(EvaluationRow(plot_data_1))
+        no_expert_calibration = evaluation_metrics_plot(EvaluationV1(plot_data_1))
         @testplot no_expert_calibration
 
         # Test that plotting succeeds (no specialization relative to the multi-class tests)

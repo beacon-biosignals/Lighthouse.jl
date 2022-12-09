@@ -28,7 +28,7 @@ log_value!(logger, field::AbstractString, value)
 
 Logs a series plot to `logger` under `field`, where...
 
-- `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationRow` field `per_class_roc_curves`
+- `curves` is an iterable of the form `Tuple{Vector{Real},Vector{Real}}`, where each tuple contains `(x-values, y-values)`, as in the `Lighthouse.EvaluationV1` field `per_class_roc_curves`
 - `labels` is the class label for each curve, which defaults to the numeric index of each curve.
 """
 log_line_series!(logger, field::AbstractString, curves, labels=1:length(curves))
@@ -92,12 +92,12 @@ end
 """
     log_evaluation_row!(logger, field::AbstractString, metrics)
 
-From fields in [`EvaluationRow`](@ref), generate and plot the composite [`evaluation_metrics_plot`](@ref)
+From fields in [`EvaluationV1`](@ref), generate and plot the composite [`evaluation_metrics_plot`](@ref)
 as well as `spearman_correlation` (if present).
 """
 function log_evaluation_row!(logger, field::AbstractString, metrics)
     metrics_plot = evaluation_metrics_plot(metrics)
-    metrics_dict = _evaluation_row_dict(metrics)
+    metrics_dict = _evaluation_dict(metrics)
     log_plot!(logger, field, metrics_plot, metrics_dict)
     if haskey(metrics_dict, "spearman_correlation")
         sp_field = replace(field, "metrics" => "spearman_correlation")
@@ -230,9 +230,9 @@ function evaluate!(predicted_hard_labels::AbstractVector,
     _validate_threshold_class(optimal_threshold_class, classes)
 
     log_resource_info!(logger, logger_prefix; suffix=logger_suffix) do
-        metrics = evaluation_metrics_row(predicted_hard_labels, predicted_soft_labels,
-                                         elected_hard_labels, classes, thresholds;
-                                         votes, optimal_threshold_class)
+        metrics = evaluation_metrics_record(predicted_hard_labels, predicted_soft_labels,
+                                            elected_hard_labels, classes, thresholds;
+                                            votes, optimal_threshold_class)
         log_evaluation_row!(logger, logger_prefix * "/metrics" * logger_suffix,
                             metrics)
         return nothing

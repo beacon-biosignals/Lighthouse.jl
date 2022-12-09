@@ -7,7 +7,7 @@ makedocs(; modules=[Lighthouse], sitename="Lighthouse",
                 "Plotting" => "plotting.md"],
          # makes docs fail hard if there is any error building the examples,
          # so we don't just miss a build failure!
-         strict = true)
+         strict=true)
 
-deploydocs(repo="github.com/beacon-biosignals/Lighthouse.jl.git",
+deploydocs(; repo="github.com/beacon-biosignals/Lighthouse.jl.git",
            devbranch="main", push_preview=true)

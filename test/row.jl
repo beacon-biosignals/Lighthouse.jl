@@ -6,8 +6,8 @@
     @test_throws DimensionMismatch Lighthouse.vec_to_mat(collect(1:6)) # Invalid dimensions
 end
 
-@testset "`EvaluationRow` basics" begin
-    # Most EvaluationRow testing happens via the `test_evaluation_metrics_roundtrip`
+@testset "`EvaluationV1` basics" begin
+    # Most Evaluation testing happens via the `test_evaluation_metrics_roundtrip`
     # in test/learn.jl
 
     # Roundtrip from dict
@@ -29,14 +29,14 @@ function test_roundtrip_observation_table(; kwargs...)
     return table
 end
 
-@testset "`ObservationRow`" begin
+@testset "`ObservationV1`" begin
     # Multiclass
     num_observations = 100
     classes = ["A", "B", "C", "D"]
     predicted_soft_labels = rand(StableRNG(22), Float32, num_observations, length(classes))
     predicted_hard_labels = map(argmax, eachrow(predicted_soft_labels))
 
-    # Single labeler: round-trip `ObservationRow``...
+    # Single labeler: round-trip `ObservationV1`...
     elected_hard_one_labeller = predicted_hard_labels[[1:50..., 1:50...]]  # Force 50% TP overall
     votes = missing
     table = test_roundtrip_observation_table(; predicted_soft_labels, predicted_hard_labels,
@@ -44,14 +44,14 @@ end
                                              votes)
 
     # ...and parity in evaluation_metrics calculation:
-    metrics_from_inputs = Lighthouse.evaluation_metrics_row(predicted_hard_labels,
-                                                            predicted_soft_labels,
-                                                            elected_hard_one_labeller,
-                                                            classes; votes)
-    metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
+    metrics_from_inputs = Lighthouse.evaluation_metrics_record(predicted_hard_labels,
+                                                               predicted_soft_labels,
+                                                               elected_hard_one_labeller,
+                                                               classes; votes)
+    metrics_from_table = Lighthouse.evaluation_metrics_record(table, classes)
     @test isequal(metrics_from_inputs, metrics_from_table)
 
-    # Multiple labelers: round-trip `ObservationRow``...
+    # Multiple labelers: round-trip `ObservationV1`...
     for num_voters in (1, 5)
         possible_vote_labels = collect(0:length(classes)) # vote 0 == "no vote"
         vote_rng = StableRNG(22)
@@ -68,18 +68,19 @@ end
                                                  votes)
 
         # ...is there parity in evaluation_metrics calculations?
-        metrics_from_inputs = Lighthouse.evaluation_metrics_row(predicted_hard_labels,
-                                                                predicted_soft_labels,
-                                                                elected_hard_multilabeller,
-                                                                classes; votes)
-        metrics_from_table = Lighthouse.evaluation_metrics_row(table, classes)
+        metrics_from_inputs = Lighthouse.evaluation_metrics_record(predicted_hard_labels,
+                                                                   predicted_soft_labels,
+                                                                   elected_hard_multilabeller,
+                                                                   classes; votes)
+        metrics_from_table = Lighthouse.evaluation_metrics_record(table, classes)
         @test isequal(metrics_from_inputs, metrics_from_table)
 
         r_table = Lighthouse._inputs_to_observation_table(; predicted_soft_labels,
                                                           predicted_hard_labels,
                                                           elected_hard_labels=elected_hard_multilabeller,
                                                           votes)
-        @test isnothing(Legolas.validate(r_table, Lighthouse.OBSERVATION_ROW_SCHEMA))
+        @test Legolas.complies_with(Tables.schema(r_table),
+                                    Lighthouse.ObservationV1SchemaVersion())
 
         # ...can we handle both dataframe input and more generic row iterators?
         df_table = DataFrame(r_table)
@@ -104,18 +105,18 @@ end
     end
 end
 
-@testset "`ClassRow" begin
-    @test isa(Lighthouse.ClassRow(; class_index=3, class_labels=missing).class_index, Int64)
-    @test isa(Lighthouse.ClassRow(; class_index=Int8(3), class_labels=missing).class_index,
+@testset "`ClassV1" begin
+    @test isa(Lighthouse.ClassV1(; class_index=3, class_labels=missing).class_index, Int64)
+    @test isa(Lighthouse.ClassV1(; class_index=Int8(3), class_labels=missing).class_index,
               Int64)
-    @test Lighthouse.ClassRow(; class_index=:multiclass).class_index == :multiclass
-    @test Lighthouse.ClassRow(; class_index=:multiclass,
-                              class_labels=["a", "b"]).class_labels == ["a", "b"]
+    @test Lighthouse.ClassV1(; class_index=:multiclass).class_index == :multiclass
+    @test Lighthouse.ClassV1(; class_index=:multiclass,
+                             class_labels=["a", "b"]).class_labels == ["a", "b"]
 
-    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=3.0f0,
-                                                   class_labels=missing)
-    @test_throws ArgumentError Lighthouse.ClassRow(; class_index=:mUlTiClAsS,
-                                                   class_labels=missing)
+    @test_throws ArgumentError Lighthouse.ClassV1(; class_index=3.0f0,
+                                                  class_labels=missing)
+    @test_throws ArgumentError Lighthouse.ClassV1(; class_index=:mUlTiClAsS,
+                                                  class_labels=missing)
 end
 
 @testset "class_labels" begin
