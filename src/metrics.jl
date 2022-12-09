@@ -352,16 +352,16 @@ end
 
 """
     evaluation_metrics_record(observation_table, classes, thresholds=0.0:0.01:1.0;
-                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+                              strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                              optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
     evaluation_metrics_record(predicted_hard_labels::AbstractVector,
-                           predicted_soft_labels::AbstractMatrix,
-                           elected_hard_labels::AbstractVector,
-                           classes,
-                           thresholds=0.0:0.01:1.0;
-                           votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
-                           strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
-                           optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
+                              predicted_soft_labels::AbstractMatrix,
+                              elected_hard_labels::AbstractVector,
+                              classes,
+                              thresholds=0.0:0.01:1.0;
+                              votes::Union{Nothing,Missing,AbstractMatrix}=nothing,
+                              strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                              optimal_threshold_class::Union{Missing,Nothing,Integer}=missing)
 
 Returns `EvaluationV1` containing a battery of classifier performance
 metrics that each compare `predicted_soft_labels` and/or `predicted_hard_labels`
