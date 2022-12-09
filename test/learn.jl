@@ -26,11 +26,11 @@ end
     @test Lighthouse._values_or_missing(nothing) === missing
     @test Lighthouse._values_or_missing(missing) === missing
     @test Lighthouse._values_or_missing(1) === 1
-    @test Lighthouse._values_or_missing([1,2,3]) == [1,2,3]
+    @test Lighthouse._values_or_missing([1, 2, 3]) == [1, 2, 3]
     @test Lighthouse._values_or_missing([missing]) === missing
     @test Lighthouse._values_or_missing([1, missing]) === missing
 
-    input = Union{Int,Missing}[1,2,3]
+    input = Union{Int,Missing}[1, 2, 3]
     result = Lighthouse._values_or_missing(input)
     @test result == input
     @test result isa Vector{Int}
@@ -40,7 +40,6 @@ end
     @test result == input
     @test result isa Matrix{Int}
 end
-
 
 @testset "Multi-class learn!(::TestModel, ...)" begin
     mktempdir() do tmpdir

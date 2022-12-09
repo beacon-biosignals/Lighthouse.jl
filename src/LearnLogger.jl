@@ -45,8 +45,9 @@ function log_plot!(logger::LearnLogger, field::AbstractString, plot, plot_data)
     return plot
 end
 
-function log_line_series!(logger::LearnLogger, field::AbstractString, curves, labels=1:length(curves))
-    @warn "`log_line_series!` not implemented for `LearnLogger`" maxlog=1
+function log_line_series!(logger::LearnLogger, field::AbstractString, curves,
+                          labels=1:length(curves))
+    @warn "`log_line_series!` not implemented for `LearnLogger`" maxlog = 1
     return nothing
 end
 

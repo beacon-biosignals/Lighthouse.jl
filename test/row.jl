@@ -45,9 +45,9 @@ end
 
     # ...and parity in evaluation_metrics calculation:
     metrics_from_inputs = Lighthouse.evaluation_metrics_record(predicted_hard_labels,
-                                                            predicted_soft_labels,
-                                                            elected_hard_one_labeller,
-                                                            classes; votes)
+                                                               predicted_soft_labels,
+                                                               elected_hard_one_labeller,
+                                                               classes; votes)
     metrics_from_table = Lighthouse.evaluation_metrics_record(table, classes)
     @test isequal(metrics_from_inputs, metrics_from_table)
 
@@ -79,7 +79,8 @@ end
                                                           predicted_hard_labels,
                                                           elected_hard_labels=elected_hard_multilabeller,
                                                           votes)
-        @test Legolas.complies_with(Tables.schema(r_table), Lighthouse.ObservationV1SchemaVersion())
+        @test Legolas.complies_with(Tables.schema(r_table),
+                                    Lighthouse.ObservationV1SchemaVersion())
 
         # ...can we handle both dataframe input and more generic row iterators?
         df_table = DataFrame(r_table)
