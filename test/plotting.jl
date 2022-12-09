@@ -33,15 +33,12 @@ using Makie.Colors: Gray
         curves = [(LinRange(0, 1, 10),
                    range(0; stop=i / 2, length=10) .+ (randn(rng, 10) .* 0.1))
                   for i in -1:3]
-        binary_discrimination_calibration_curves_plot = with_theme(;
-                                                                   BinaryDiscriminationCalibrationCurves=(Ideal=(linewidth=3,
-                                                                                                                 color=(:green,
-                                                                                                                        0.5)),
-                                                                                                          CalibrationCurve=(solid_color=:green,
-                                                                                                                            markersize=50, # should be overwritten by user kw
-                                                                                                                            linewidth=5),
-                                                                                                          PerExpert=(solid_color=:red,
-                                                                                                                     linewidth=1))) do
+        theme = (; Ideal=(linewidth=3, color=(:green, 0.5)),
+                 CalibrationCurve=(solid_color=:green,
+                                   markersize=50, # should be overwritten by user kw
+                                   linewidth=5),
+                 PerExpert=(solid_color=:red, linewidth=1))
+        plot = with_theme(; BinaryDiscriminationCalibrationCurves=theme) do
             return Lighthouse.plot_binary_discrimination_calibration_curves(curves[3],
                                                                             rand(rng, 5),
                                                                             curves[[1, 2, 4,
@@ -51,6 +48,7 @@ using Makie.Colors: Gray
                                                                             "";
                                                                             markersize=10)
         end
+        binary_discrimination_calibration_curves_plot = plot
         @testplot binary_discrimination_calibration_curves_plot
     end
 end
