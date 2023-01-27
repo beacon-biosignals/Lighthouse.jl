@@ -10,20 +10,25 @@
     @test accuracy(c) == percent_agreement == 3 / 8
     @test kappa == (3 / 8 - chance) / (1 - chance)
     stats = binary_statistics(c, 3)
+    total = sum(c)
     @test stats.predicted_positives == 2
     @test stats.predicted_negatives == 6
     @test stats.actual_positives == 2
     @test stats.actual_negatives == 6
     @test stats.true_positives == 1
-    @test stats.true_negatives == 2
+    @test stats.true_negatives == 5
     @test stats.false_positives == 1
     @test stats.false_negatives == 1
     @test stats.true_positive_rate == 0.5
-    @test stats.true_negative_rate == 1 / 3
+    @test stats.true_negative_rate == 5 / 6
     @test stats.false_positive_rate == 1 / 6
     @test stats.false_negative_rate == 0.5
     @test stats.precision == 0.5
     @test stats.f1 == 0.5
+    @test stats.true_positives + stats.true_negatives + stats.false_positives +
+          stats.false_negatives == total
+    @test stats.actual_positives + stats.actual_negatives == total
+    @test stats.predicted_positives + stats.predicted_negatives == total
 
     labels = rand(StableRNG(42), 1:3, 100)
     hard_label_pairs = zip(labels, labels)
