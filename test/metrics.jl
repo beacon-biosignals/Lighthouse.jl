@@ -11,6 +11,7 @@
     @test kappa == (3 / 8 - chance) / (1 - chance)
     stats = binary_statistics(c, 3)
     total = sum(c)
+    @test total == 8
     @test stats.predicted_positives == 2
     @test stats.predicted_negatives == 6
     @test stats.actual_positives == 2
