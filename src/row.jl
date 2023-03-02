@@ -19,7 +19,7 @@ const GenericCurve = Tuple{Vector{Float64},Vector{Float64}}
     # XXX why do we spell out the different array types?
     # For Arrow, we need to be able to serialize as a vector
     # but we also want to be able to store a matrix directly.
-    # Then why not just use Array{Int64? Because that's an
+    # Then why not just use Array{Int64}? Because that's an
     # abstract type, which creates serialization issues in
     # unions with Missing.
     confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix)
