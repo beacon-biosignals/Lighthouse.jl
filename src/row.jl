@@ -20,7 +20,7 @@ const EVALUATION_ROW_SCHEMA = Legolas.Schema("lighthouse.evaluation@1")
 """
     const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                    class_labels::Union{Missing,Vector{String}},
-                                   confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
+                                   confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix),
                                    discrimination_calibration_curve::Union{Missing,
                                                                            Tuple{Vector{Float64},
                                                                                  Vector{Float64}}},
@@ -75,7 +75,13 @@ Constructor that takes `evaluation_row_dict` converts [`evaluation_metrics`](@re
 """
 const EvaluationRow = Legolas.@row("lighthouse.evaluation@1",
                                    class_labels::Union{Missing,Vector{String}},
-                                   confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
+                                    # XXX why do we spell out the different array types?
+                                    # For Arrow, we need to be able to serialize as a vector
+                                    # but we also want to be able to store a matrix directly.
+                                    # Then why not just use Array{Int64}? Because that's an
+                                    # abstract type, which creates serialization issues in
+                                    # unions with Missing.
+                                   confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix),
                                    discrimination_calibration_curve::Union{Missing,
                                                                            Tuple{Vector{Float64},
                                                                                  Vector{Float64}}},
@@ -298,7 +304,7 @@ const LabelMetricsRow = Legolas.@row("lighthouse.label-metrics@1" > "lighthouse.
 """
     HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
                                         "lighthouse.class@1",
-                                        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
+                                        confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix),
                                         discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
                                                                                                  missing :
                                                                                                  Curve(discrimination_calibration_curve),
@@ -312,7 +318,7 @@ and [`get_hardened_metrics_multiclass`](@ref).
 """
 const HardenedMetricsRow = Legolas.@row("lighthouse.hardened-metrics@1" >
                                         "lighthouse.class@1",
-                                        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix),
+                                        confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix),
                                         discrimination_calibration_curve::Union{Missing,Curve} = ismissing(discrimination_calibration_curve) ?
                                                                                                  missing :
                                                                                                  Curve(discrimination_calibration_curve),
