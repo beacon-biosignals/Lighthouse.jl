@@ -10,13 +10,19 @@ function vec_to_mat(vec::AbstractVector)
     n = isqrt(length(vec))
     return reshape(vec, n, n)
 end
-vec_to_mat(x::Missing) = return missing
+vec_to_mat(::Missing) = missing
 
 const GenericCurve = Tuple{Vector{Float64},Vector{Float64}}
 @schema "lighthouse.evaluation" Evaluation
 @version EvaluationV1 begin
     class_labels::Union{Missing,Vector{String}}
-    confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
+    # XXX why do we spell out the different array types?
+    # For Arrow, we need to be able to serialize as a vector
+    # but we also want to be able to store a matrix directly.
+    # Then why not just use Array{Int64}? Because that's an
+    # abstract type, which creates serialization issues in
+    # unions with Missing.
+    confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix)
     discrimination_calibration_curve::Union{Missing,GenericCurve}
     discrimination_calibration_score::Union{Missing,Float64}
     multiclass_IRA_kappas::Union{Missing,Float64}
@@ -47,7 +53,7 @@ end
 """
     @version EvaluationV1 begin
         class_labels::Union{Missing,Vector{String}}
-        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
+        confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix)
         discrimination_calibration_curve::Union{Missing,GenericCurve}
         discrimination_calibration_score::Union{Missing,Float64}
         multiclass_IRA_kappas::Union{Missing,Float64}
@@ -269,7 +275,7 @@ LabelMetricsV1
 
 @schema "lighthouse.hardened-metrics" HardenedMetrics
 @version HardenedMetricsV1 > ClassV1 begin
-    confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
+    confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix)
     discrimination_calibration_curve::Union{Missing,Curve} = lift(Curve,
                                                                   discrimination_calibration_curve)
     discrimination_calibration_score::Union{Missing,Float64}
@@ -278,7 +284,7 @@ end
 
 """
     @version HardenedMetricsV1 > ClassV1 begin
-        confusion_matrix::Union{Missing,Array{Int64}} = vec_to_mat(confusion_matrix)
+        confusion_matrix::Union{Missing,Array{Int64,1},Array{Int64,2}} = vec_to_mat(confusion_matrix)
         discrimination_calibration_curve::Union{Missing,Curve} = lift(Curve,
                                                                       discrimination_calibration_curve)
         discrimination_calibration_score::Union{Missing,Float64}
