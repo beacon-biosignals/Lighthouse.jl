@@ -70,9 +70,9 @@ function binary_statistics(confusion::AbstractMatrix, class_index::Integer)
     actual_positives = sum(view(confusion, :, class_index))
     actual_negatives = total - actual_positives
     true_positives = confusion[class_index, class_index]
-    true_negatives = sum(diag(confusion)) - true_positives
     false_positives = predicted_positives - true_positives
     false_negatives = actual_positives - true_positives
+    true_negatives = actual_negatives - false_positives
     true_positive_rate = (true_positives == 0 && actual_positives == 0) ?
                          (one(true_positives) / one(actual_positives)) :
                          (true_positives / actual_positives)
