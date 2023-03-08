@@ -85,10 +85,10 @@
     @test stats.true_negatives == 0
     @test stats.false_positives == 0
     @test stats.false_negatives == 0
-    @test stats.true_positive_rate == 1
-    @test stats.true_negative_rate == 1
-    @test stats.false_positive_rate == 0
-    @test stats.false_negative_rate == 0
+    @test isnan(stats.true_positive_rate)
+    @test isnan(stats.true_negative_rate)
+    @test isnan(stats.false_positive_rate)
+    @test isnan(stats.false_negative_rate)
     @test isnan(stats.precision)
     @test isnan(stats.f1)
 
