@@ -1,10 +1,4 @@
-if !isdefined(Makie, :FigurePosition)
-    const FigurePosition = Makie.GridPosition
-    get_parent(x::Makie.GridPosition) = x.layout.parent
-else
-    using Makie: FigurePosition
-    get_parent(x::FigurePosition) = x.fig
-end
+get_parent(x::Makie.GridPosition) = x.layout.parent
 
 # We can't rely on inference to always give us fully typed
 # Vector{<: Number} so we add `{T} where T` to the the mix
@@ -23,7 +17,7 @@ function get_theme(scene, key1::Symbol, key2::Symbol; defaults...)
     return get_theme(Makie.get_scene(scene), key1, key2; defaults...)
 end
 
-function get_theme(fig::FigurePosition, key1::Symbol, key2::Symbol; defaults...)
+function get_theme(fig::GridPosition, key1::Symbol, key2::Symbol; defaults...)
     return get_theme(get_parent(fig), key1, key2; defaults...)
 end
 
@@ -64,7 +58,7 @@ A series of XYVectors, or a single xyvector.
 """
 const SeriesCurves = Union{XYVector,AbstractVector{<:XYVector}}
 
-function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
+function series_plot!(subfig::GridPosition, per_class_pr_curves::SeriesCurves,
                       class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt,
                       title="No title",
                       xlabel="x label", ylabel="y label", solid_color=nothing,
@@ -92,7 +86,7 @@ function series_plot!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
     return ax
 end
 
-function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurves,
+function plot_pr_curves!(subfig::GridPosition, per_class_pr_curves::SeriesCurves,
                          class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt,
                          title="PR curves",
                          xlabel="True positive rate", ylabel="Precision",
@@ -103,7 +97,7 @@ function plot_pr_curves!(subfig::FigurePosition, per_class_pr_curves::SeriesCurv
                         ylabel=ylabel, scatter=scatter, solid_color=solid_color)
 end
 
-function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCurves,
+function plot_roc_curves!(subfig::GridPosition, per_class_roc_curves::SeriesCurves,
                           per_class_roc_aucs::NumberVector,
                           class_labels::AbstractVector{<:String};
                           legend=:rb, title="ROC curves", xlabel="False positive rate",
@@ -116,7 +110,7 @@ function plot_roc_curves!(subfig::FigurePosition, per_class_roc_curves::SeriesCu
                         ylabel=ylabel)
 end
 
-function plot_reliability_calibration_curves!(subfig::FigurePosition,
+function plot_reliability_calibration_curves!(subfig::GridPosition,
                                               per_class_reliability_calibration_curves::SeriesCurves,
                                               per_class_reliability_calibration_scores::NumberVector,
                                               class_labels::AbstractVector{String};
@@ -152,7 +146,7 @@ function set_from_kw!(theme, key, kw, default)
     return
 end
 
-function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
+function plot_binary_discrimination_calibration_curves!(subfig::GridPosition,
                                                         calibration_curve::SeriesCurves,
                                                         calibration_score,
                                                         per_expert_calibration_curves::Union{SeriesCurves,
@@ -204,7 +198,7 @@ function plot_binary_discrimination_calibration_curves!(subfig::FigurePosition,
     return ax
 end
 
-function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
+function plot_confusion_matrix!(subfig::GridPosition, confusion::NumberMatrix,
                                 class_labels::AbstractVector{String},
                                 normalize_by::Union{Symbol,Nothing}=nothing;
                                 annotation_text_size=20, colormap=:Blues)
@@ -221,7 +215,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
         title = "$(string(normalize_by))-Normalized Confusion"
     end
     class_indices = 1:nclasses
-    text_theme = get_theme(subfig, :ConfusionMatrix, :Text; textsize=annotation_text_size)
+    text_theme = get_theme(subfig, :ConfusionMatrix, :Text; fontsize=annotation_text_size)
     heatmap_theme = get_theme(subfig, :ConfusionMatrix, :Heatmap; nan_color=(:black, 0.0))
     axis_theme = get_theme(subfig, :ConfusionMatrix, :Axis; xticklabelrotation=pi / 4,
                            titlealign=:left, title,
@@ -255,7 +249,7 @@ function plot_confusion_matrix!(subfig::FigurePosition, confusion::NumberMatrix,
     annos = vec([(string(confusion[i, j]), Point2f(j, i))
                  for i in class_indices, j in class_indices])
     colors = vec([label_color(i, j) for i in class_indices, j in class_indices])
-    text!(ax, annos; align=(:center, :center), color=colors, textsize=annotation_text_size,
+    text!(ax, annos; align=(:center, :center), color=colors, fontsize=annotation_text_size,
           text_theme...)
     return ax
 end
@@ -282,7 +276,7 @@ function text_attributes(values, groups, bar_colors, bg_color, text_color)
     return aligns, offsets, text_colors
 end
 
-function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
+function plot_kappas!(subfig::GridPosition, per_class_kappas::NumberVector,
                       class_labels::AbstractVector{String}, per_class_IRA_kappas=nothing;
                       color=[:lightgrey, :lightblue], annotation_text_size=20)
     nclasses = length(class_labels)
@@ -290,7 +284,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
                            xlabel="Cohen's kappa", xticks=[0, 1], yreversed=true,
                            yticks=(1:nclasses, class_labels))
 
-    text_theme = get_theme(subfig, :Kappas, :Text; textsize=annotation_text_size)
+    text_theme = get_theme(subfig, :Kappas, :Text; fontsize=annotation_text_size)
     text_color = to_color(to_value(pop!(text_theme, :color, to_color(:black))))
     bars_theme = get_theme(subfig, :Kappas, :BarPlot; color=color)
     bar_colors = to_color.(bars_theme.color[])
@@ -340,7 +334,7 @@ function plot_kappas!(subfig::FigurePosition, per_class_kappas::NumberVector,
 end
 
 """
-    evaluation_metrics_plot(data::Dict; resolution=(1000, 1000), textsize=12)
+    evaluation_metrics_plot(data::Dict; size=(1000, 1000), fontsize=12)
     evaluation_metrics_plot(row::EvaluationV1; kwargs...)
 
 Plot all evaluation metrics generated via [`evaluation_metrics_record`](@ref) and/or
@@ -350,16 +344,16 @@ function evaluation_metrics_plot(data::Dict; kwargs...)
     return evaluation_metrics_plot(EvaluationV1(data); kwargs...)
 end
 
-function evaluation_metrics_plot(row::EvaluationV1; resolution=(1000, 1000),
-                                 textsize=12)
-    fig = Figure(; resolution=resolution, Axis=(titlesize=17,))
+function evaluation_metrics_plot(row::EvaluationV1; size=(1000, 1000),
+                                 fontsize=12)
+    fig = Figure(; size=size, Axis=(titlesize=17,))
 
     # Confusion
     plot_confusion_matrix!(fig[1, 1], row.confusion_matrix, row.class_labels,
                            :Column;
-                           annotation_text_size=textsize)
+                           annotation_text_size=fontsize)
     plot_confusion_matrix!(fig[1, 2], row.confusion_matrix, row.class_labels, :Row;
-                           annotation_text_size=textsize)
+                           annotation_text_size=fontsize)
     # Kappas
     IRA_kappa_data = nothing
     multiclass = length(row.class_labels) > 2
@@ -375,7 +369,7 @@ function evaluation_metrics_plot(row::EvaluationV1; resolution=(1000, 1000),
     end
 
     plot_kappas!(fig[1, 3], kappa_data, labels, IRA_kappa_data;
-                 annotation_text_size=textsize)
+                 annotation_text_size=fontsize)
 
     # Curves
     ax = plot_roc_curves!(fig[2, 1], row.per_class_roc_curves,
@@ -428,8 +422,8 @@ function evaluation_metrics_plot(row::EvaluationV1; resolution=(1000, 1000),
 end
 
 # Helper to more easily define the non mutating versions
-function axisplot(func, args; resolution=(800, 600), plot_kw...)
-    fig = Figure(; resolution=resolution)
+function axisplot(func, args; size=(800, 600), plot_kw...)
+    fig = Figure(; size=size)
     ax = func(fig[1, 1], args...; plot_kw...)
     # ax.plots[1] is not really that great, but there isn't a FigureAxis object right now
     # this will need to wait for when we figure out a better recipe integration
@@ -437,12 +431,12 @@ function axisplot(func, args; resolution=(800, 600), plot_kw...)
 end
 
 """
-    plot_confusion_matrix!(subfig::FigurePosition, args...; kw...)
+    plot_confusion_matrix!(subfig::GridPosition, args...; kw...)
 
     plot_confusion_matrix(confusion::AbstractMatrix{<: Number},
                           class_labels::AbstractVector{String},
                           normalize_by::Union{Symbol,Nothing}=nothing;
-                          resolution=(800,600), annotation_text_size=20)
+                          size=(800,600), annotation_text_size=20)
 
 
 Lighthouse plots confusion matrices, which are simple tables
@@ -467,7 +461,7 @@ plot_confusion_matrix(args...; kw...) = axisplot(plot_confusion_matrix!, args; k
     plot_reliability_calibration_curves(per_class_reliability_calibration_curves::SeriesCurves,
                                         per_class_reliability_calibration_scores::NumberVector,
                                         class_labels::AbstractVector{String};
-                                        legend=:rb, resolution=(800, 600))
+                                        legend=:rb, size=(800, 600))
 
 """
 function plot_reliability_calibration_curves(args...; kw...)
@@ -489,11 +483,11 @@ function plot_binary_discrimination_calibration_curves(args...; kw...)
 end
 
 """
-    plot_pr_curves!(subfig::FigurePosition, args...; kw...)
+    plot_pr_curves!(subfig::GridPosition, args...; kw...)
 
     plot_pr_curves(per_class_pr_curves::SeriesCurves,
                 class_labels::AbstractVector{<: String};
-                resolution=(800, 600),
+                size=(800, 600),
                 legend=:lt, title="PR curves",
                 xlabel="True positive rate", ylabel="Precision",
                 linewidth=2, scatter=NamedTuple(), color=:darktest)
@@ -504,12 +498,12 @@ end
 plot_pr_curves(args...; kw...) = axisplot(plot_pr_curves!, args; kw...)
 
 """
-    plot_roc_curves!(subfig::FigurePosition, args...; kw...)
+    plot_roc_curves!(subfig::GridPosition, args...; kw...)
 
     plot_roc_curves(per_class_roc_curves::SeriesCurves,
                     per_class_roc_aucs::NumberVector,
                     class_labels::AbstractVector{<: String};
-                    resolution=(800, 600),
+                    size=(800, 600),
                     legend=:lt,
                     title="ROC curves",
                     xlabel="False positive rate",
@@ -522,12 +516,12 @@ plot_pr_curves(args...; kw...) = axisplot(plot_pr_curves!, args; kw...)
 plot_roc_curves(args...; kw...) = axisplot(plot_roc_curves!, args; kw...)
 
 """
-    plot_kappas!(subfig::FigurePosition, args...; kw...)
+    plot_kappas!(subfig::GridPosition, args...; kw...)
 
     plot_kappas(per_class_kappas::NumberVector,
                 class_labels::AbstractVector{String},
                 per_class_IRA_kappas=nothing;
-                resolution=(800, 600),
+                size=(800, 600),
                 annotation_text_size=20)
 """
 plot_kappas(args...; kw...) = axisplot(plot_kappas!, args; kw...)

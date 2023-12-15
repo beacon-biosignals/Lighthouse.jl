@@ -9,7 +9,7 @@ on:
   pull_request:
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - Makie - ${{ matrix.makie }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -22,6 +22,8 @@ jobs:
           - ubuntu-latest
         arch:
           - x64
+        makie:
+            - '0.20'
     env:
       JULIA_NUM_THREADS: 2
     steps:
@@ -37,11 +39,16 @@ jobs:
           path: ~/.julia/artifacts
           key: ${{ runner.os }}-test-artifacts-${{ hashFiles('**/Project.toml') }}
           restore-keys: ${{ runner.os }}-test-artifacts
-      - uses: julia-actions/julia-buildpkg@v1
+      - name: "Install Makie and instantiate project"
+        shell: julia --color=yes --project {0}
+        run: |
+          using Pkg
+          Pkg.add(Pkg.PackageSpec(; name="Makie", version="${{ matrix.makie }}"))
+          Pkg.instantiate()
       - uses: julia-actions/julia-runtest@v1
       - name: Percy Upload
         uses: percy/exec-action@v0.3.1
-        if: matrix.version == 1
+        if: ${{ matrix.version == 1 && matrix.makie == 0.20 }}
         with:
           custom-command: "npx @percy/cli upload ./test/plot_results"
         env:

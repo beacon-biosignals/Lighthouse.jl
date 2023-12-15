@@ -26,7 +26,7 @@ fig, ax, p = plot_confusion_matrix(confusion, classes)
 ```
 
 ```@example 1
-fig = Figure(resolution=(800, 400))
+fig = Figure(size=(800, 400))
 plot_confusion_matrix!(fig[1, 1], confusion, classes, :Row, annotation_text_size=14)
 plot_confusion_matrix!(fig[1, 2], confusion, classes, :Column, annotation_text_size=14)
 fig

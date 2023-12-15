@@ -1,7 +1,7 @@
 name = "Lighthouse"
 uuid = "ac2c24cd-07f0-4848-96b2-1b82c3ea0e59"
 authors = ["Beacon Biosignals, Inc."]
-version = "0.15.2"
+version = "0.16.0"
 
 [deps]
 ArrowTypes = "31f734f8-188a-4ce0-8406-c8a06bd891cd"
@@ -21,11 +21,11 @@ TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 [compat]
 Arrow = "2.3"
 ArrowTypes = "1, 2"
-CairoMakie = "0.7, 0.8"
+CairoMakie = "0.11"
 DataFrames = "1.3"
 Legolas = "0.5"
-Makie = "0.17.4, 0.18"
-StatsBase = "0.33"
+Makie = "0.20"
+StatsBase = "0.33, 0.34"
 Tables = "1.7"
 TensorBoardLogger = "0.1"
 julia = "1.6"
