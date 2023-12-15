@@ -43,7 +43,7 @@ jobs:
         shell: julia --color=yes --project {0}
         run: |
           using Pkg
-          Pkg.develop(Pkg.PackageSpec(; name="Makie", version="${{ matrix.makie }}"))
+          Pkg.add(Pkg.PackageSpec(; name="Makie", version="${{ matrix.makie }}"))
           Pkg.instantiate()
       - uses: julia-actions/julia-runtest@v1
       - name: Percy Upload
