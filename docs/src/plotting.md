@@ -1,3 +1,10 @@
+!!! note
+    All plotting functions require a valid Makie backend, e.g. CairoMakie, to be loaded.
+    If there is no backend loaded, then functions won't do anything interesting.
+    On Julia 1.9+, Makie is a weak dependency and so won't incur any compilation/dependency
+    cost without a backend. On Julia < 1.9, Makie will still be loaded, but without a
+    backend, the resulting figure will not be rendered.
+
 # Confusion matrices
 
 ```@docs
