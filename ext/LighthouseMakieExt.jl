@@ -6,6 +6,8 @@ using Printf
 
 using Lighthouse: has_value, evaluation_metrics
 
+using Lighthouse: XYVector, SeriesCurves, NumberLike, NumberVector, NumberMatrix
+
 # all the methods we're actually defining and which call each other
 using Lighthouse: evaluation_metrics_plot, plot_confusion_matrix, plot_confusion_matrix!,
                   plot_reliability_calibration_curves, plot_reliability_calibration_curves!,
@@ -15,14 +17,6 @@ using Lighthouse: evaluation_metrics_plot, plot_confusion_matrix, plot_confusion
                   plot_kappas, plot_kappas!, evaluation_metrics_plot
 
 get_parent(x::Makie.GridPosition) = x.layout.parent
-
-# We can't rely on inference to always give us fully typed
-# Vector{<: Number} so we add `{T} where T` to the the mix
-# This makes the number like type a bit absurd, but is still nice for
-# documentation purposes!
-const NumberLike = Union{Number,Missing,Nothing,T} where {T}
-const NumberVector = AbstractVector{<:NumberLike}
-const NumberMatrix = AbstractMatrix{<:NumberLike}
 
 #####
 ##### Helpers for theming and color generation...May want to move them to Colors.jl / Makie.jl
@@ -59,20 +53,6 @@ function high_contrast(background_color::Colorant, target_color::Colorant;
                                    cchoices=[target.c], hchoices=[target.h])
     return RGBAf(color[1], Makie.Colors.alpha(target_color))
 end
-
-"""
-    Tuple{<:NumberVector, <: NumberVector}
-
-Tuple of X, Y coordinates
-"""
-const XYVector = Tuple{<:NumberVector,<:NumberVector}
-
-"""
-    Union{XYVector, AbstractVector{<: XYVector}}
-
-A series of XYVectors, or a single xyvector.
-"""
-const SeriesCurves = Union{XYVector,AbstractVector{<:XYVector}}
 
 function series_plot!(subfig::GridPosition, per_class_pr_curves::SeriesCurves,
                       class_labels::Union{Nothing,AbstractVector{String}}; legend=:lt,

@@ -1,3 +1,25 @@
+# We can't rely on inference to always give us fully typed
+# Vector{<: Number} so we add `{T} where T` to the the mix
+# This makes the number like type a bit absurd, but is still nice for
+# documentation purposes!
+const NumberLike = Union{Number,Missing,Nothing,T} where {T}
+const NumberVector = AbstractVector{<:NumberLike}
+const NumberMatrix = AbstractMatrix{<:NumberLike}
+
+"""
+    Tuple{<:NumberVector, <: NumberVector}
+
+Tuple of X, Y coordinates
+"""
+const XYVector = Tuple{<:NumberVector,<:NumberVector}
+
+"""
+    Union{XYVector, AbstractVector{<: XYVector}}
+
+A series of XYVectors, or a single xyvector.
+"""
+const SeriesCurves = Union{XYVector,AbstractVector{<:XYVector}}
+
 """
     evaluation_metrics_plot(data::Dict; size=(1000, 1000), fontsize=12)
     evaluation_metrics_plot(row::EvaluationV1; kwargs...)

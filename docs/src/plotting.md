@@ -82,6 +82,7 @@ Note that all curve plot types accepts these types:
 Lighthouse.XYVector
 Lighthouse.SeriesCurves
 ```
+
 ## Theming
 
 All generic series and axis attributes can be themed via `SeriesPlot.Series` / `SeriesPlot.Axis`.
