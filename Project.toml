@@ -1,7 +1,7 @@
 name = "Lighthouse"
 uuid = "ac2c24cd-07f0-4848-96b2-1b82c3ea0e59"
 authors = ["Beacon Biosignals, Inc."]
-version = "0.16.0"
+version = "0.17.0"
 
 [deps]
 ArrowTypes = "31f734f8-188a-4ce0-8406-c8a06bd891cd"
@@ -18,6 +18,12 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 
+[weakdeps]
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+
+[extensions]
+LighthouseMakieExt = ["Makie"]
+
 [compat]
 Arrow = "2.3"
 ArrowTypes = "1, 2"
@@ -33,8 +39,9 @@ julia = "1.6"
 [extras]
 Arrow = "69666777-d1a9-59fb-9406-91d4454c9d45"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Arrow", "CairoMakie", "StableRNGs"]
+test = ["Test", "Arrow", "CairoMakie", "Makie", "StableRNGs"]

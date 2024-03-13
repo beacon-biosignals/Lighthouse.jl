@@ -4,7 +4,6 @@ using Statistics, Dates, LinearAlgebra, Random, Logging
 using Base.Threads
 using StatsBase: StatsBase
 using TensorBoardLogger
-using Makie
 using Printf
 using Legolas: Legolas, @schema, @version, lift
 using Tables
@@ -39,5 +38,10 @@ export log_event!, log_line_series!, log_plot!, step_logger!, log_value!, log_va
 export log_array!, log_arrays!
 
 include("deprecations.jl")
+
+@static if !isdefined(Base, :get_extension)
+    include("../ext/LighthouseMakieExt.jl")
+    using .LighthouseMakieExt
+end
 
 end # module

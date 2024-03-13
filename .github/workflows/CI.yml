@@ -7,6 +7,11 @@ on:
     tags:
       - v*
   pull_request:
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}-TrialReportCI
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - Makie - ${{ matrix.makie }}
@@ -16,7 +21,7 @@ jobs:
       matrix:
         version:
           - '1'
-          - '1.7'
+          - '1.9'
           - '1.6'
         os:
           - ubuntu-latest
@@ -24,21 +29,16 @@ jobs:
           - x64
         makie:
             - '0.20'
-    env:
-      JULIA_NUM_THREADS: 2
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: actions/cache@v2
+      - uses: julia-actions/cache@v1
         with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-artifacts-${{ hashFiles('**/Project.toml') }}
-          restore-keys: ${{ runner.os }}-test-artifacts
+          cache-compiled: true
+          cache-name: ${{ github.workflow }}-${{ github.job }}-${{ matrix.os }}-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.makie }}
       - name: "Install Makie and instantiate project"
         shell: julia --color=yes --project {0}
         run: |
@@ -54,17 +54,22 @@ jobs:
         env:
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v4
         with:
           file: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
         with:
-          version: '1.6'
+          version: '1.10'
+      - uses: julia-actions/cache@v1
+        with:
+           cache-compiled: true
+           cache-name: ${{ github.workflow }}-${{ github.job }}
       - run: |
           julia --project=docs -e '
             using Pkg

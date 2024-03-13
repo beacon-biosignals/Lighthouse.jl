@@ -148,7 +148,6 @@ end
 function _observation_table_to_inputs(observation_table)
     Legolas.validate(Tables.schema(observation_table), ObservationV1SchemaVersion())
     df_table = Tables.columns(observation_table)
-    votes = missing
     if any(ismissing, df_table.votes) && !all(ismissing, df_table.votes)
         throw(ArgumentError("`:votes` must either be all `missing` or contain no `missing`"))
     end
