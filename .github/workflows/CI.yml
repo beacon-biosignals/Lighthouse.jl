@@ -44,8 +44,9 @@ jobs:
         run: |
           using Pkg
           Pkg.add(Pkg.PackageSpec(; name="Makie", version="${{ matrix.makie }}"))
-          Pkg.pin("Makie")
           Pkg.instantiate()
+          Pkg.pin("Makie")
+
       - uses: julia-actions/julia-runtest@v1
       - name: Percy Upload
         uses: percy/exec-action@v0.3.1
