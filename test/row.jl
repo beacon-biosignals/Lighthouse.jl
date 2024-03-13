@@ -95,7 +95,12 @@ end
 
         transform!(df_table, :votes => ByRow(v -> ismissing(v) ? [1, 2, 3] : v);
                    renamecols=false)
-        @test_throws ArgumentError Lighthouse._observation_table_to_inputs(df_table)
+        @static if VERSION < v"1.10"
+            # the error type changed between Julia versions!
+            @test_throws ArgumentError Lighthouse._observation_table_to_inputs(df_table)
+        else
+            @test_throws DimensionMismatch Lighthouse._observation_table_to_inputs(df_table)
+        end
 
         @test_throws DimensionMismatch Lighthouse._inputs_to_observation_table(;
                                                                                predicted_soft_labels,
