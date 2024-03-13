@@ -443,8 +443,10 @@ function axisplot(func, args; size=(800, 600), plot_kw...)
     return Makie.FigureAxisPlot(fig, ax, ax.scene.plots[1])
 end
 
-Lighthouse.plot_confusion_matrix(args...; kw...) = axisplot(plot_confusion_matrix!, args;
-                                                            kw...)
+function Lighthouse.plot_confusion_matrix(args...; kw...)
+    return axisplot(plot_confusion_matrix!, args;
+                    kw...)
+end
 
 function Lighthouse.plot_reliability_calibration_curves(args...; kw...)
     return axisplot(plot_reliability_calibration_curves!, args; kw...)
