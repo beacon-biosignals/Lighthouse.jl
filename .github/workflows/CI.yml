@@ -66,6 +66,10 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.9'
+      - uses: julia-actions/cache@v1
+        with:
+           cache-compiled: true
+           cache-name: ${{ github.workflow }}-${{ github.job }}
       - run: |
           julia --project=docs -e '
             using Pkg
