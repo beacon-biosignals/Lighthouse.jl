@@ -4,7 +4,6 @@ using Statistics, Dates, LinearAlgebra, Random, Logging
 using Base.Threads
 using StatsBase: StatsBase
 using TensorBoardLogger
-using Makie
 using Printf
 using Legolas: Legolas, @schema, @version, lift
 using Tables

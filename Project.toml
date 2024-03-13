@@ -1,7 +1,7 @@
 name = "Lighthouse"
 uuid = "ac2c24cd-07f0-4848-96b2-1b82c3ea0e59"
 authors = ["Beacon Biosignals, Inc."]
-version = "0.16.0"
+version = "0.17.0"
 
 [deps]
 ArrowTypes = "31f734f8-188a-4ce0-8406-c8a06bd891cd"
@@ -10,7 +10,6 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Legolas = "741b9549-f6ed-4911-9fbf-4a1c0c97f0cd"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -28,7 +27,13 @@ Makie = "0.20"
 StatsBase = "0.33, 0.34"
 Tables = "1.7"
 TensorBoardLogger = "0.1"
-julia = "1.6"
+julia = "1.9"
+
+[weakdeps]
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+
+[extensions]
+LighthouseMakieExt = ["Makie"]
 
 [extras]
 Arrow = "69666777-d1a9-59fb-9406-91d4454c9d45"
@@ -37,4 +42,4 @@ StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Arrow", "CairoMakie", "StableRNGs"]
+test = ["Test", "Arrow", "CairoMakie", "Makie", "StableRNGs"]
