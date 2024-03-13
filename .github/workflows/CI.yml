@@ -7,6 +7,8 @@ on:
     tags:
       - v*
   pull_request:
+env:
+    MIN_JULIA_VERSION: '1.9'
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - Makie - ${{ matrix.makie }}
@@ -16,34 +18,29 @@ jobs:
       matrix:
         version:
           - '1'
-          - '1.7'
-          - '1.6'
+          - ${{ env.MIN_JULIA_VERSION }}
         os:
           - ubuntu-latest
         arch:
           - x64
         makie:
             - '0.20'
-    env:
-      JULIA_NUM_THREADS: 2
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: actions/cache@v2
+      - uses: julia-actions/cache@v1
         with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-artifacts-${{ hashFiles('**/Project.toml') }}
-          restore-keys: ${{ runner.os }}-test-artifacts
+          cache-compiled: true
+          cache-name: ${{ github.workflow }}-${{ github.job }}-${{ matrix.os }}-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.makie }}
       - name: "Install Makie and instantiate project"
         shell: julia --color=yes --project {0}
         run: |
           using Pkg
           Pkg.add(Pkg.PackageSpec(; name="Makie", version="${{ matrix.makie }}"))
+          Pkg.pin("Makie")
           Pkg.instantiate()
       - uses: julia-actions/julia-runtest@v1
       - name: Percy Upload
@@ -54,17 +51,18 @@ jobs:
         env:
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v4
         with:
           file: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
         with:
-          version: '1.6'
+          version: ${{ env.MIN_JULIA_VERSION }}
       - run: |
           julia --project=docs -e '
             using Pkg
