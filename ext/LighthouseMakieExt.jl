@@ -179,7 +179,7 @@ function Lighthouse.plot_binary_discrimination_calibration_curves!(subfig::GridP
 
     calibration = get_theme(subfig, :BinaryDiscriminationCalibrationCurves,
                             :CalibrationCurve;
-                            solid_color=:navyblue, markerstrokewidth=0)
+                            solid_color=:navyblue)
 
     set_from_kw!(calibration, :markersize, kw, 5)
     set_from_kw!(calibration, :marker, kw, :rect)
