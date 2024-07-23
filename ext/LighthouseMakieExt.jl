@@ -161,7 +161,7 @@ function Lighthouse.plot_binary_discrimination_calibration_curves!(subfig::GridP
     # but we want kw > BinaryDiscriminationCalibrationCurves > Scatter, so we need to somehow set things
     # after the theme merging above, especially, since we also pass those to series!,
     # which then again tries to merge the kw args with the theme.
-    set_from_kw!(scatter_theme, :makersize, kw, 5)
+    set_from_kw!(scatter_theme, :markersize, kw, 5)
     set_from_kw!(scatter_theme, :marker, kw, :rect)
 
     if ismissing(per_expert_calibration_curves)
