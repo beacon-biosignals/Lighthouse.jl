@@ -122,7 +122,6 @@
     @test stats.false_positives == 0
     @test stats.false_negatives == 2
     @test stats.f1 == 0
-    
     for p in 0:0.1:1
         @test Lighthouse._cohens_kappa(p, p) == 0
         if p > 0
