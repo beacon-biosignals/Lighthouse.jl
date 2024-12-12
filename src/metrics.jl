@@ -73,20 +73,11 @@ function binary_statistics(confusion::AbstractMatrix, class_index::Integer)
     false_positives = predicted_positives - true_positives
     false_negatives = actual_positives - true_positives
     true_negatives = actual_negatives - false_positives
-    true_positive_rate = (true_positives == 0 && actual_positives == 0) ?
-                         (one(true_positives) / one(actual_positives)) :
-                         (true_positives / actual_positives)
-    true_negative_rate = (true_negatives == 0 && actual_negatives == 0) ?
-                         (one(true_negatives) / one(actual_negatives)) :
-                         (true_negatives / actual_negatives)
-    false_positive_rate = (false_positives == 0 && actual_negatives == 0) ?
-                          (zero(false_positives) / one(actual_negatives)) :
-                          (false_positives / actual_negatives)
-    false_negative_rate = (false_negatives == 0 && actual_positives == 0) ?
-                          (zero(false_negatives) / one(actual_positives)) :
-                          (false_negatives / actual_positives)
-    precision = (true_positives == 0 && predicted_positives == 0) ? NaN :
-                (true_positives / predicted_positives)
+    true_positive_rate = true_positives / actual_positives
+    true_negative_rate = true_negatives / actual_negatives
+    false_positive_rate = false_positives / actual_negatives
+    false_negative_rate = false_negatives / actual_positives
+    precision = true_positives / predicted_positives
     f1 = true_positives / (true_positives + 0.5 * (false_positives + false_negatives))
     return (; predicted_positives, predicted_negatives, actual_positives, actual_negatives,
             true_positives, true_negatives, false_positives, false_negatives,
