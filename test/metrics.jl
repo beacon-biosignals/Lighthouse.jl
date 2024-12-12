@@ -100,6 +100,8 @@
     @test stats.false_positives == 0
     @test stats.false_negatives == 0
     @test isnan(stats.f1)
+    @test isnan(stats.true_positive_rate)
+    @test isnan(stats.false_negative_rate)
 
     c = [0 2
          0 6]
