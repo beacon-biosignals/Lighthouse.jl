@@ -15,11 +15,15 @@ end
     area_under_curve(x, y)
 
 Calculates the area under the curve specified by the `x` vector and `y` vector
-using the trapezoidal rule. If inputs are empty, return `missing`.
+using the trapezoidal rule. If inputs are empty, return `NaN`. Excludes NaN entries.
 """
 function area_under_curve(x, y)
     length(x) == length(y) || throw(ArgumentError("Length of inputs must match."))
-    length(x) == 0 && return missing
+    isempty(x) && return NaN
+    non_nan = (!).(isnan.(x) .| isnan.(y))
+    x = x[non_nan]
+    y = y[non_nan]
+    isempty(x) && return NaN
     auc = zero(middle(one(eltype(x)), one(eltype(y))))
     perms = sortperm(x)
     sorted_x = view(x, perms)

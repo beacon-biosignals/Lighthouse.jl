@@ -85,10 +85,10 @@
     @test stats.true_negatives == 0
     @test stats.false_positives == 0
     @test stats.false_negatives == 0
-    @test stats.true_positive_rate == 1
-    @test stats.true_negative_rate == 1
-    @test stats.false_positive_rate == 0
-    @test stats.false_negative_rate == 0
+    @test isnan(stats.true_positive_rate)
+    @test isnan(stats.true_negative_rate)
+    @test isnan(stats.false_positive_rate)
+    @test isnan(stats.false_negative_rate)
     @test isnan(stats.precision)
     @test isnan(stats.f1)
 
@@ -100,6 +100,8 @@
     @test stats.false_positives == 0
     @test stats.false_negatives == 0
     @test isnan(stats.f1)
+    @test isnan(stats.true_positive_rate)
+    @test isnan(stats.false_negative_rate)
 
     c = [0 2
          0 6]
@@ -109,6 +111,8 @@
     @test stats.false_positives == 2
     @test stats.false_negatives == 0
     @test stats.f1 == 0
+    @test isnan(stats.true_positive_rate)
+    @test isnan(stats.false_negative_rate)
 
     c = [0 0
          2 6]
@@ -118,7 +122,6 @@
     @test stats.false_positives == 0
     @test stats.false_negatives == 2
     @test stats.f1 == 0
-
     for p in 0:0.1:1
         @test Lighthouse._cohens_kappa(p, p) == 0
         if p > 0
