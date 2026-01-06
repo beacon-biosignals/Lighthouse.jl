@@ -36,7 +36,7 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
         with:
           cache-compiled: true
           cache-name: ${{ github.workflow }}-${{ github.job }}-${{ matrix.os }}-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.makie }}
@@ -67,7 +67,7 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.10'
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
         with:
            cache-compiled: true
            cache-name: ${{ github.workflow }}-${{ github.job }}
