@@ -10,7 +10,7 @@ on:
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
-  group: ${{ github.workflow }}-${{ github.ref }}-TrialReportCI
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
@@ -21,8 +21,8 @@ jobs:
       matrix:
         version:
           - '1'
-          - '1.9'
-          - '1.6'
+          - 'lts'
+          - 'min'
         os:
           - ubuntu-latest
         arch:
@@ -30,13 +30,14 @@ jobs:
         makie:
             - '0.20'
             - '0.21'
+            - '0.24'
     steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
         with:
           cache-compiled: true
           cache-name: ${{ github.workflow }}-${{ github.job }}-${{ matrix.os }}-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.makie }}
@@ -49,7 +50,7 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
       - name: Percy Upload
         uses: percy/exec-action@v0.3.1
-        if: ${{ matrix.version == 1 && matrix.makie == 0.20 }}
+        if: ${{ matrix.version == 1 && matrix.makie == 0.24 }}
         with:
           custom-command: "npx @percy/cli upload ./test/plot_results"
         env:
@@ -63,11 +64,11 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1.10'
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
         with:
            cache-compiled: true
            cache-name: ${{ github.workflow }}-${{ github.job }}
