@@ -28,8 +28,7 @@ jobs:
         arch:
           - x64
         makie:
-            - '0.20'
-            - '0.21'
+            - '0.23'
             - '0.24'
     steps:
       - uses: actions/checkout@v6
