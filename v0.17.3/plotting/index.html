@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Plotting · Lighthouse.jl</title><meta name="title" content="Plotting · Lighthouse.jl"/><meta property="og:title" content="Plotting · Lighthouse.jl"/><meta property="twitter:title" content="Plotting · Lighthouse.jl"/><meta name="description" content="Documentation for Lighthouse.jl."/><meta property="og:description" content="Documentation for Lighthouse.jl."/><meta property="twitter:description" content="Documentation for Lighthouse.jl."/><meta property="og:url" content="https://beacon-biosignals.github.io/Lighthouse.jl/stable/plotting/"/><meta property="twitter:url" content="https://beacon-biosignals.github.io/Lighthouse.jl/stable/plotting/"/><link rel="canonical" href="https://beacon-biosignals.github.io/Lighthouse.jl/stable/plotting/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.svg" alt="Lighthouse.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Lighthouse.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">API Documentation</a></li><li class="is-active"><a class="tocitem" href>Plotting</a><ul class="internal"><li><a class="tocitem" href="#Theming"><span>Theming</span></a></li><li class="toplevel"><a class="tocitem" href="#Reliability-calibration-curves"><span>Reliability calibration curves</span></a></li><li><a class="tocitem" href="#Theming-2"><span>Theming</span></a></li><li class="toplevel"><a class="tocitem" href="#Binary-Discrimination-Calibration-Curves"><span>Binary Discrimination Calibration Curves</span></a></li><li class="toplevel"><a class="tocitem" href="#PR-curves"><span>PR curves</span></a></li><li><a class="tocitem" href="#Theming-3"><span>Theming</span></a></li><li class="toplevel"><a class="tocitem" href="#ROC-curves"><span>ROC curves</span></a></li><li><a class="tocitem" href="#Theming-4"><span>Theming</span></a></li><li class="toplevel"><a class="tocitem" href="#Kappas-(per-expert-agreement)"><span>Kappas (per expert agreement)</span></a></li><li><a class="tocitem" href="#Theming-5"><span>Theming</span></a></li><li class="toplevel"><a class="tocitem" href="#Evaluation-metrics-plot"><span>Evaluation metrics plot</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Plotting</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Plotting</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/beacon-biosignals/Lighthouse.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/main/docs/src/plotting.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><div class="admonition is-info" id="Note-6de504a706816320"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-6de504a706816320" title="Permalink"></a></header><div class="admonition-body"><p>All plotting functions require a valid Makie backend, e.g. CairoMakie, to be loaded. If there is no backend loaded, then functions won&#39;t do anything interesting. On Julia 1.9+, Makie is a weak dependency and so won&#39;t incur any compilation/dependency cost without a backend. On Julia &lt; 1.9, Makie will still be loaded, but without a backend, the resulting figure will not be rendered.</p></div></div><h1 id="Confusion-matrices"><a class="docs-heading-anchor" href="#Confusion-matrices">Confusion matrices</a><a id="Confusion-matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Confusion-matrices" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="Lighthouse.plot_confusion_matrix"><a class="docstring-binding" href="#Lighthouse.plot_confusion_matrix"><code>Lighthouse.plot_confusion_matrix</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">plot_confusion_matrix!(subfig::GridPosition, args...; kw...)
+
+plot_confusion_matrix(confusion::AbstractMatrix{&lt;: Number},
+                      class_labels::AbstractVector{String},
+                      normalize_by::Union{Symbol,Nothing}=nothing;
+                      size=(800,600), annotation_text_size=20)</code></pre><p>Lighthouse plots confusion matrices, which are simple tables showing the empirical distribution of predicted class (the rows) versus the elected class (the columns). These can optionally be normalized:</p><ul><li>row-normalized (<code>:Row</code>): this means each row has been normalized to sum to 1. Thus, the row-normalized confusion matrix shows the empirical distribution of elected classes for a given predicted class. E.g. the first row of the row-normalized confusion matrix shows the empirical probabilities of the elected classes for a sample which was predicted to be in the first class.</li><li>column-normalized (<code>:Column</code>): this means each column has been normalized to sum to 1. Thus, the column-normalized confusion matrix shows the empirical distribution of predicted classes for a given elected class. E.g. the first column of the column-normalized confusion matrix shows the empirical probabilities of the predicted classes for a sample which was elected to be in the first class.</li></ul><pre><code class="nohighlight hljs">fig, ax, p = plot_confusion_matrix(rand(2, 2), [&quot;1&quot;, &quot;2&quot;])
+fig = Figure()
+ax = plot_confusion_matrix!(fig[1, 1], rand(2, 2), [&quot;1&quot;, &quot;2&quot;], :Row)
+ax = plot_confusion_matrix!(fig[1, 2], rand(2, 2), [&quot;1&quot;, &quot;2&quot;], :Column)</code></pre><div class="admonition is-info" id="Note-5865eaa3c41af731"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-5865eaa3c41af731" title="Permalink"></a></header><div class="admonition-body"><p>This function requires a valid Makie backend (e.g. CairoMakie) to be loaded.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L35-L60">source</a></section></details></article><pre><code class="language-julia hljs">using Lighthouse: plot_confusion_matrix, plot_confusion_matrix!
+
+classes = [&quot;red&quot;, &quot;orange&quot;, &quot;yellow&quot;, &quot;green&quot;]
+ground_truth =     [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]
+predicted_labels = [1, 1, 1, 1, 2, 2, 4, 4, 4, 4, 4, 3]
+confusion = Lighthouse.confusion_matrix(length(classes), zip(predicted_labels, ground_truth))
+
+fig, ax, p = plot_confusion_matrix(confusion, classes)</code></pre><img src="005b9a74.png" alt="Example block output"/><pre><code class="language-julia hljs">fig = Figure(size=(800, 400))
+plot_confusion_matrix!(fig[1, 1], confusion, classes, :Row, annotation_text_size=14)
+plot_confusion_matrix!(fig[1, 2], confusion, classes, :Column, annotation_text_size=14)
+fig</code></pre><img src="f9e6eb36.png" alt="Example block output"/><h2 id="Theming"><a class="docs-heading-anchor" href="#Theming">Theming</a><a id="Theming-1"></a><a class="docs-heading-anchor-permalink" href="#Theming" title="Permalink"></a></h2><p>All plots are globally themeable, by setting their <code>camelcase(functionname)</code> to a theme. Usually, there are a few sub categories, for e.g. axis, text and subplots.</p><div class="admonition is-warning" id="Warning-151505ba096f6e8"><header class="admonition-header">Warning<a class="admonition-anchor" href="#Warning-151505ba096f6e8" title="Permalink"></a></header><div class="admonition-body"><p>Make sure, that you spell names correctly and fully construct the named tuples in the calls. E.g. <code>(color=:red)</code> is <em>not</em> a named tuple - it needs to be <code>(color=:red,)</code>. Misspelled names and badly constructed named tuples are not easy to error on, since those theming attributes are global, and may be valid for other plots.</p></div></div><pre><code class="language-julia hljs">with_theme(
+        ConfusionMatrix = (
+            Text = (
+                color=:yellow,
+            ),
+            Heatmap = (
+                colormap=:greens,
+            ),
+            Axis = (
+                backgroundcolor=:black,
+                xticklabelrotation=0.0,
+            )
+        )
+    ) do
+    plot_confusion_matrix(confusion, classes, :Row)
+end</code></pre><img src="53560850.png" alt="Example block output"/><h1 id="Reliability-calibration-curves"><a class="docs-heading-anchor" href="#Reliability-calibration-curves">Reliability calibration curves</a><a id="Reliability-calibration-curves-1"></a><a class="docs-heading-anchor-permalink" href="#Reliability-calibration-curves" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="Lighthouse.plot_reliability_calibration_curves"><a class="docstring-binding" href="#Lighthouse.plot_reliability_calibration_curves"><code>Lighthouse.plot_reliability_calibration_curves</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">plot_reliability_calibration_curves!(fig::SubFigure, args...; kw...)
+
+plot_reliability_calibration_curves(per_class_reliability_calibration_curves::SeriesCurves,
+                                    per_class_reliability_calibration_scores::NumberVector,
+                                    class_labels::AbstractVector{String};
+                                    legend=:rb, size=(800, 600))</code></pre><div class="admonition is-info" id="Note-5865eaa3c41af731"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-5865eaa3c41af731" title="Permalink"></a></header><div class="admonition-body"><p>This function requires a valid Makie backend (e.g. CairoMakie) to be loaded.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L64-L74">source</a></section></details></article><pre><code class="language-julia hljs">using Lighthouse: plot_reliability_calibration_curves
+classes = [&quot;class $i&quot; for i in 1:5]
+curves = [(LinRange(0, 1, 10), range(0, stop=i/2, length=10) .+ (stable_randn(10) .* 0.1)) for i in -1:3]
+
+plot_reliability_calibration_curves(
+    curves,
+    stable_rand(5),
+    classes
+)</code></pre><img src="221819cf.png" alt="Example block output"/><p>Note that all curve plot types accepts these types:</p><article><details class="docstring" open="true"><summary id="Lighthouse.XYVector"><a class="docstring-binding" href="#Lighthouse.XYVector"><code>Lighthouse.XYVector</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">Tuple{&lt;:NumberVector, &lt;: NumberVector}</code></pre><p>Tuple of X, Y coordinates</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L9-L13">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lighthouse.SeriesCurves"><a class="docstring-binding" href="#Lighthouse.SeriesCurves"><code>Lighthouse.SeriesCurves</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">Union{XYVector, AbstractVector{&lt;: XYVector}}</code></pre><p>A series of XYVectors, or a single xyvector.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L16-L20">source</a></section></details></article><h2 id="Theming-2"><a class="docs-heading-anchor" href="#Theming-2">Theming</a><a class="docs-heading-anchor-permalink" href="#Theming-2" title="Permalink"></a></h2><p>All generic series and axis attributes can be themed via <code>SeriesPlot.Series</code> / <code>SeriesPlot.Axis</code>. You can have a look at <a href="http://makie.juliaplots.org/stable/plotting_functions/series.html">the series doc to get an idea about the applicable attributes</a>. To style specifics of a subplot inside the curve plot, e.g. the ideal lineplot, one can use the camel case function name (without <code>plot_</code>) and pass those attributes there. So e.g the <code>ideal</code> curve inside the reliability curve can be themed like this:</p><pre><code class="language-julia hljs"># The axis is getting created in the seriesplot,
+# to always have these kind of probabilistic series have the same axis
+series_theme = (
+    Axis = (
+        backgroundcolor = (:gray, 0.1),
+        bottomspinevisible = false,
+        leftspinevisible = false,
+        topspinevisible = false,
+        rightspinevisible = false,
+    ),
+    Series = (
+        color=:darktest,
+        marker=:circle
+    )
+)
+with_theme(
+        ReliabilityCalibrationCurves = (
+            Ideal = (
+                color=:red, linewidth=3
+            ),
+        ),
+        SeriesPlot = series_theme
+    ) do
+    plot_reliability_calibration_curves(
+        curves,
+        stable_rand(5),
+        classes
+    )
+end</code></pre><img src="d159c3b8.png" alt="Example block output"/><h1 id="Binary-Discrimination-Calibration-Curves"><a class="docs-heading-anchor" href="#Binary-Discrimination-Calibration-Curves">Binary Discrimination Calibration Curves</a><a id="Binary-Discrimination-Calibration-Curves-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-Discrimination-Calibration-Curves" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="Lighthouse.plot_binary_discrimination_calibration_curves"><a class="docstring-binding" href="#Lighthouse.plot_binary_discrimination_calibration_curves"><code>Lighthouse.plot_binary_discrimination_calibration_curves</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">plot_binary_discrimination_calibration_curves!(fig::SubFigure, args...; kw...)
+
+plot_binary_discrimination_calibration_curves!(calibration_curve::SeriesCurves, calibration_score,
+                                               per_expert_calibration_curves::SeriesCurves,
+                                               per_expert_calibration_scores, optimal_threshold,
+                                               discrimination_class::AbstractString;
+                                               marker=:rect, markersize=5, linewidth=2)</code></pre><div class="admonition is-info" id="Note-5865eaa3c41af731"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-5865eaa3c41af731" title="Permalink"></a></header><div class="admonition-body"><p>This function requires a valid Makie backend (e.g. CairoMakie) to be loaded.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L78-L89">source</a></section></details></article><pre><code class="language-julia hljs">using Lighthouse: plot_binary_discrimination_calibration_curves
+
+Lighthouse.plot_binary_discrimination_calibration_curves(
+    curves[3],
+    stable_rand(5),
+    curves[[1, 2, 4, 5]],
+    nothing, nothing,
+    &quot;&quot;,
+)</code></pre><img src="579cfd24.png" alt="Example block output"/><h1 id="PR-curves"><a class="docs-heading-anchor" href="#PR-curves">PR curves</a><a id="PR-curves-1"></a><a class="docs-heading-anchor-permalink" href="#PR-curves" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="Lighthouse.plot_pr_curves"><a class="docstring-binding" href="#Lighthouse.plot_pr_curves"><code>Lighthouse.plot_pr_curves</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">plot_pr_curves!(subfig::GridPosition, args...; kw...)
+
+plot_pr_curves(per_class_pr_curves::SeriesCurves,
+            class_labels::AbstractVector{&lt;: String};
+            size=(800, 600),
+            legend=:lt, title=&quot;PR curves&quot;,
+            xlabel=&quot;True positive rate&quot;, ylabel=&quot;Precision&quot;,
+            linewidth=2, scatter=NamedTuple(), color=:darktest)</code></pre><ul><li><code>scatter::Union{Nothing, NamedTuple}</code>: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.</li></ul><div class="admonition is-info" id="Note-5865eaa3c41af731"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-5865eaa3c41af731" title="Permalink"></a></header><div class="admonition-body"><p>This function requires a valid Makie backend (e.g. CairoMakie) to be loaded.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L93-L108">source</a></section></details></article><pre><code class="language-julia hljs">using Lighthouse: plot_pr_curves
+plot_pr_curves(
+    curves,
+    classes
+)</code></pre><img src="c534e878.png" alt="Example block output"/><h2 id="Theming-3"><a class="docs-heading-anchor" href="#Theming-3">Theming</a><a class="docs-heading-anchor-permalink" href="#Theming-3" title="Permalink"></a></h2><pre><code class="language-julia hljs"># The plots with only a series don&#39;t have a special keyword
+with_theme(SeriesPlot = series_theme) do
+    plot_pr_curves(
+        curves,
+        classes
+    )
+end</code></pre><img src="a15f8c60.png" alt="Example block output"/><h1 id="ROC-curves"><a class="docs-heading-anchor" href="#ROC-curves">ROC curves</a><a id="ROC-curves-1"></a><a class="docs-heading-anchor-permalink" href="#ROC-curves" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="Lighthouse.plot_roc_curves"><a class="docstring-binding" href="#Lighthouse.plot_roc_curves"><code>Lighthouse.plot_roc_curves</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">plot_roc_curves!(subfig::GridPosition, args...; kw...)
+
+plot_roc_curves(per_class_roc_curves::SeriesCurves,
+                per_class_roc_aucs::NumberVector,
+                class_labels::AbstractVector{&lt;: String};
+                size=(800, 600),
+                legend=:lt,
+                title=&quot;ROC curves&quot;,
+                xlabel=&quot;False positive rate&quot;,
+                ylabel=&quot;True positive rate&quot;,
+                linewidth=2, scatter=NamedTuple(), color=:darktest)</code></pre><ul><li><code>scatter::Union{Nothing, NamedTuple}</code>: can be set to a named tuples of attributes that are forwarded to the scatter call (e.g. markersize). If nothing, no scatter is added.</li></ul><div class="admonition is-info" id="Note-5865eaa3c41af731"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-5865eaa3c41af731" title="Permalink"></a></header><div class="admonition-body"><p>This function requires a valid Makie backend (e.g. CairoMakie) to be loaded.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L112-L129">source</a></section></details></article><pre><code class="language-julia hljs">using Lighthouse: plot_roc_curves
+
+plot_roc_curves(
+    curves,
+    stable_rand(5),
+    classes,
+    legend=:lt)</code></pre><img src="061b17dc.png" alt="Example block output"/><h2 id="Theming-4"><a class="docs-heading-anchor" href="#Theming-4">Theming</a><a class="docs-heading-anchor-permalink" href="#Theming-4" title="Permalink"></a></h2><pre><code class="language-julia hljs"># The plots with only a series don&#39;t have a special keyword
+with_theme(SeriesPlot = series_theme) do
+    plot_roc_curves(
+        curves,
+        stable_rand(5),
+        classes,
+        legend=:lt)
+end</code></pre><img src="60247e83.png" alt="Example block output"/><h1 id="Kappas-(per-expert-agreement)"><a class="docs-heading-anchor" href="#Kappas-(per-expert-agreement)">Kappas (per expert agreement)</a><a id="Kappas-(per-expert-agreement)-1"></a><a class="docs-heading-anchor-permalink" href="#Kappas-(per-expert-agreement)" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="Lighthouse.plot_kappas"><a class="docstring-binding" href="#Lighthouse.plot_kappas"><code>Lighthouse.plot_kappas</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">plot_kappas!(subfig::GridPosition, args...; kw...)
+
+plot_kappas(per_class_kappas::NumberVector,
+            class_labels::AbstractVector{String},
+            per_class_IRA_kappas=nothing;
+            size=(800, 600),
+            annotation_text_size=20)</code></pre><div class="admonition is-info" id="Note-5865eaa3c41af731"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-5865eaa3c41af731" title="Permalink"></a></header><div class="admonition-body"><p>This function requires a valid Makie backend (e.g. CairoMakie) to be loaded.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L133-L144">source</a></section></details></article><pre><code class="language-julia hljs">using Lighthouse: plot_kappas
+plot_kappas(stable_rand(5), classes)</code></pre><img src="2f3fcc30.png" alt="Example block output"/><pre><code class="language-julia hljs">using Lighthouse: plot_kappas
+plot_kappas(stable_rand(5), classes, stable_rand(5))</code></pre><img src="8b6216c5.png" alt="Example block output"/><h2 id="Theming-5"><a class="docs-heading-anchor" href="#Theming-5">Theming</a><a class="docs-heading-anchor-permalink" href="#Theming-5" title="Permalink"></a></h2><pre><code class="language-julia hljs">with_theme(
+        Kappas = (
+            Axis = (
+                xticklabelsvisible=false,
+                xticksvisible=false,
+                leftspinevisible = false,
+                rightspinevisible = false,
+                bottomspinevisible = false,
+                topspinevisible = false,
+            ),
+            Text = (
+                color = :blue,
+            ),
+            BarPlot = (color=[:black, :green],)
+        )) do
+    plot_kappas((1:5) ./ 5 .- 0.1, classes, (1:5) ./ 5)
+end</code></pre><img src="20d77b14.png" alt="Example block output"/><h1 id="Evaluation-metrics-plot"><a class="docs-heading-anchor" href="#Evaluation-metrics-plot">Evaluation metrics plot</a><a id="Evaluation-metrics-plot-1"></a><a class="docs-heading-anchor-permalink" href="#Evaluation-metrics-plot" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="Lighthouse.evaluation_metrics_plot"><a class="docstring-binding" href="#Lighthouse.evaluation_metrics_plot"><code>Lighthouse.evaluation_metrics_plot</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">evaluation_metrics_plot(predicted_hard_labels::AbstractVector,
+                        predicted_soft_labels::AbstractMatrix,
+                        elected_hard_labels::AbstractVector,
+                        classes,
+                        thresholds=0.0:0.01:1.0;
+                        votes::Union{Nothing,AbstractMatrix}=nothing,
+                        strata::Union{Nothing,AbstractVector{Set{T}} where T}=nothing,
+                        optimal_threshold_class::Union{Nothing,Integer}=nothing)</code></pre><p>Return a plot and dictionary containing a battery of classifier performance metrics that each compare <code>predicted_soft_labels</code> and/or <code>predicted_hard_labels</code> agaist <code>elected_hard_labels</code>.</p><p>See <a href="../#Lighthouse.evaluation_metrics"><code>evaluation_metrics</code></a> for a description of the arguments.</p><p>This method is deprecated in favor of calling <code>evaluation_metrics</code> and <a href="#Lighthouse.evaluation_metrics_plot"><code>evaluation_metrics_plot</code></a> separately.</p><div class="admonition is-info" id="Note-5865eaa3c41af731"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-5865eaa3c41af731" title="Permalink"></a></header><div class="admonition-body"><p>This function requires a valid Makie backend (e.g. CairoMakie) to be loaded.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/beacon-biosignals/Lighthouse.jl/blob/698ab8427e35f083fbe8e8d9bbfb11ffad6c3864/src/plotting.jl#L152-L173">source</a></section></details></article><pre><code class="language-julia hljs">using Lighthouse: evaluation_metrics_plot
+data = Dict{String, Any}()
+data[&quot;confusion_matrix&quot;] = stable_rand(0:100, 5, 5)
+data[&quot;class_labels&quot;] = classes
+
+data[&quot;per_class_kappas&quot;] = stable_rand(5)
+data[&quot;multiclass_kappa&quot;] = stable_rand()
+data[&quot;per_class_IRA_kappas&quot;] = stable_rand(5)
+data[&quot;multiclass_IRA_kappas&quot;] = stable_rand()
+
+data[&quot;per_class_pr_curves&quot;] = curves
+data[&quot;per_class_roc_curves&quot;] = curves
+data[&quot;per_class_roc_aucs&quot;] = stable_rand(5)
+
+data[&quot;per_class_reliability_calibration_curves&quot;] = curves
+data[&quot;per_class_reliability_calibration_scores&quot;] = stable_rand(5)
+
+evaluation_metrics_plot(data)</code></pre><img src="80d6d564.png" alt="Example block output"/><p>Optionally, one can also add a binary discrimination calibration curve plot:</p><pre><code class="language-julia hljs">data[&quot;discrimination_calibration_curve&quot;] = (LinRange(0, 1, 10), LinRange(0,1, 10) .+ 0.1randn(10))
+data[&quot;per_expert_discrimination_calibration_curves&quot;] = curves
+
+# These are currently not used in plotting, but are still passed to `plot_binary_discrimination_calibration_curves`!
+data[&quot;discrimination_calibration_score&quot;] = missing
+data[&quot;optimal_threshold_class&quot;] = 1
+data[&quot;per_expert_discrimination_calibration_scores&quot;] = missing
+data[&quot;optimal_threshold&quot;] = missing
+
+evaluation_metrics_plot(data)</code></pre><img src="18a9d866.png" alt="Example block output"/><p>Plots can also be generated directly from an <code>EvaluationV1</code>:</p><pre><code class="language-julia hljs">data_row = EvaluationV1(data)
+evaluation_metrics_plot(data_row)</code></pre><img src="18a9d866-001.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« API Documentation</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 7 January 2026 18:03">Wednesday 7 January 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
