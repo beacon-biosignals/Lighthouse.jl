@@ -23,8 +23,7 @@ include("metrics.jl")
 export confusion_matrix, accuracy, binary_statistics, cohens_kappa, calibration_curve,
        get_tradeoff_metrics, get_tradeoff_metrics_binary_multirater, get_hardened_metrics,
        get_hardened_metrics_multirater, get_hardened_metrics_multiclass,
-       get_label_metrics_multirater, get_label_metrics_multirater_multiclass,
-       harden_by_threshold
+       get_label_metrics_multirater, get_label_metrics_multirater_multiclass
 
 include("classifier.jl")
 export AbstractClassifier
