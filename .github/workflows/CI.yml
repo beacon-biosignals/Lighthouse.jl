@@ -71,12 +71,7 @@ jobs:
         with:
            cache-compiled: true
            cache-name: ${{ github.workflow }}-${{ github.job }}
-      - run: |
-          julia --project=docs -e '
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
-      - run: julia --project=docs docs/make.jl
+      - uses: julia-actions/julia-docdeploy@v1
         env:
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # when run by tagbot
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
