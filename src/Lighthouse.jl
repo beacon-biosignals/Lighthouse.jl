@@ -38,9 +38,4 @@ export log_array!, log_arrays!
 
 include("deprecations.jl")
 
-@static if !isdefined(Base, :get_extension)
-    include("../ext/LighthouseMakieExt.jl")
-    using .LighthouseMakieExt
-end
-
 end # module
