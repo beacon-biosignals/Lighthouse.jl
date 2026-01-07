@@ -15,7 +15,6 @@ using Lighthouse: plot_reliability_calibration_curves, plot_pr_curves,
                   plot_roc_curves, plot_kappas, plot_confusion_matrix,
                   evaluation_metrics_plot, evaluation_metrics, binarize_by_threshold
 
-
 # Needs to be set for figures
 # returning true for showable("image/png", obj)
 # which TensorBoardLogger.jl uses to determine output
