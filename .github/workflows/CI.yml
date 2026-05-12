@@ -16,6 +16,8 @@ jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - Makie v${{ matrix.makie }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -31,11 +33,13 @@ jobs:
             version: 'min'
             os: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: julia-actions/setup-julia@4c0cb0fce8556fdb04a90347310e5db8b1f98fb9 # v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v3
+      - uses: julia-actions/cache@a45e8fa8be21c18a06b7177052533149e61e9b38 # v3
         with:
           cache-compiled: true
           cache-name: ${{ github.workflow }}-${{ github.job }}-${{ matrix.os }}-${{ matrix.version }}-${{ matrix.arch }}-${{ matrix.makie }}
@@ -45,15 +49,15 @@ jobs:
           using Pkg
           Pkg.instantiate()
           Pkg.add(Pkg.PackageSpec(; name="Makie", version="${{ matrix.makie }}"))
-      - uses: julia-actions/julia-runtest@v1
+      - uses: julia-actions/julia-runtest@d60b785c6f2bdf4ebfb18b2b6f7d93b7dfb0efe3 # v1
       - name: Percy Upload
-        uses: percy/exec-action@v0.3.1
+        uses: percy/exec-action@20e02fc241611bb7842e20e94076217c1d7663fd # v0.3.1
         if: ${{ matrix.version == 1 && matrix.makie == 0.24 }}
         with:
           custom-command: "npx @percy/cli upload ./test/plot_results"
         env:
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-      - uses: julia-actions/julia-processcoverage@v1
+      - uses: julia-actions/julia-processcoverage@03114f09f119417c3242a9fb6e0b722676aedf38 # v1
       - uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
         with:
           files: lcov.info
@@ -61,16 +65,21 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      statuses: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: julia-actions/setup-julia@4c0cb0fce8556fdb04a90347310e5db8b1f98fb9 # v2
         with:
           version: '1.10'
-      - uses: julia-actions/cache@v3
+      - uses: julia-actions/cache@a45e8fa8be21c18a06b7177052533149e61e9b38 # v3
         with:
            cache-compiled: true
            cache-name: ${{ github.workflow }}-${{ github.job }}
-      - uses: julia-actions/julia-docdeploy@v1
+      - uses: julia-actions/julia-docdeploy@e62cc8fd639797a0c2922a437d5b1b81c4a12787 # v1
         env:
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # when run by tagbot
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
