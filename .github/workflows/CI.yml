@@ -51,12 +51,11 @@ jobs:
           Pkg.add(Pkg.PackageSpec(; name="Makie", version="${{ matrix.makie }}"))
       - uses: julia-actions/julia-runtest@d60b785c6f2bdf4ebfb18b2b6f7d93b7dfb0efe3 # v1
       - name: Percy Upload
-        uses: percy/exec-action@20e02fc241611bb7842e20e94076217c1d7663fd # v0.3.1
         if: ${{ matrix.version == 1 && matrix.makie == 0.24 }}
-        with:
-          custom-command: "npx @percy/cli upload ./test/plot_results"
+        run: |
+          npx @percy/cli upload ./test/plot_results
         env:
-          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }
       - uses: julia-actions/julia-processcoverage@03114f09f119417c3242a9fb6e0b722676aedf38 # v1
       - uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
         with:
